@@ -1,14 +1,25 @@
-# Donation integrations
+# Provider integrations
+
+Provider guides describe external account setup and the implemented transport and
+data contracts. Product behavior lives in the relevant feature guide.
+
+## Donation sources
 
 StreamBrew connects donation sources through either OAuth or the realtime protocol behind a source's
 alert widget. The provider-specific data and transport contracts live in the individual source
 guides:
 
-- [DonationAlerts](../features/donation-alerts.md)
+- [DonationAlerts](donationalerts.md)
 - [donate.stream](donate-stream.md)
 - [Streamlabs](streamlabs.md)
 - [StreamElements](streamelements.md)
 - [Tourniquet](tourniquet.md)
+
+## Chat providers
+
+- [Boosty](boosty.md): token setup, collection protocol, and limitations.
+- [Multichat](../features/multichat.md#provider-capabilities): supported providers,
+  capabilities, and OAuth configuration.
 
 ## Service identity in the interface
 
