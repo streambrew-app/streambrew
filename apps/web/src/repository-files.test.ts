@@ -1,7 +1,10 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { expect, it } from "vitest";
+
+const repositoryRoot = fileURLToPath(import.meta.resolve("../../../"));
+const allowedRootMarkdownFiles = ["AGENTS.md", "README.md", "TODO.md"];
 
 it("does not contain vite.config.js alongside vite.config.ts", () => {
   expect(
@@ -15,6 +18,18 @@ it("does not contain a root CONTEXT.md", () => {
     existsSync(fileURLToPath(import.meta.resolve("../../../CONTEXT.md"))),
     "Do not create a root CONTEXT.md; put repository-wide agent guidance in AGENTS.md and module-specific guidance in the relevant docs/ guide.",
   ).toBe(false);
+});
+
+it("keeps root Markdown limited to repository entry points", () => {
+  const rootMarkdownFiles = readdirSync(repositoryRoot, { withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith(".md"))
+    .map((entry) => entry.name)
+    .sort();
+
+  expect(
+    rootMarkdownFiles,
+    "Move other Markdown documentation into docs/ and link to it from AGENTS.md or README.md.",
+  ).toEqual(allowedRootMarkdownFiles);
 });
 
 it("runs production migrations inside a quoted remote script", () => {
