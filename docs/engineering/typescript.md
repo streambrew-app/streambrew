@@ -2,7 +2,7 @@
 
 Read this guide before changing TypeScript or TSX in any workspace package,
 including `apps/web` and `packages`. Shared engineering conventions live in
-[contribution guide](contributing.md#shared-engineering-conventions).
+[contribution guide](../contributing.md#shared-engineering-conventions).
 
 ## Local skills
 
@@ -29,4 +29,4 @@ Before editing TS and TSX files for a substantial task:
   the [internationalization guide](i18n.md).
 
 Web-specific rules and document links live in
-[apps/web/AGENTS.md](../apps/web/AGENTS.md).
+[apps/web/AGENTS.md](../../apps/web/AGENTS.md).

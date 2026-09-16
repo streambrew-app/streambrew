@@ -38,7 +38,7 @@ the job. They never reset attempt history.
 
 Review the migrations in `db/migrations`, then deploy their matching application
 revision with `apply_migrations=true` using the [deployment
-workflow](deployment.md). The workflow pauses the old web and video processes
+workflow](../operations/deployment.md). The workflow pauses the old web and video processes
 before applying the migration because old web code cannot parse NULL timing, then
 starts all application services on the matching new revision. Do not leave mixed
 old/new web and worker versions running.

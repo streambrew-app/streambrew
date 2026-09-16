@@ -22,4 +22,4 @@ with the existing semantic surface, border, text and focus tokens.
 
 FORM: Local extension of the established layout; no new visual identity or concept seed.
 
-FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, docs/design.md, and every shipping raster carrying its provenance
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, docs/engineering/design.md, and every shipping raster carrying its provenance

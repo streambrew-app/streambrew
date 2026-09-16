@@ -9,7 +9,7 @@ The metadata provider was subsequently migrated to YouTube Data API v3.
 The durable job and timing rules below remain in effect. Empty API results
 remain retryable instead of inferring private/deleted status, titles are
 retrieved in the same request as duration, and the video service now requires
-`YOUTUBE_API_KEY`. See [the operations guide](../video-metadata.md) for the
+`YOUTUBE_API_KEY`. See [the operations guide](../features/video-metadata.md) for the
 current provider error categories and quota backoff.
 
 ## Problem
@@ -103,7 +103,7 @@ Persist a bounded error category and HTTP status on every failed attempt. Log
 video ID, provider video ID, attempt number, result category, provider playability
 reason when safe, and next retry time. Do not log raw HTML, cookies, or tokens.
 Pending jobs, oldest due time, error categories, and terminal failures can be
-inspected using the queries in [the operations guide](../video-metadata.md).
+inspected using the queries in [the operations guide](../features/video-metadata.md).
 
 On success, atomically verify the lease, write duration, fill a missing title,
 resolve an open end, and complete the job. Read current video timing under lock;

@@ -18,7 +18,7 @@ Terraform reconciles the Docker runtime.
 The bandwidth-heavy multistream media plane is the one exception: it runs as a
 stateless container on Hetzner Cloud and is deployed by
 `.github/workflows/restream.yml`. The AWS application remains its control plane.
-See [Multistream architecture and operations](restream.md) for provisioning,
+See [Multistream architecture and operations](../features/restream.md) for provisioning,
 security boundaries, secrets, and recovery.
 
 ## Architecture
@@ -191,7 +191,7 @@ Required environment secrets are `SSH_PRIVATE_KEY`, `SSH_KNOWN_HOSTS`,
 WAL-G-only `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` pair. Optional OAuth
 secrets must be configured together with their matching client IDs. The
 Hetzner deployment also has its own variables and secrets documented in
-[Multistream architecture and operations](restream.md#github-production-environment).
+[Multistream architecture and operations](../features/restream.md#github-production-environment).
 
 Create `SSH_KNOWN_HOSTS` using the alias expected by the workflows, then verify
 the fingerprint through the Lightsail console before saving it:

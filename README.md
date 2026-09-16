@@ -11,12 +11,12 @@ list them.
 Related documentation:
 
 - [product context](docs/product.md);
-- [design guide](docs/design.md);
+- [design guide](docs/engineering/design.md);
 - [contribution guide](docs/contributing.md);
-- [currency and video-queue rules](docs/currencies.md);
-- [donation alerts and OBS widget behavior](docs/donation-alerts.md);
-- [multichat architecture and provider setup](docs/multichat.md);
-- [production deployment, configuration, and backups](docs/deployment.md).
+- [currency and video-queue rules](docs/features/currencies.md);
+- [donation alerts and OBS widget behavior](docs/features/donation-alerts.md);
+- [multichat architecture and provider setup](docs/features/multichat.md);
+- [production deployment, configuration, and backups](docs/operations/deployment.md).
 
 ## GitHub automation
 
@@ -132,7 +132,7 @@ and S3 backups. `Production` builds immutable application and PostgreSQL/WAL-G
 images and applies only the portable Docker runtime over SSH, so routine
 releases neither plan nor replace cloud resources. Bootstrap, first deployment,
 migrations, rollback, networking, and backup guidance lives in
-[the deployment guide](docs/deployment.md).
+[the deployment guide](docs/operations/deployment.md).
 
 PostgreSQL continuously archives WAL files to the configured S3-compatible
 storage, while the `wal-g` service creates and retains periodic base backups.
