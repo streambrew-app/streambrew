@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 import { fmtAmount, fmtDate, fmtListDate, fmtRubles, formatMoneyInputValue } from "./fmt";
 import { createTranslations, createTranslator, resolveLocale } from "./i18n";
 
-const testMessages = createTranslations({
+const testTranslations = createTranslations({
   save: {
     en: "Save",
     ru: "Сохранить",
@@ -58,7 +58,7 @@ describe("resolveLocale", () => {
 
 describe("createTranslator", () => {
   it("translates a local type-safe catalog", () => {
-    const t = createTranslator("ru", testMessages);
+    const t = createTranslator("ru", testTranslations);
 
     expect(t("save")).toBe("Сохранить");
     expect(t("greeting", { name: "Мира" })).toBe("Привет, Мира");

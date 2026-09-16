@@ -26,7 +26,7 @@ import {
 } from "../../hooks/api";
 import { createTranslations, createTranslator, useI18n } from "../../lib/i18n";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   selectedVideo: {
     en: "Selected video",
     ru: "Выбранное видео",
@@ -116,7 +116,11 @@ const VideoPageInputSchema = z.object({
 export const Route = createFileRoute("/_authenticated/videos")({
   component: VideoQueue,
   head: ({ match }) => ({
-    meta: [{ title: `${createTranslator(match.context.locale, i18n)("videoQueue")} · StreamBrew` }],
+    meta: [
+      {
+        title: `${createTranslator(match.context.locale, translations)("videoQueue")} · StreamBrew`,
+      },
+    ],
   }),
   validateSearch: z.object({
     videoQueueId: z.coerce.number().int().positive().optional().catch(undefined),
@@ -223,7 +227,7 @@ type VideoQueuePage = ReturnType<typeof useVideoQueuePage>;
 type QueueVideo = NonNullable<VideoQueuePage["videosQ"]["data"]>["items"][number];
 
 function VideoQueueHeader({ page }: { page: VideoQueuePage }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   return (
     <CosmicPageHeader
       title={t("videoQueue")}
@@ -245,7 +249,7 @@ function VideoQueueHeader({ page }: { page: VideoQueuePage }) {
 }
 
 function OwnerVideoCard({ page, video }: { page: VideoQueuePage; video: QueueVideo }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const isUpdating =
     page.updateVideoStatusM.isPending ||
     page.updateVideoM.isPending ||
@@ -280,7 +284,7 @@ function OwnerVideoCard({ page, video }: { page: VideoQueuePage; video: QueueVid
 }
 
 function VideoQueueEmptyState({ page }: { page: VideoQueuePage }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   if (page.search.videoId) {
     return (
       <EmptyState
@@ -313,7 +317,7 @@ function VideoQueueEmptyState({ page }: { page: VideoQueuePage }) {
 }
 
 function VideoQueueResults({ page }: { page: VideoQueuePage }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   if (page.videosQ.isLoading) {
     return <VideoListSkeleton aria-busy="true" aria-label={t("loadingVideoQueue")} withActions />;
   }
@@ -336,7 +340,7 @@ function VideoQueueResults({ page }: { page: VideoQueuePage }) {
 }
 
 function VideoQueueContent({ page }: { page: VideoQueuePage }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   return (
     <div className="order-2 min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain lg:order-1">
       {page.search.videoId && (
@@ -361,7 +365,7 @@ function VideoQueueContent({ page }: { page: VideoQueuePage }) {
 }
 
 function VideoStatusFilters({ page }: { page: VideoQueuePage }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const tabs = [
     { id: "all", label: t("all"), count: page.statusCounts.all, icon: Icons.list },
     {
@@ -412,7 +416,7 @@ function VideoStatusFilters({ page }: { page: VideoQueuePage }) {
 }
 
 function VideoQueueSidebar({ page }: { page: VideoQueuePage }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   return (
     <aside className="relative order-1 flex shrink-0 flex-col overflow-hidden border-b border-border bg-muted/40 p-3 lg:order-2 lg:min-h-0 lg:w-72 lg:border-b-0 lg:border-l">
       <VideoStatusFilters page={page} />
@@ -444,7 +448,7 @@ function VideoQueueSidebar({ page }: { page: VideoQueuePage }) {
 }
 
 function VideoQueuePagination({ page }: { page: VideoQueuePage }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   if (!page.videosQ.data || page.videosQ.isError || page.visibleVideos.length === 0) return null;
   return (
     <PagePagination
@@ -463,7 +467,7 @@ function VideoQueuePagination({ page }: { page: VideoQueuePage }) {
 
 function VideoQueue() {
   const page = useVideoQueuePage();
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
 
   return (
     <section className="cosmic-panel flex h-full min-h-0 min-w-0 flex-col overflow-hidden">

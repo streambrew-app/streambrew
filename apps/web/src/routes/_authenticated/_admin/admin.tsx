@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { createTranslations, createTranslator } from "@web/lib/i18n";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   adminPanel: {
     en: "Admin panel",
     ru: "Админская панель",
@@ -11,6 +11,10 @@ const i18n = createTranslations({
 export const Route = createFileRoute("/_authenticated/_admin/admin")({
   component: Outlet,
   head: ({ match }) => ({
-    meta: [{ title: `${createTranslator(match.context.locale, i18n)("adminPanel")} · StreamBrew` }],
+    meta: [
+      {
+        title: `${createTranslator(match.context.locale, translations)("adminPanel")} · StreamBrew`,
+      },
+    ],
   }),
 });

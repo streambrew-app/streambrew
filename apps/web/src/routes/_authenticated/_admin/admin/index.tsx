@@ -14,7 +14,7 @@ import { preloadRouteQuery } from "@web/lib/trpc";
 import { cn } from "@web/lib/utils";
 import type { AppRouter } from "@web/server/api/trpc/index";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   overview: { en: "Overview", ru: "Обзор" },
   refresh: { en: "Refresh metrics", ru: "Обновить показатели" },
   noOperationalIssues: { en: "No operational issues", ru: "Отклонений нет" },
@@ -196,7 +196,7 @@ const serviceLabels = {
   chat: "serviceChat",
   donations: "serviceDonations",
   activity: "serviceActivity",
-} as const satisfies Record<Service["id"], TranslationKey<typeof i18n>>;
+} as const satisfies Record<Service["id"], TranslationKey<typeof translations>>;
 
 export const Route = createFileRoute("/_authenticated/_admin/admin/")({
   component: AdminOverviewPage,
@@ -204,13 +204,15 @@ export const Route = createFileRoute("/_authenticated/_admin/admin/")({
     await preloadRouteQuery(context.queryClient, context.trpc.admin.dashboard.queryOptions());
   },
   head: ({ match }) => ({
-    meta: [{ title: `${createTranslator(match.context.locale, i18n)("overview")} · StreamBrew` }],
+    meta: [
+      { title: `${createTranslator(match.context.locale, translations)("overview")} · StreamBrew` },
+    ],
   }),
 });
 
 function AdminOverviewPage() {
   const dashboardQ = useAdminDashboardQ();
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const attentionCount = dashboardQ.data ? getAttentionCount(dashboardQ.data) : 0;
 
   return (
@@ -294,7 +296,7 @@ function SectionHeading({ children }: { children: string }) {
 }
 
 function SystemSection({ dashboard }: { dashboard: Dashboard }) {
-  const { locale, t } = useI18n(i18n);
+  const { locale, t } = useI18n(translations);
   const [oneMinute, fiveMinutes, fifteenMinutes] = dashboard.system.loadAverage;
   const loadRatio = oneMinute / dashboard.system.cpuCount;
   const memoryRatio = dashboard.system.memory.usedBytes / dashboard.system.memory.totalBytes;
@@ -443,7 +445,7 @@ function ResourceRow({
 }
 
 function ServiceRow({ service }: { service: Service }) {
-  const { locale, t } = useI18n(i18n);
+  const { locale, t } = useI18n(translations);
   const healthy = service.status === "healthy";
 
   return (
@@ -468,7 +470,7 @@ function ServiceRow({ service }: { service: Service }) {
 }
 
 function ActivitySection({ dashboard }: { dashboard: Dashboard }) {
-  const { locale, t } = useI18n(i18n);
+  const { locale, t } = useI18n(translations);
   const activity = dashboard.multichat.activity;
   const coverageDays = activity
     ? (dashboard.capturedAt.getTime() - activity.trackingSince.getTime()) / 86_400_000
@@ -540,7 +542,7 @@ function ActivityRow({
   label: string;
   period: (Omit<ActivityPeriod, "now"> & { now: number | null }) | null;
 }) {
-  const { locale } = useI18n(i18n);
+  const { locale } = useI18n(translations);
   return (
     <tr className={emphasized ? "bg-muted/25" : undefined}>
       <th
@@ -559,7 +561,7 @@ function ActivityRow({
 }
 
 function ProductSection({ dashboard }: { dashboard: Dashboard }) {
-  const { locale, t } = useI18n(i18n);
+  const { locale, t } = useI18n(translations);
   const adoption = [
     { label: t("totalStreamers"), value: dashboard.users.total, share: null },
     {
@@ -634,7 +636,7 @@ function PeriodTable({
 }: {
   rows: Array<{ label: string; values: { day: number; week: number; month: number } }>;
 }) {
-  const { locale, t } = useI18n(i18n);
+  const { locale, t } = useI18n(translations);
   return (
     <table className="w-full border-collapse text-xs tabular-nums">
       <thead className="text-[11px] font-medium text-muted-foreground">
@@ -666,7 +668,7 @@ function PeriodTable({
 }
 
 function ProviderRow({ provider }: { provider: Dashboard["multichat"]["providers"][number] }) {
-  const { locale, t } = useI18n(i18n);
+  const { locale, t } = useI18n(translations);
   const meta = providerMeta[provider.provider];
   return (
     <div className="flex min-w-0 items-center gap-3 rounded-lg bg-muted/40 px-3 py-2.5">
@@ -684,7 +686,7 @@ function ProviderRow({ provider }: { provider: Dashboard["multichat"]["providers
 }
 
 function ProcessingSection({ dashboard }: { dashboard: Dashboard }) {
-  const { locale, t } = useI18n(i18n);
+  const { locale, t } = useI18n(translations);
   return (
     <section className="flex min-w-0 flex-col gap-3">
       <SectionHeading>{t("processing")}</SectionHeading>
@@ -772,7 +774,7 @@ function QueueRow({
   label: string;
   value: number;
 }) {
-  const { locale } = useI18n(i18n);
+  const { locale } = useI18n(translations);
   return (
     <div className="flex items-center justify-between gap-4 px-4 py-3.5">
       <div className="flex min-w-0 flex-col gap-0.5">
@@ -803,7 +805,7 @@ function queueDetail(
   retried: number,
   oldestSeconds: number | null,
   locale: "en" | "ru",
-  t: ReturnType<typeof useI18n<typeof i18n>>["t"],
+  t: ReturnType<typeof useI18n<typeof translations>>["t"],
 ) {
   if (pending === 0) return t("queueEmpty");
   const details = [

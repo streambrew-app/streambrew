@@ -11,7 +11,7 @@ import { createTranslations, createTranslator, useI18n } from "@web/lib/i18n";
 import { resolveLocale } from "@web/lib/locale";
 import { Fragment, useState, type FormEvent } from "react";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   boostyConnectTitle: {
     en: "Connect Boosty",
     ru: "Подключить Boosty",
@@ -127,13 +127,16 @@ function BoostyInstructionText({ text }: { text: string }) {
 }
 
 export function BoostyConnectionForm({ onClose }: { onClose: () => void }) {
-  const { t, locale } = useI18n(i18n);
+  const { t, locale } = useI18n(translations);
   const hydrated = useHydrated();
   const devtools = hydrated
     ? getDevtoolsShortcut(navigator.userAgent, navigator.maxTouchPoints)
     : getDevtoolsShortcut("");
   const browserLanguage = hydrated ? navigator.language : undefined;
-  const browserT = createTranslator(resolveLocale(undefined, browserLanguage || locale), i18n);
+  const browserT = createTranslator(
+    resolveLocale(undefined, browserLanguage || locale),
+    translations,
+  );
   const panels = {
     application: browserT("devtoolsApplication"),
     storage: browserT("devtoolsStorage"),

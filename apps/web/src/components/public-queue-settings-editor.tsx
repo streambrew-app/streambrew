@@ -8,7 +8,7 @@ import { Controller, useForm } from "react-hook-form";
 
 import { Icons } from "./icons";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   publicQueueSettings: {
     en: "Public video queue",
     ru: "Доступ к очереди по ссылке",
@@ -99,7 +99,7 @@ function SettingRow({
 
 export function PublicQueueSettingsEditor() {
   const userInfo = useUserInfo();
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const updateSettingsM = useUpdatePublicQueueSettingsM();
   const { control, formState, handleSubmit, reset, watch } = useForm<PublicQueueSettings>({
     defaultValues: userInfo.publicQueueSettings,

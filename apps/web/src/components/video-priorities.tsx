@@ -7,7 +7,7 @@ import { cn } from "@web/lib/utils";
 import { createTranslations, useI18n } from "../lib/i18n";
 import VideoPriorityEditor from "./video-priority-editor";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   all: {
     en: "All",
     ru: "Все",
@@ -47,7 +47,7 @@ export default function VideoPriorities({
   remainingSecondsByPriorityId,
   videoCountByPriorityId,
 }: Props) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const prioritiesQ = useVideoPrioritiesQ();
   const videoCount = Object.values(videoCountByPriorityId).reduce(
     (total, count) => total + count,

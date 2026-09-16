@@ -25,7 +25,7 @@ import { cn } from "@web/lib/utils";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   chat: {
     en: "Multichat",
     ru: "Мультичат",
@@ -100,7 +100,10 @@ const chatOauthErrorMessages = {
   "oauth profile failed": "chatOauthProfileFailed",
   "chat source limit reached": "chatOauthSourceLimitReached",
   unknown: "chatOauthUnknownError",
-} as const satisfies Record<z.infer<typeof chatOauthErrorSchema>, TranslationKey<typeof i18n>>;
+} as const satisfies Record<
+  z.infer<typeof chatOauthErrorSchema>,
+  TranslationKey<typeof translations>
+>;
 
 export const Route = createFileRoute("/_authenticated/chat")({
   component: ChatPage,
@@ -109,7 +112,9 @@ export const Route = createFileRoute("/_authenticated/chat")({
     chat_oauth_error: chatOauthErrorSchema.optional().catch(undefined),
   }),
   head: ({ match }) => ({
-    meta: [{ title: `${createTranslator(match.context.locale, i18n)("chat")} · StreamBrew` }],
+    meta: [
+      { title: `${createTranslator(match.context.locale, translations)("chat")} · StreamBrew` },
+    ],
   }),
 });
 
@@ -121,7 +126,7 @@ const providerMeta = {
   vk_video: { label: "VK Video", color: "#2688eb", logo: PlatformIcons.vk_video },
 } as const;
 
-const copy = createTranslations({
+const chatTranslations = createTranslations({
   connections: {
     en: "Channels",
     ru: "Каналы",
@@ -255,7 +260,7 @@ function SourceState({
   state?: "connecting" | "error" | "live" | "offline";
   locale: "ru" | "en";
 }) {
-  const t = createTranslator(locale, copy);
+  const t = createTranslator(locale, chatTranslations);
   const normalized = state ?? "offline";
   return (
     <Tooltip>
@@ -382,7 +387,7 @@ type ChatPageModel = ReturnType<typeof useChatPageModel>;
 type ChatSource = ChatConfig["sources"][number];
 
 function ChatLoadingState({ page }: { page: ChatPageModel }) {
-  const { t } = useI18n(copy);
+  const { t } = useI18n(chatTranslations);
   return (
     <section className="cosmic-panel grid h-full min-h-0 place-items-center overflow-hidden p-6 text-center">
       {page.configQuery.isError ? (
@@ -404,7 +409,7 @@ function ChatLoadingState({ page }: { page: ChatPageModel }) {
 }
 
 function ChatOauthNotice({ page }: { page: ChatPageModel }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const { chat_oauth: chatOauth, chat_oauth_error: chatOauthError } = page.search;
   if (!chatOauth) return null;
   return (
@@ -474,7 +479,7 @@ function BroadcastResults({ page }: { page: ChatPageModel }) {
 }
 
 function ChatComposer({ page }: { page: ChatPageModel }) {
-  const { t } = useI18n(copy);
+  const { t } = useI18n(chatTranslations);
   const { broadcast, moderate, startOauth } = page.mutations;
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -517,7 +522,7 @@ function ChatComposer({ page }: { page: ChatPageModel }) {
 }
 
 function ChatFeedPanel({ page }: { page: ChatPageModel }) {
-  const { t } = useI18n(copy);
+  const { t } = useI18n(chatTranslations);
   return (
     <article className="cosmic-panel isolate flex h-[max(24rem,55dvh)] min-h-0 min-w-0 shrink-0 flex-col overflow-hidden xl:h-auto">
       <CosmicPageHeader
@@ -602,7 +607,7 @@ function ConnectionActions({
   source?: ChatSource;
   sourceState?: "connecting" | "error" | "live" | "offline";
 }) {
-  const { t } = useI18n(copy);
+  const { t } = useI18n(chatTranslations);
   const { disconnect, refreshSource, setSourceEnabled } = page.mutations;
   const refreshable = connection.provider === "youtube" || connection.provider === "vk_video";
   const isRefreshing =
@@ -698,7 +703,7 @@ function ConnectionCard({
   connection: ChatProviderConnection;
   page: ChatPageModel;
 }) {
-  const { locale } = useI18n(i18n);
+  const { locale } = useI18n(translations);
   const source = page.indexes.sourceByConnection.get(connection.connectionId);
   const sourceState = source ? page.stream.statuses[source.sourceId] : undefined;
   return (
@@ -734,7 +739,7 @@ function AvailableProviderButton({
   page: ChatPageModel;
   provider: ChatProviderAvailability;
 }) {
-  const { t } = useI18n(copy);
+  const { t } = useI18n(chatTranslations);
   const meta = providerMeta[provider.provider];
   const oauthProvider =
     provider.provider === "youtube" ||
@@ -786,7 +791,7 @@ function AvailableProviders({ page }: { page: ChatPageModel }) {
 }
 
 function OverlayBackgroundPicker({ page }: { page: ChatPageModel }) {
-  const { t } = useI18n(copy);
+  const { t } = useI18n(chatTranslations);
   const options = [
     ["transparent", t("overlayBackgroundTransparent")],
     ["black", t("overlayBackgroundBlack")],
@@ -818,7 +823,7 @@ function OverlayBackgroundPicker({ page }: { page: ChatPageModel }) {
 }
 
 function OverlayFooter({ page }: { page: ChatPageModel }) {
-  const { t } = useI18n(copy);
+  const { t } = useI18n(chatTranslations);
   if (!page.config) return null;
   return (
     <footer className="flex flex-col gap-2 border-t border-border p-3">
@@ -853,7 +858,7 @@ function OverlayFooter({ page }: { page: ChatPageModel }) {
 }
 
 function ConnectionsPanel({ page }: { page: ChatPageModel }) {
-  const { t } = useI18n(copy);
+  const { t } = useI18n(chatTranslations);
   if (!page.config) return null;
   return (
     <aside
@@ -878,8 +883,8 @@ function ConnectionsPanel({ page }: { page: ChatPageModel }) {
 }
 
 function DisconnectDialog({ page }: { page: ChatPageModel }) {
-  const { t } = useI18n(i18n);
-  const { t: copyT } = useI18n(copy);
+  const { t } = useI18n(translations);
+  const { t: copyT } = useI18n(chatTranslations);
   const connection = page.state.connectionToDisconnect;
   const disconnect = page.mutations.disconnect;
   return (

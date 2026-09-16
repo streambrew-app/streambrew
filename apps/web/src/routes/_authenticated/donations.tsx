@@ -2,7 +2,7 @@ import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 import { createTranslations, createTranslator } from "../../lib/i18n";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   donations: {
     en: "Donations",
     ru: "Донаты",
@@ -12,7 +12,11 @@ const i18n = createTranslations({
 export const Route = createFileRoute("/_authenticated/donations")({
   component: DonationsLayout,
   head: ({ match }) => ({
-    meta: [{ title: `${createTranslator(match.context.locale, i18n)("donations")} · StreamBrew` }],
+    meta: [
+      {
+        title: `${createTranslator(match.context.locale, translations)("donations")} · StreamBrew`,
+      },
+    ],
   }),
 });
 

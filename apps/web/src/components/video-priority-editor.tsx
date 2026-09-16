@@ -18,7 +18,7 @@ type HourMinuteParts = {
   minutes: number;
 };
 
-const i18n = createTranslations({
+const translations = createTranslations({
   selectQueueFilter: {
     en: ({ label }: { label: string }) => `Select ${label} priority filter`,
     ru: ({ label }: { label: string }) => `Показать приоритет «${label}»`,
@@ -90,7 +90,7 @@ function priorityFormValues(priority: VideoPriority): VideoPriorityFormValues {
 }
 
 function useVideoPriorityEditor(priority: VideoPriority) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const userInfo = useUserInfo();
   const [isEditing, setIsEditing] = useState(false);
   const updateVideoPriorityM = useUpdateVideoPriorityM();

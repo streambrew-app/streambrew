@@ -6,7 +6,7 @@ import { createTranslations, useI18n } from "../lib/i18n";
 import { CosmicArt } from "./cosmic-art";
 import { Icons } from "./icons";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   dataLoadError: {
     en: "Couldn't load data",
     ru: "Не удалось загрузить данные",
@@ -36,7 +36,7 @@ export default function QueryErrorState({
   onRetry,
   ...props
 }: Props) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
 
   return (
     <div

@@ -26,7 +26,7 @@ type HourMinuteParts = {
   minutes: number;
 };
 
-const i18n = createTranslations({
+const translations = createTranslations({
   queueAmountUnavailable: {
     en: "not calculated",
     ru: "не рассчитана",
@@ -185,7 +185,7 @@ const normalizeUrl = (url: string) => {
 };
 
 function VideoThumbnail({ author, video }: { author: string; video: Video }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const timingLabel =
     video.endSeconds === null
       ? t("videoFromTime", { startTime: formatVideoTime(video.startSeconds) })
@@ -232,7 +232,7 @@ function VideoStatusControls({
   onStatusChange: NonNullable<Props["onStatusChange"]>;
   video: Video;
 }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const isWatched = video.watchedAt !== null;
   const isBookmarked = video.bookmarkedAt !== null;
 
@@ -276,7 +276,7 @@ function VideoPreview({
   onStatusChange,
   video,
 }: Pick<Props, "isUpdating" | "onStatusChange" | "video"> & { author: string }) {
-  const { locale, t } = useI18n(i18n);
+  const { locale, t } = useI18n(translations);
   return (
     <div className="flex min-w-0 flex-col gap-2">
       <VideoThumbnail author={author} video={video} />
@@ -355,7 +355,7 @@ function VideoHeading({
   showSource: boolean;
   video: Video;
 }) {
-  const { locale, t } = useI18n(i18n);
+  const { locale, t } = useI18n(translations);
   return (
     <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-4 gap-y-2">
       <div className="flex min-w-0 grow flex-wrap items-center gap-x-1.5 gap-y-1">
@@ -413,7 +413,7 @@ function VideoSummary({
   showPriorityLabel: boolean;
   video: Video;
 }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const watchDuration =
     video.endSeconds === null
       ? null
@@ -454,7 +454,7 @@ function VideoEditForm({
   isUpdating: boolean;
   video: Video;
 }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const { formState, handleSubmit, register } = editor.form;
   const amountErrorId = `video-amount-error-${video.videoId}`;
 
@@ -519,7 +519,7 @@ function VideoMetadataStatus({
   onRetryMetadata,
   video,
 }: Pick<Props, "onRetryMetadata" | "video"> & { isEditing: boolean; isUpdating: boolean }) {
-  const { locale, t } = useI18n(i18n);
+  const { locale, t } = useI18n(translations);
   if (video.durationSeconds !== null && video.startSeconds >= video.durationSeconds) {
     return <p className="text-xs text-destructive">{t("videoInvalidRange")}</p>;
   }
@@ -556,7 +556,7 @@ function VideoMetadataStatus({
 }
 
 function DonationDetails({ video }: { video: Extract<Video, { source: "donation" }> }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const messageChunks = useTextWithLinks(video.donation.message ?? "");
 
   return (
@@ -649,7 +649,7 @@ export default function VideoCard({
   isUpdating = false,
   onRetryMetadata,
 }: Props) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const author =
     video.source === "donation" ? (video.donation.author ?? t("anonymous")) : t("video");
 

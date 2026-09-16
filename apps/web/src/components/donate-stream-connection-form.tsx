@@ -3,7 +3,7 @@ import { createTranslations, useI18n } from "@web/lib/i18n";
 
 import { WidgetConnectionForm } from "./widget-connection-form";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   title: {
     en: "Connect donate.stream",
     ru: "Подключить donate.stream",
@@ -51,7 +51,7 @@ const i18n = createTranslations({
 });
 
 export function DonateStreamConnectionForm({ onClose }: { onClose: () => void }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const connect = useConnectDonateStreamM();
   return (
     <WidgetConnectionForm

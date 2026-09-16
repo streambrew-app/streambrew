@@ -20,7 +20,7 @@ import { useState, type FormEvent } from "react";
 
 import { createTranslations, createTranslator, useI18n } from "../../lib/i18n";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   multistream: { en: "Multistream", ru: "Мультистрим" },
   subtitle: {
     en: "Send one OBS stream to as many as three platforms.",
@@ -168,7 +168,9 @@ export const Route = createFileRoute("/_authenticated/multistream")({
   component: MultistreamPage,
   head: ({ match }) => ({
     meta: [
-      { title: `${createTranslator(match.context.locale, i18n)("multistream")} · StreamBrew` },
+      {
+        title: `${createTranslator(match.context.locale, translations)("multistream")} · StreamBrew`,
+      },
     ],
   }),
   loader: async ({ context }) => {
@@ -193,7 +195,7 @@ function PlatformMark({ platform }: { platform: RestreamPlatform }) {
 }
 
 function CopyButton({ label, onCopy }: { label: string; onCopy: () => void }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const copied = label === t("copied");
   return (
     <Tooltip>
@@ -210,7 +212,7 @@ function CopyButton({ label, onCopy }: { label: string; onCopy: () => void }) {
 }
 
 function SignalRail({ destinationCount, status }: { destinationCount: number; status?: string }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const isLive = status === "live";
   const isConnecting = status === "connecting";
   return (
@@ -273,7 +275,7 @@ function IngestValueField({
   secret?: boolean;
   value: string;
 }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const [visible, setVisible] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
@@ -333,7 +335,7 @@ function IngestValueField({
 }
 
 function GenerateIngestKeyButton() {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const { rotateIngestKey } = useRestreamMutations();
   return (
     <div className="flex flex-col items-end gap-1">
@@ -360,7 +362,7 @@ function GenerateIngestKeyButton() {
 }
 
 function RotateIngestKeyButton() {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const { rotateIngestKey } = useRestreamMutations();
   const [confirmRotation, setConfirmRotation] = useState(false);
   const rotate = () => {
@@ -403,7 +405,7 @@ function IngestKeyAction({ ingest, isLive }: { ingest: Ingest | null; isLive: bo
 }
 
 function IngestSetup({ ingest, isLive }: { ingest: Ingest | null; isLive: boolean }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   return (
     <section className="flex flex-col gap-3">
       <div className="flex flex-wrap items-end justify-between gap-2">
@@ -466,7 +468,7 @@ function DestinationRowActions({
   onEdit: () => void;
   onToggle: (enabled: boolean) => void;
 }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const deleteLabel = t(confirmDelete ? "confirmDelete" : "deleteDestination");
   const requestDelete = () => {
@@ -544,7 +546,7 @@ function DestinationRow({
   onEdit: () => void;
   onToggle: (enabled: boolean) => void;
 }) {
-  const { locale, t } = useI18n(i18n);
+  const { locale, t } = useI18n(translations);
   const state = getDestinationState(destination, liveState);
 
   return (
@@ -586,7 +588,7 @@ function DestinationRow({
 }
 
 function DestinationForm({ draft, onClose }: { draft: DestinationDraft; onClose: () => void }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const { createDestination, updateDestination } = useRestreamMutations();
   const [value, setValue] = useState(draft);
   const mutation = value.destinationId === undefined ? createDestination : updateDestination;
@@ -746,7 +748,7 @@ function DestinationList({
   isLive: boolean;
   sessionDestinations: RestreamSession["destinations"];
 }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const { deleteDestination, setDestinationEnabled } = useRestreamMutations();
   const [draft, setDraft] = useState<DestinationDraft | null>(null);
   const limitReached = destinations.length >= 3;
@@ -834,7 +836,7 @@ function DestinationList({
 }
 
 function PlanAside({ plan }: { plan: RestreamConfig["plan"] }) {
-  const { locale, t } = useI18n(i18n);
+  const { locale, t } = useI18n(translations);
   const monthlyPrice = new Intl.NumberFormat(locale, {
     style: "currency",
     currency: "USD",
@@ -872,7 +874,7 @@ function PlanAside({ plan }: { plan: RestreamConfig["plan"] }) {
 }
 
 function MultistreamPage() {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const configQ = useRestreamConfigQ();
   const config = configQ.data;
   if (configQ.isError) {

@@ -3,7 +3,7 @@ import { createTranslations, useI18n } from "@web/lib/i18n";
 import { Icons } from "./icons";
 import { Button } from "./ui/button";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   pagination: {
     en: "Pagination",
     ru: "Навигация по страницам",
@@ -72,7 +72,7 @@ export function PagePagination({
   total,
   totalPages,
 }: Props) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   if (total === 0) {
     return null;
   }

@@ -5,7 +5,7 @@ import { QueueCurrencyEditor } from "@web/components/queue-currency-editor";
 
 import { createTranslations, createTranslator, useI18n } from "../../lib/i18n";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   settings: {
     en: "Settings",
     ru: "Настройки",
@@ -15,12 +15,14 @@ const i18n = createTranslations({
 export const Route = createFileRoute("/_authenticated/settings")({
   component: Settings,
   head: ({ match }) => ({
-    meta: [{ title: `${createTranslator(match.context.locale, i18n)("settings")} · StreamBrew` }],
+    meta: [
+      { title: `${createTranslator(match.context.locale, translations)("settings")} · StreamBrew` },
+    ],
   }),
 });
 
 function Settings() {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
 
   return (
     <section className="cosmic-panel flex h-full min-h-0 min-w-0 flex-col overflow-hidden">

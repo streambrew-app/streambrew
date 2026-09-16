@@ -36,7 +36,7 @@ import { z } from "zod";
 
 import { useDonationOverviewQ, useUserInfoSafe } from "../../hooks/api";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   overview: {
     en: "Overview",
     ru: "Главная",
@@ -134,7 +134,7 @@ export const Route = createFileRoute("/_authenticated/")({
       {
         title: `${createTranslator(
           match.context.locale,
-          i18n,
+          translations,
         )(match.context.viewer ? "overview" : "landingPageTitle")} · StreamBrew`,
       },
     ],
@@ -204,7 +204,7 @@ function Overview() {
   const success = Route.useSearch({ select: (search) => search.success });
   const donationConnections = donationSourceConnections(userInfo);
   const hasDonationConnection = donationConnections.some(({ connected }) => connected);
-  const { locale, t } = useI18n(i18n);
+  const { locale, t } = useI18n(translations);
 
   const total = donationOverviewQ.data?.totalAmount ?? 0;
   const donationsLength = donationOverviewQ.data?.donationCount ?? 0;

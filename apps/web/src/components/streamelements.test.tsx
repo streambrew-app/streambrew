@@ -7,9 +7,9 @@ vi.mock("../lib/i18n", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../lib/i18n")>();
   return {
     ...actual,
-    useI18n: (messages: I18nMessages) => ({
+    useI18n: (translations: I18nMessages) => ({
       locale: "ru",
-      t: actual.createTranslator("ru", messages),
+      t: actual.createTranslator("ru", translations),
     }),
   };
 });

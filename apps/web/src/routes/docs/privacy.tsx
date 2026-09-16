@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { LegalDocument, LegalSection } from "@web/components/legal-document";
 import { createTranslations, createTranslator, useI18n } from "@web/lib/i18n";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   privacyPolicy: {
     en: "Privacy policy",
     ru: "Политика конфиденциальности",
@@ -65,13 +65,15 @@ export const Route = createFileRoute("/docs/privacy")({
   component: PrivacyPolicy,
   head: ({ match }) => ({
     meta: [
-      { title: `${createTranslator(match.context.locale, i18n)("privacyPolicy")} · StreamBrew` },
+      {
+        title: `${createTranslator(match.context.locale, translations)("privacyPolicy")} · StreamBrew`,
+      },
     ],
   }),
 });
 
 function PrivacyPolicy() {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
 
   return (
     <LegalDocument

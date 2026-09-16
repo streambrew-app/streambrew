@@ -12,7 +12,7 @@ import { Input } from "./ui/input";
 import { Switch } from "./ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   videoQueues: { en: "Video queues", ru: "Очереди видео" },
   loadingQueues: { en: "Loading queues…", ru: "Загружаем очереди…" },
   createVideoQueue: { en: "New queue", ru: "Новая очередь" },
@@ -70,7 +70,7 @@ function useQueueForm(queue: VideoQueue | undefined, onSaved: (queue: VideoQueue
 type QueueFormModel = ReturnType<typeof useQueueForm>;
 
 function QueueSaveButton({ form }: { form: QueueFormModel }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const action = form.mutation.isPending ? "saving" : "save";
 
   return (
@@ -99,7 +99,7 @@ function QueueSaveButton({ form }: { form: QueueFormModel }) {
 }
 
 function QueueCancelButton({ form, onCancel }: { form: QueueFormModel; onCancel: () => void }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
 
   return (
     <Tooltip>
@@ -124,7 +124,7 @@ function QueueCancelButton({ form, onCancel }: { form: QueueFormModel; onCancel:
 }
 
 function DefaultQueueSwitch({ form, queue }: { form: QueueFormModel; queue: VideoQueue }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
 
   return (
     <Field
@@ -154,7 +154,7 @@ function QueueFormControls({
   onCancel: () => void;
   queue?: VideoQueue;
 }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const isNameTaken = form.mutation.error?.data?.code === "CONFLICT";
   const columns = queue
     ? "grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-lg border border-input bg-background/60 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/20 has-[input[aria-invalid=true]]:border-destructive sm:w-fit sm:grid-cols-[auto_16rem_auto_auto]"
@@ -187,7 +187,7 @@ function QueueFormControls({
 }
 
 function NewQueueHelp() {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
 
   return (
     <div className="flex min-h-8 shrink-0 items-center">
@@ -211,7 +211,7 @@ function NewQueueHelp() {
 }
 
 function QueueForm({ id, queue, onCancel, onSaved }: QueueFormProps) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const form = useQueueForm(queue, onSaved);
 
   return (
@@ -266,7 +266,7 @@ function SelectedQueueLink({
   onNavigate: () => void;
   queue: VideoQueue;
 }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
 
   return (
     <div className="grid h-7 min-w-0 max-w-full grid-cols-[minmax(0,1fr)_auto] items-center overflow-hidden rounded-[min(var(--radius-md),12px)]">
@@ -345,7 +345,7 @@ function CreateQueueControl({
   onCreate: () => void;
   onSaved: (queue: VideoQueue) => void;
 }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   if (creating) return <QueueForm id="video-queue-editor" onCancel={onCancel} onSaved={onSaved} />;
 
   return (
@@ -375,7 +375,7 @@ export function VideoQueueControls({
   videoQueueId?: number;
   onSelect: (videoQueueId: number) => void;
 }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const queuesQ = useVideoQueuesQ();
   const [editing, setEditing] = useState<VideoQueue | "new" | null>(null);
   const queues = queuesQ.data ?? [];

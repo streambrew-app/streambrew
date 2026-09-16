@@ -12,7 +12,7 @@ import { Field, FieldDescription, FieldError, FieldLabel } from "./ui/field";
 import { Input } from "./ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   showAllVideos: { en: "Show all videos", ru: "Показать все видео" },
   settings: { en: "Settings", ru: "Настройки" },
   publicVideoQueueSlug: {
@@ -47,7 +47,7 @@ type SlugFormValues = {
 type SlugAction = "saving" | "save" | "copied" | "copy";
 
 function useSlugEditor() {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const [copied, setCopied] = useState(false);
   const userInfo = useUserInfo();
   const { formState, handleSubmit, register, reset } = useForm<SlugFormValues>({
