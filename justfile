@@ -276,8 +276,8 @@ backup-list:
 backup-verify:
   docker compose run --rm --no-deps wal-g wal-g wal-verify integrity
 
-test-web: install
-  bunx dotenvx run -f .env --overload -- bunx vitest --run apps/web
+test-web $env_file="test.env": install
+  bun --no-env-file x dotenvx run -f $env_file --overload -- node_modules/.bin/vitest --run apps/web
 
 test-donations: install
   go test ./apps/donations ./internal/donationalert ./internal/donations ./internal/donationalerts ./internal/donatestream ./internal/streamelements ./internal/streamlabs ./internal/tourniquet
@@ -297,8 +297,8 @@ test-restream: install
 test-scripts: install
   bun --no-env-file x --bun vitest --run scripts
 
-test-packages $env_file=".env": install
-  bunx dotenvx run -f $env_file --overload -- bunx vitest --run packages
+test-packages $env_file="test.env": install
+  bun --no-env-file x dotenvx run -f $env_file --overload -- node_modules/.bin/vitest --run packages
 
 test: test-scripts test-web test-chat test-donations test-video test-alerts test-restream test-packages
 
