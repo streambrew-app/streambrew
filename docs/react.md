@@ -2,6 +2,20 @@
 
 Follow this guide whenever creating, editing, or reviewing React hooks or their consumers in `apps/web`.
 
+## Pages
+
+Every new page declares a document title through its route:
+
+```ts
+export const Route = createFileRoute("/donations")({
+  component: DonationsLayout,
+  head: () => ({ meta: [{ title: "Donations · StreamBrew" }] }),
+});
+```
+
+Follow the [data loading guide](data-loading.md) when choosing route loaders,
+`useQuery`, or `useSuspenseQuery`.
+
 ## Required hook values
 
 - When the absence of a hook value is a valid state, expose that nullable contract as `useXSafe()`.

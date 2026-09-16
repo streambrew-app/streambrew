@@ -1,194 +1,96 @@
 # StreamBrew
 
-This app is created for streamers. It connects to many donation platforms (such as donationalerts.com), fetches donates from all of them and displays them all in one place.
+StreamBrew is a workspace for streamers who use multiple platforms. It brings
+donations and chat together, manages video queues from donation links and manual
+additions, displays donation alerts in OBS, and forwards a live stream to multiple
+destinations. The primary user is the streamer; integrations connect their external
+platform accounts. Viewers can consult a streamer's public video queues.
 
-## Glossary
+The interface supports Russian and English, desktop and mobile, and light and dark
+themes. Prioritize legible messages and predictable controls during live broadcasts.
+See [PRODUCT.md](PRODUCT.md) for product and design context.
 
-Use these names consistently in product text, documentation, Go, TypeScript,
-API schemas, SQL, and migrations. English identifiers use the names in the
-**Code/DB** column; Russian UI copy uses the names in the **Russian** column.
-Apply each language's casing conventions: SQL uses `snake_case`, TypeScript uses
-`camelCase` or `PascalCase`, and Go uses `PascalCase` with initialisms such as
-`ID` (for example, `SourceDonationID`).
+## Core concepts
 
-| Term                 | Russian                          | Code/DB                                        | Definition                                                                                                                         |
-| -------------------- | -------------------------------- | ---------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| donation             | донат                            | `donation` / `Donation`                        | An immutable support event received from a donation platform.                                                                      |
-| donation source      | источник доната                  | `source` / `DonationSource`                    | The platform that supplied a donation, such as `donationalerts`.                                                                   |
-| source donation ID   | идентификатор доната в источнике | `source_donation_id` / `sourceDonationId`      | The source-assigned identifier. Together with user and source, it makes a donation idempotent.                                     |
-| original money       | исходная сумма                   | `amount`, `currency`                           | The amount and currency as reported by the source. It is stored only on `donation` and is never converted.                         |
-| user                 | стример                          | `"user"` / `UserInfo`                          | The StreamBrew account that owns donations and its video queues.                                                                   |
-| queue currency       | валюта очереди                   | `user.queue_currency` / `queueCurrency`        | The one currency selected by a user for every queue amount and threshold. It is not duplicated in `video` or `video_priority`.     |
-| video                | видео                            | `video` / `Video`                              | A supported video link in the queue, originating from a donation or added manually by its owner.                                   |
-| video source         | источник видео                   | `Video.source`                                 | Whether a video came from a `donation` or was added `manual` by the streamer.                                                      |
-| manual video         | видео, добавленное вручную       | `video.user_id` / `video.added_at`             | A video added directly by the streamer without creating a donation.                                                                |
-| queue amount         | сумма для очереди                | `video.queue_amount` / `queueAmount`           | The amount used to assign a video priority, expressed in the current user queue currency. `NULL` means it cannot be queued.        |
-| video queue          | очередь видео                    | `video_queue` / `VideoQueue`                   | A user's named collection of videos. Every video belongs to exactly one video queue.                                               |
-| video priority       | приоритет видео                  | `video_priority` / `VideoPriority`             | A user-defined threshold and label shared by all of the user's video queues.                                                       |
-| queue threshold      | порог очереди                    | `min_price_per_minute` / `minPricePerMinute`   | The minimum queue amount per minute of watch time required for a video priority.                                                   |
-| default queue        | очередь по умолчанию             | `video_queue.is_default` / `isDefault`         | The user's single queue for incoming donation videos and manual videos without an explicit queue selection.                        |
-| default priority     | приоритет по умолчанию           | `video_priority.is_default` / `isDefault`      | The user's single zero-threshold priority, used when no higher threshold applies.                                                  |
-| queue assignment     | назначение в очередь             | `video_queue_id` / `videoQueueId`              | The queue selected for a video, including while metadata is pending.                                                               |
-| priority assignment  | назначение приоритета            | `video_priority_id` / `videoPriorityId`        | The user's priority selected for a video. Moving queues and changing queue currency preserve it.                                   |
-| unparsed donation    | необработанный донат             | `videos_parsed_at IS NULL`                     | A donation whose message has not yet been scanned for supported video links.                                                       |
-| parsed donation      | обработанный донат               | `videos_parsed_at`                             | A donation whose video-link scan has completed, including when it produced no videos.                                              |
-| watched video        | просмотренное видео              | `watched_at` / `watchedAt`                     | A video marked as watched by its owner.                                                                                            |
-| bookmarked video     | видео в закладках                | `bookmarked_at` / `bookmarkedAt`               | A video bookmarked by its owner.                                                                                                   |
-| video start          | начало видео                     | `start_seconds` / `startSeconds`               | The offset in seconds where playback of a video begins.                                                                            |
-| video end            | окончание видео                  | `end_seconds` / `endSeconds`                   | The offset in seconds where playback of a video ends.                                                                              |
-| watch time           | время просмотра                  | `endSeconds - startSeconds`                    | The exact duration of the selected video segment, unknown while endSeconds is NULL. It is calculated and is not stored separately. |
-| multistream          | мультистрим                      | `restream` / `Restream`                        | The capability that accepts one live stream and forwards it unchanged to several streaming platforms.                              |
-| restream ingest      | входящий поток                   | `restream_ingest` / `RestreamIngest`           | A user's authenticated source stream entering the StreamBrew media plane.                                                          |
-| restream destination | площадка                         | `restream_destination` / `RestreamDestination` | One configured streaming platform or custom RTMP endpoint that receives the user's live stream.                                    |
-| restream session     | эфир                             | `restream_session` / `RestreamSession`         | One connection of a user's restream ingest, from publisher authorization until disconnect.                                         |
+Use these distinctions consistently in product text, documentation, and code:
 
-### Invariants
+- **User / стример:** the StreamBrew account that owns its integrations and content.
+- **Donation / донат:** an immutable support event received from a donation source.
+  One donation can produce zero or more videos.
+- **Video / видео:** a supported video link from a donation or a manual addition.
+  Manual additions belong to the streamer without creating a donation.
+- **Video queue / очередь видео:** an independent collection of the streamer's videos.
+- **Video priority / приоритет видео:** a threshold level shared across the
+  streamer's queues; it is distinct from the queue itself.
+- **Donation alert / алерт доната:** the presentation of a donation in OBS.
+  Replaying an alert does not create another donation.
+- **Multichat / мультичат:** chat from the streamer's connected platform accounts
+  in one interface.
+- **Multistream / мультистрим:** forwarding one live stream to multiple
+  destinations without transcoding; English code uses `restream`.
 
-- Do not call a `donation` a queue item: a donation may create zero or more videos.
-- Do not create a synthetic `donation` for a manual video. A video belongs either to a donation or directly to its owning user.
-- Do not store or describe a converted amount on a donation. The converted value is always a video `queue_amount`.
-- Do not add a currency field to videos or priorities. Their currency is the owning user's `queue_currency`.
-- A video may have unknown duration and ending (`duration_seconds` / `end_seconds` are NULL). Persist it before fetching metadata; missing watch time leaves `video_priority_id` NULL without discarding its `queue_amount`.
-- Completing a donation scan means its supported links were persisted. Metadata retries belong to `video_metadata_job`, not to donation parsing.
-- Every video queue belongs to the video's owner. Its assigned priority, when present, belongs to that same owner.
-- Every user has one default video queue and one shared set of video priorities with one default priority. Changing the default queue affects future incoming videos only.
-- Moving a video preserves its priority, amount, timing, donation, watched and bookmarked state.
-- Use **video queue** for an independent collection and **video priority** for a user-wide threshold level. `/videos` switches between video queues.
-- Keep restream configuration, credential encryption, and session history in the AWS control plane. Hetzner media nodes receive destination credentials only for an active session and never connect to PostgreSQL.
-- Forward a restream ingest without transcoding. The streamer is responsible for an H.264/AAC stream compatible with every enabled destination.
+Preserve a donation's original amount and currency. Converted money belongs to
+videos as their queue amount, in the streamer's shared queue currency.
+Exact identifiers and translations live in the [domain glossary](docs/glossary.md);
+behavior belongs to the domain guides below.
 
-## Repository structure
+## Repository map
 
-- `apps/web` and `packages` contain the TypeScript web application and shared TypeScript packages.
-- `apps/chat`, `apps/donations`, and `apps/video` are Go service entrypoints; their application packages live under `internal`.
-- `db` and the API wire contracts are shared boundaries. Keep their terminology and behavior consistent across both languages.
+- `apps/web`: TypeScript web interface, authentication, widgets, and public API.
+- `packages`: shared TypeScript packages.
+- `apps/*` Go entrypoints and `internal`: chat, donations, video processing,
+  restream, and operational services.
+- `db` and API contracts: shared boundaries; keep terminology and behavior
+  consistent across Go and TypeScript.
+- `docs`: domain behavior, engineering guides, operations, and architecture decisions.
 
-## Code style
+## Working agreements
 
-- Normalize untrusted input once at its seam into a canonical domain value; downstream code compares, stores, and keys that canonical value rather than the raw input.
-- Treat a module's public interface as its test surface. Do not widen a public API or add dependency injection solely for tests.
-- Remove legacy code and compatibility paths instead of preserving them, but always ask for the user's explicit permission before removing them.
+- Before changing code, read [CONTRIBUTING.md](CONTRIBUTING.md). Work through an
+  open issue, a task branch, and a PR. Read-only tasks do not require an issue.
+- Complete code work with a green, review-ready PR. Merge a specific PR only when
+  the user explicitly requests that merge.
+- Obtain explicit user authorization before changing the data schema, applying
+  migrations (including `just db-migrate`), or removing legacy code or compatibility
+  paths. Authorization already given for the action need not be requested again.
+- Create or edit files in `scripts/` only when the user explicitly requests a
+  `scripts/` change; add helper commands to `justfile`.
+- Resolve routine implementation details independently. Ask before introducing
+  product behavior outside the request, changing architectural boundaries, or
+  choosing a materially different trade-off in scope, cost, or data handling that
+  the request leaves unresolved. Follow decisions already authorized by the user.
 
-## Git discipline for code changes
+## Task guides
 
-Apply this workflow to every task that changes code. Research, investigation,
-review, planning, and other read-only tasks do not require a GitHub issue unless
-they also change code.
+Before editing, read the guides for every area the task touches. Read any nested
+`AGENTS.md` governing the files you will change, even when working from the root.
+Keep these guides current when changing the behavior they describe.
 
-1. Base the change on an open GitHub issue in this repository. If no suitable
-   open issue exists, create one before changing code. The issue must explain
-   the reason and motivation for the change. Create a new issue for follow-up
-   work instead of reopening a closed issue.
-2. Start from the current green `master`. If `master` is broken or its required
-   checks are red, restore it through a dedicated issue and pull request before
-   starting the planned implementation. Make code changes on a task branch,
-   never directly on `master`.
-3. Work in small increments. Commit every small, coherent step with a clear
-   message and any documentation that the step requires. Keep the uncommitted
-   diff small instead of accumulating a large batch of changes.
-4. Create a pull request for the issue. Include `Closes #<issue-number>` in the
-   pull request description so GitHub automatically closes the issue when the
-   pull request is merged into `master`. Use the pull request as the reviewable
-   unit through which a human can inspect and redirect the work.
-5. Run the relevant build, tests, and required CI checks. Resolve conflicts and
-   failed checks, then verify the result again. A green, review-ready pull
-   request is the agent's normal completion point. Hand it to a human for
-   review, approval, and merge. An agent may merge a specific pull request only
-   when a human explicitly requests that merge.
-6. Escalate uncertain decisions to a human, especially architectural changes
-   and new product behavior. Green CI verifies automated rules; it does not
-   establish architectural correctness.
-7. Turn recurring review findings into automated repository checks when
-   practical.
+| Task                                                           | Read first                                                            |
+| -------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Domain terms, identifiers, or translations                     | [Domain glossary](docs/glossary.md) and the relevant domain guide     |
+| Donation sources or ingestion                                  | [Donation integrations](docs/integrations.md)                         |
+| Donation alerts, playback, widgets, media, or settings         | [Donation alerts](docs/donation-alerts.md)                            |
+| Chat providers, collectors, streams, overlays, or integrations | [Multichat](docs/multichat.md)                                        |
+| Video queues, priority assignment, or rollout                  | [Video queues](docs/video-queues.md)                                  |
+| Money, conversion, or queue currency                           | [Currencies](docs/currencies.md)                                      |
+| Donation link scanning or video metadata                       | [Video metadata](docs/video-metadata.md)                              |
+| Multistream behavior or media infrastructure                   | [Multistream](docs/restream.md)                                       |
+| TypeScript or TSX in any package                               | [TypeScript guide](docs/typescript.md), including local skill loading |
+| Web application                                                | [Web instructions](apps/web/AGENTS.md)                                |
+| PostgreSQL schema or SQL in Go or TypeScript                   | [SQL guide](docs/sql.md)                                              |
+| Localized copy, locale handling, or formatting                 | [Internationalization](docs/i18n.md)                                  |
+| Environment variables, deployment, or infrastructure           | [Deployment](docs/deployment.md)                                      |
 
-## TypeScript and TSX
+## Verification
 
-<!-- intent-skills:start -->
+Use repository-wide `just` recipes. Run checks relevant to the change and required
+CI checks; report failures and unavailable checks explicitly.
 
-### Skill Loading
+- `just typecheck`: type-check TypeScript and compile Go service packages.
+- `just test`: run TypeScript and Go tests.
+- `just fmt`: format supported repository files.
+- `just check`: run lint, formatting checks, and tests.
 
-Before editing TS and TSX files for a substantial task:
-
-- Run `bun intent list` from the workspace root to see available local skills.
-- If a listed skill matches the task, run `bun intent load <package>#<skill>` before changing files.
-- Use the loaded `SKILL.md` guidance while making the change.
-- Monorepos: when working across packages, run the skill check from the workspace root and prefer the local skill for the package being changed.
-- Multiple matches: prefer the most specific local skill for the package or concern you are changing; load additional skills only when the task spans multiple packages or concerns.
-
-<!-- intent-skills:end -->
-
-### Libraries
-
-- Use `tRPC` for client-server interactions. A tRPC wire contract may be implemented by a Go service; keep its TypeScript contract and Go implementation synchronized.
-- Follow the [data loading guide](docs/data-loading.md) when choosing between route loaders, `useQuery`, and `useSuspenseQuery`.
-- Use `shadcn` for UI components.
-
-### Code style
-
-- Avoid mutating objects.
-
-### Creating new page
-
-- Every new page should declare a document title like this:
-
-  ```ts
-  export const Route = createFileRoute("/donations")({
-    component: DonationsLayout,
-    head: () => ({ meta: [{ title: "Donations · StreamBrew" }] }),
-  });
-  ```
-
-### Frontend styling
-
-- Follow the [StreamBrew UI Style Guide](DESIGN.md) for visual direction, semantic colors, typography, components, and responsive behavior.
-- Follow the icon section of the [StreamBrew UI Style Guide](DESIGN.md#interface-icons) when choosing or adding UI icons.
-- Use `tailwindcss` for styling.
-- Use `flex`, `gap` and `padding` instead of margins wherever possible.
-- Pass external positioning (`margin`, `width`, `grow` etc.) of the root element of components via `className` instead of hardcoding it inside the component. It is similar to modifiers in BEM methodology.
-- When setup instructions require visiting a third-party service, include an inline link to the exact external page at the point of instruction.
-
-## Go
-
-- Use the repository-wide `just` recipes for formatting, tests, and checks; they include the Go services and their `internal` packages.
-- Read the relevant domain guide before changing a Go service, especially the multichat architecture and shared SQL rules.
-
-## Documentation
-
-- Documentation files referenced by this guide may and should be edited whenever needed, and kept up to date with the codebase and project conventions.
-- Read [the multichat architecture](docs/multichat.md) before changing chat providers, collectors, streams, overlays, or related external-service integrations.
-- Follow [donation alert terminology and behavior](docs/donation-alerts.md) when changing alert ingestion, playback, widgets, media, or settings.
-- In TypeScript, follow the [error-handling guide](docs/errors.md) when working with HTTP requests, subscriptions, streams, workers, or other external failures.
-- Follow the [React guide](docs/react.md) when creating or changing React hooks or their consumers in `apps/web`.
-- Follow the [SQL guide](docs/sql.md) when editing PostgreSQL schemas or SQL embedded in Go or TypeScript.
-- Follow [video queue behavior and migration](docs/video-queues.md) when changing queues, priority assignment, or their rollout.
-- In TypeScript, follow the [Zod guide](docs/zod.md) when creating or changing Zod schemas.
-- Follow the [internationalization guide](docs/i18n.md) when changing localized UI copy, locale handling, or locale-sensitive formatting.
-- Follow the [SSR and hydration guide](docs/ssr-and-hydration.md) when working on server-rendered UI, route context, browser-persisted state, or hydration warnings in `apps/web`.
-
-## Scripts
-
-Add helper scripts to `justfile`, not `package.json`
-
-Create or edit files in `scripts/` only when the developer explicitly requests a `scripts/` change.
-
-## Environment variables
-
-- When adding an environment variable, immediately wire it through
-  `.github/workflows/production.yml` so deployments include it in the generated
-  production environment file.
-- Store non-sensitive configuration in GitHub Environment Variables (`vars`) and
-  credentials or other sensitive values in GitHub Environment Secrets (`secrets`).
-- Add the variable to the workflow's required or optional production environment
-  list as appropriate; declaring it only in a step's `env` block is insufficient.
-
-## Data schema
-
-- Any change to the data schema requires explicit user confirmation before it is made.
-- Do not run `just db-migrate` or any other command that applies schema changes without explicit user confirmation.
-
-## Check yourself
-
-- `just typecheck` - type-checks TypeScript and compiles the Go service packages.
-- `just test` - runs the TypeScript and Go test suites.
-- `just fmt` - formats TypeScript, Go, Markdown, and other supported files.
-- `just check` - runs linting, formatting checks, and both test suites.
+For development setup, read [README.md](README.md#start-locally); for documentation
+validation and PR completion, follow [CONTRIBUTING.md](CONTRIBUTING.md#validation).

@@ -75,8 +75,7 @@ This is the canonical guide for StreamBrew's visual direction and UI conventions
 Product context lives in [PRODUCT.md](PRODUCT.md); terminology lives in the [domain glossary](docs/glossary.md), and
 [AGENTS.md](AGENTS.md#task-guides) routes to domain behavior guides. Exact tokens and component behavior
 are defined in [styles.css](apps/web/styles.css) and the existing UI components.
-Review evidence belongs in the [redesign review](.impeccable/review/final-review.md),
-not in the design rules.
+Keep review evidence in the relevant review artifacts rather than in the design rules.
 
 ## Original associations
 
@@ -130,6 +129,8 @@ tabular numerals. Headings balance their wrapping. Capitalize both words in
 
 ## Layout
 
+Use Tailwind CSS for styling and shadcn components for UI primitives.
+
 The landing uses a centered `max-w-6xl` container with 20 px mobile and 32 px
 larger-screen side padding. Its introduction stacks on mobile and becomes two
 equal columns at `lg` (1024 px). The artwork follows the copy in document order.
@@ -139,7 +140,8 @@ rules. Broad section gaps give the entry page a slower rhythm than working pages
 Working surfaces use flex/grid, gap, and padding rather than margins wherever practical.
 Keep flex children `min-w-0` and allow long names, messages, and URLs to wrap. Shared page headers have 20 px
 padding, increasing to 28 px at `sm`, and reserve room for faint right-side art.
-Reusable components receive external sizing and positioning through `className`.
+Reusable components receive external sizing and positioning of their root element
+through `className` instead of hardcoding margins, width, or grow behavior internally.
 Keep long content shrinkable and wrapping; illustrations need safe space around
 copy and interactive controls at every breakpoint.
 
