@@ -1,5 +1,7 @@
+import type { DonationSource } from "@streambrew/packages/schemas.js";
 import { useState, type FormEvent } from "react";
 
+import { DonationSourceIcon } from "./donation-source";
 import { Icons } from "./icons";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "./ui/dialog";
@@ -27,6 +29,7 @@ export function WidgetConnectionForm({
   onConnect,
   onReset,
   settingsURL,
+  source,
   translate,
 }: {
   fieldId: string;
@@ -36,6 +39,7 @@ export function WidgetConnectionForm({
   onConnect: (widgetURL: string, onSuccess: () => void) => void;
   onReset: () => void;
   settingsURL: string;
+  source: DonationSource;
   translate: (key: WidgetConnectionFormCopyKey) => string;
 }) {
   const [widgetURL, setWidgetURL] = useState("");
@@ -52,9 +56,12 @@ export function WidgetConnectionForm({
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
-        <div className="flex flex-col gap-2">
-          <DialogTitle>{translate("title")}</DialogTitle>
-          <DialogDescription>{translate("description")}</DialogDescription>
+        <div className="flex items-start gap-3">
+          <DonationSourceIcon source={source} />
+          <div className="flex min-w-0 flex-col gap-2">
+            <DialogTitle>{translate("title")}</DialogTitle>
+            <DialogDescription>{translate("description")}</DialogDescription>
+          </div>
         </div>
         <form className="flex flex-col gap-5" onSubmit={submit}>
           <Field data-invalid={isError || undefined}>

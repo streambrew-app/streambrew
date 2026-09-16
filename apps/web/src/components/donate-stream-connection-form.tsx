@@ -62,6 +62,7 @@ export function DonateStreamConnectionForm({ onClose }: { onClose: () => void })
       onConnect={(widgetUrl, onSuccess) => connect.mutate({ widgetUrl }, { onSuccess })}
       onReset={() => connect.reset()}
       settingsURL="https://lk.donate.stream/widgets/alert/all"
+      source="donate_stream"
       translate={t}
     />
   );

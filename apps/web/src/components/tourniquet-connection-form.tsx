@@ -47,6 +47,7 @@ export function TourniquetConnectionForm({ onClose }: { onClose: () => void }) {
       onConnect={(widgetUrl, onSuccess) => connect.mutate({ widgetUrl }, { onSuccess })}
       onReset={() => connect.reset()}
       settingsURL="https://tourniquet.app/profile/widgets"
+      source="tourniquet"
       translate={t}
     />
   );

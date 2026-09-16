@@ -1,4 +1,5 @@
 import type { ChatProvider } from "@streambrew/packages/chat.js";
+import type { DonationSource } from "@streambrew/packages/schemas.js";
 import * as icons from "lucide-react";
 
 import boostyLogo from "../../assets/chat-providers/boosty.svg";
@@ -6,6 +7,11 @@ import kickLogo from "../../assets/chat-providers/kick.svg";
 import twitchLogo from "../../assets/chat-providers/twitch.svg";
 import vkLogo from "../../assets/chat-providers/vk.svg";
 import youtubeLogo from "../../assets/chat-providers/youtube.svg";
+import donateStreamLogo from "../../assets/donation-sources/donate_stream.svg";
+import donationAlertsLogo from "../../assets/donation-sources/donationalerts.svg";
+import streamElementsLogo from "../../assets/donation-sources/streamelements.svg";
+import streamlabsLogo from "../../assets/donation-sources/streamlabs.svg";
+import tourniquetLogo from "../../assets/donation-sources/tourniquet.svg";
 
 export type IconComponent = icons.LucideIcon;
 
@@ -16,6 +22,14 @@ export const PlatformIcons = {
   boosty: boostyLogo,
   vk_video: vkLogo,
 } as const satisfies Record<ChatProvider, string>;
+
+export const DonationSourceIcons = {
+  donationalerts: donationAlertsLogo,
+  donate_stream: donateStreamLogo,
+  streamlabs: streamlabsLogo,
+  tourniquet: tourniquetLogo,
+  streamelements: streamElementsLogo,
+} as const satisfies Record<DonationSource, string>;
 
 export const Icons = {
   activity: icons.Activity,
