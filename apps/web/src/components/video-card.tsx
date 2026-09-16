@@ -13,7 +13,7 @@ import { useState, type ReactNode } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
 import { useTextWithLinks } from "../hooks/use-text-with-links";
-import { createI18n, useI18n } from "../lib/i18n";
+import { createTranslations, useI18n } from "../lib/i18n";
 import { Icons } from "./icons";
 import { Button } from "./ui/button";
 import { Field, FieldError, FieldLabel } from "./ui/field";
@@ -26,7 +26,7 @@ type HourMinuteParts = {
   minutes: number;
 };
 
-const i18n = createI18n({
+const i18n = createTranslations({
   queueAmountUnavailable: {
     en: "not calculated",
     ru: "не рассчитана",

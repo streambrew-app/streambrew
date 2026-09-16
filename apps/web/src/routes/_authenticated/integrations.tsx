@@ -19,9 +19,9 @@ import { useState } from "react";
 import { z } from "zod";
 
 import { useAuthUrlQ, useDisconnectM, useUserInfoSafe } from "../../hooks/api";
-import { createI18n, createTranslator, useI18n } from "../../lib/i18n";
+import { createTranslations, createTranslator, useI18n } from "../../lib/i18n";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   integrations: { en: "Integrations", ru: "Интеграции" },
   disconnecting: { en: "Disconnecting…", ru: "Отключаем…" },
   loadingAuthorization: { en: "Loading authorization…", ru: "Получаем ссылку…" },

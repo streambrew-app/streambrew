@@ -1,7 +1,7 @@
 import type { VideoQueue } from "@streambrew/packages/schemas.js";
 import { Link } from "@tanstack/react-router";
 import { useVideoQueueMutations, useVideoQueuesQ } from "@web/hooks/api";
-import { createI18n, useI18n } from "@web/lib/i18n";
+import { createTranslations, useI18n } from "@web/lib/i18n";
 import { useState } from "react";
 
 import { Icons } from "./icons";
@@ -12,7 +12,7 @@ import { Input } from "./ui/input";
 import { Switch } from "./ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   videoQueues: { en: "Video queues", ru: "Очереди видео" },
   loadingQueues: { en: "Loading queues…", ru: "Загружаем очереди…" },
   createVideoQueue: { en: "New queue", ru: "Новая очередь" },

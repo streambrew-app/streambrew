@@ -15,9 +15,9 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 
 import { useDonationPageQ } from "../../hooks/api";
-import { createI18n, useI18n } from "../../lib/i18n";
+import { createTranslations, useI18n } from "../../lib/i18n";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   donations: {
     en: "Donations",
     ru: "Донаты",

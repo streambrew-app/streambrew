@@ -9,11 +9,11 @@ import { Button } from "@web/components/ui/button";
 import { Skeleton } from "@web/components/ui/skeleton";
 import { useChatDeadLettersQ } from "@web/hooks/api";
 import { fmtListDate } from "@web/lib/fmt";
-import { createI18n, createTranslator, useI18n } from "@web/lib/i18n";
+import { createTranslations, createTranslator, useI18n } from "@web/lib/i18n";
 import { preloadRouteQuery } from "@web/lib/trpc";
 import { z } from "zod";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   deadLetters: {
     en: "Dead letters",
     ru: "Ошибочные сообщения",

@@ -8,7 +8,7 @@ import { cn } from "@web/lib/utils";
 import { useId } from "react";
 import { useFormContext } from "react-hook-form";
 
-import { createI18n, useI18n } from "../lib/i18n";
+import { createTranslations, useI18n } from "../lib/i18n";
 import { Field, FieldDescription, FieldError, FieldLabel } from "./ui/field";
 import { Input } from "./ui/input";
 
@@ -23,7 +23,7 @@ type HourMinuteParts = {
   minutes: number;
 };
 
-const i18n = createI18n({
+const i18n = createTranslations({
   videoStart: {
     en: "Start",
     ru: "Начало",

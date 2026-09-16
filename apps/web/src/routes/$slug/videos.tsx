@@ -10,7 +10,7 @@ import { SharedVideoCard } from "@web/components/shared-video-card";
 import { buttonVariants } from "@web/components/ui/button";
 import { useSharedVideoPageQ } from "@web/hooks/api";
 import { groupVideosByPriority } from "@web/lib/group-videos-by-priority";
-import { createI18n, createTranslator, useI18n } from "@web/lib/i18n";
+import { createTranslations, createTranslator, useI18n } from "@web/lib/i18n";
 import { slugParams } from "@web/lib/slug-params";
 import type { SharedVideo } from "@web/server/exports";
 import { useEffect } from "react";
@@ -21,7 +21,7 @@ type HourMinuteParts = {
   minutes: number;
 };
 
-const i18n = createI18n({
+const i18n = createTranslations({
   videoQueues: {
     en: "Video queues",
     ru: "Очереди видео",

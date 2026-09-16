@@ -2,11 +2,11 @@ import { Button } from "@web/components/ui/button";
 import { cn } from "@web/lib/utils";
 import type { ComponentProps } from "react";
 
-import { createI18n, useI18n } from "../lib/i18n";
+import { createTranslations, useI18n } from "../lib/i18n";
 import { CosmicArt } from "./cosmic-art";
 import { Icons } from "./icons";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   dataLoadError: {
     en: "Couldn't load data",
     ru: "Не удалось загрузить данные",

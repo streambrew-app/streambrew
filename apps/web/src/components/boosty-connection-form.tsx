@@ -7,11 +7,11 @@ import { Switch } from "@web/components/ui/switch";
 import { useBoostyConnection } from "@web/hooks/chat-service";
 import { parseBoostyAuth } from "@web/lib/boosty-auth";
 import { getDevtoolsShortcut } from "@web/lib/devtools-shortcut";
-import { createI18n, createTranslator, useI18n } from "@web/lib/i18n";
+import { createTranslations, createTranslator, useI18n } from "@web/lib/i18n";
 import { resolveLocale } from "@web/lib/locale";
 import { Fragment, useState, type FormEvent } from "react";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   boostyConnectTitle: {
     en: "Connect Boosty",
     ru: "Подключить Boosty",

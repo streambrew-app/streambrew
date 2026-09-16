@@ -1,9 +1,9 @@
 import { useConnectDonateStreamM } from "@web/hooks/api";
-import { createI18n, useI18n } from "@web/lib/i18n";
+import { createTranslations, useI18n } from "@web/lib/i18n";
 
 import { WidgetConnectionForm } from "./widget-connection-form";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   title: {
     en: "Connect donate.stream",
     ru: "Подключить donate.stream",

@@ -3,9 +3,9 @@ import { CosmicPageHeader } from "@web/components/cosmic-page-header";
 import { PublicQueueSettingsEditor } from "@web/components/public-queue-settings-editor";
 import { QueueCurrencyEditor } from "@web/components/queue-currency-editor";
 
-import { createI18n, createTranslator, useI18n } from "../../lib/i18n";
+import { createTranslations, createTranslator, useI18n } from "../../lib/i18n";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   settings: {
     en: "Settings",
     ru: "Настройки",

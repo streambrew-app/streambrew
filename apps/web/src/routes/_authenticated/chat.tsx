@@ -20,12 +20,12 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@web/components/ui/tool
 import { useChatServiceMutations, useChatServiceQueries } from "@web/hooks/chat-service";
 import { useChatServiceStream } from "@web/hooks/use-chat-service-stream";
 import { withChatOverlayBackground, type ChatOverlayBackground } from "@web/lib/chat-overlay";
-import { createI18n, createTranslator, useI18n, type TranslationKey } from "@web/lib/i18n";
+import { createTranslations, createTranslator, useI18n, type TranslationKey } from "@web/lib/i18n";
 import { cn } from "@web/lib/utils";
 import { useState, type FormEvent } from "react";
 import { z } from "zod";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   chat: {
     en: "Multichat",
     ru: "Мультичат",
@@ -121,7 +121,7 @@ const providerMeta = {
   vk_video: { label: "VK Video", color: "#2688eb", logo: PlatformIcons.vk_video },
 } as const;
 
-const copy = createI18n({
+const copy = createTranslations({
   connections: {
     en: "Channels",
     ru: "Каналы",

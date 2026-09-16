@@ -2,10 +2,10 @@ import type { DonationSource } from "@streambrew/packages/schemas.js";
 import { cn } from "@web/lib/utils";
 import type { ReactNode } from "react";
 
-import { createI18n, useI18n } from "../lib/i18n";
+import { createTranslations, useI18n } from "../lib/i18n";
 import { Icons } from "./icons";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   connected: {
     en: "Connected",
     ru: "Подключено",

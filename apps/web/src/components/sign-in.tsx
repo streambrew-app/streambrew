@@ -4,12 +4,12 @@ import { signIn } from "@web/lib/auth-client";
 import { useState } from "react";
 
 import productMark from "../../assets/logo.png";
-import { createI18n, useI18n } from "../lib/i18n";
+import { createTranslations, useI18n } from "../lib/i18n";
 import { CosmicArt } from "./cosmic-art";
 import { Icons } from "./icons";
 import { Button } from "./ui/button";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   signIn: {
     en: "Sign in",
     ru: "Войти",

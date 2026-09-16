@@ -2,7 +2,7 @@ import { MoneyAmountSchema, type VideoQueue } from "@streambrew/packages/schemas
 import { youtubeVideoId } from "@streambrew/packages/youtube.js";
 import { useAddVideoM, useUserInfoSafe } from "@web/hooks/api";
 import { formatMoneyInputValue } from "@web/lib/fmt";
-import { createI18n, useI18n } from "@web/lib/i18n";
+import { createTranslations, useI18n } from "@web/lib/i18n";
 import { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 
@@ -13,7 +13,7 @@ import { Input } from "./ui/input";
 import { VideoQueueSelect } from "./video-queue-controls";
 import { parseVideoTiming, VideoTimingFields, type VideoTimingValues } from "./video-timing-fields";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   videoQueue: {
     en: "Video queue",
     ru: "Очередь видео",

@@ -3,12 +3,12 @@ import { buttonVariants, Button } from "@web/components/ui/button";
 import { FieldError } from "@web/components/ui/field";
 import { Switch } from "@web/components/ui/switch";
 import { useUpdatePublicQueueSettingsM, useUserInfo } from "@web/hooks/api";
-import { createI18n, useI18n } from "@web/lib/i18n";
+import { createTranslations, useI18n } from "@web/lib/i18n";
 import { Controller, useForm } from "react-hook-form";
 
 import { Icons } from "./icons";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   publicQueueSettings: {
     en: "Public video queue",
     ru: "Доступ к очереди по ссылке",

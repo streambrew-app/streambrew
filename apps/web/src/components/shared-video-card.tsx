@@ -7,14 +7,14 @@ import { fmtAmount, fmtDate, fmtListDate } from "@web/lib/fmt";
 import { getSharedVideoTimingParts } from "@web/lib/shared-video-timing";
 import type { SharedVideo } from "@web/server/exports";
 
-import { createI18n, useI18n } from "../lib/i18n";
+import { createTranslations, useI18n } from "../lib/i18n";
 
 type HourMinuteParts = {
   hours: number;
   minutes: number;
 };
 
-const i18n = createI18n({
+const i18n = createTranslations({
   openYoutubeVideo: {
     en: "Open YouTube video in a new tab",
     ru: "Открыть видео YouTube в новой вкладке",

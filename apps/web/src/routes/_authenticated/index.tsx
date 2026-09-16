@@ -29,14 +29,14 @@ import {
 } from "@web/components/streamlabs";
 import { buttonVariants } from "@web/components/ui/button";
 import { fmtRubles } from "@web/lib/fmt";
-import { createI18n, createTranslator, useI18n } from "@web/lib/i18n";
+import { createTranslations, createTranslator, useI18n } from "@web/lib/i18n";
 import { preloadRouteQuery } from "@web/lib/trpc";
 import { cn } from "@web/lib/utils";
 import { z } from "zod";
 
 import { useDonationOverviewQ, useUserInfoSafe } from "../../hooks/api";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   overview: {
     en: "Overview",
     ru: "Главная",

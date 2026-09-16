@@ -4,10 +4,10 @@ import QueryErrorState from "@web/components/query-error-state";
 import { useVideoPrioritiesQ } from "@web/hooks/api";
 import { cn } from "@web/lib/utils";
 
-import { createI18n, useI18n } from "../lib/i18n";
+import { createTranslations, useI18n } from "../lib/i18n";
 import VideoPriorityEditor from "./video-priority-editor";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   all: {
     en: "All",
     ru: "Все",

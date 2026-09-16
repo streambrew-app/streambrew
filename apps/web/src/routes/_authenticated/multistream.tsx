@@ -18,9 +18,9 @@ import { useRestreamConfigQ, useRestreamMutations } from "@web/hooks/restream";
 import { preloadRouteQuery } from "@web/lib/trpc";
 import { useState, type FormEvent } from "react";
 
-import { createI18n, createTranslator, useI18n } from "../../lib/i18n";
+import { createTranslations, createTranslator, useI18n } from "../../lib/i18n";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   multistream: { en: "Multistream", ru: "Мультистрим" },
   subtitle: {
     en: "Send one OBS stream to as many as three platforms.",

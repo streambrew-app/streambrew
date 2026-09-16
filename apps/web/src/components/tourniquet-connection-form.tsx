@@ -1,9 +1,9 @@
 import { useConnectTourniquetM } from "@web/hooks/api";
-import { createI18n, useI18n } from "@web/lib/i18n";
+import { createTranslations, useI18n } from "@web/lib/i18n";
 
 import { WidgetConnectionForm } from "./widget-connection-form";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   title: { en: "Connect Tourniquet", ru: "Подключить Турникет" },
   description: {
     en: "StreamBrew receives new paid donations through your alert widget. Tourniquet does not provide past or missed donations.",

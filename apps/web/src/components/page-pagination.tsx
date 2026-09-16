@@ -1,9 +1,9 @@
-import { createI18n, useI18n } from "@web/lib/i18n";
+import { createTranslations, useI18n } from "@web/lib/i18n";
 
 import { Icons } from "./icons";
 import { Button } from "./ui/button";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   pagination: {
     en: "Pagination",
     ru: "Навигация по страницам",

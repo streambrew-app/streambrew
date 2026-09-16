@@ -26,7 +26,7 @@ import favicon from "../../assets/logo.png";
 import { Skeleton } from "../components/ui/skeleton";
 import { signOut } from "../lib/auth-client";
 import type { Locale } from "../lib/i18n";
-import { createI18n, I18nProvider, useI18n } from "../lib/i18n";
+import { createTranslations, I18nProvider, useI18n } from "../lib/i18n";
 import { localeCookieName, resolveLocale } from "../lib/locale";
 import type { Theme } from "../lib/theme";
 import { resolveTheme, themeCookieName } from "../lib/theme";
@@ -38,7 +38,7 @@ import PageLoadingSkeleton from "./-components/page-loading-skeleton";
 import alertCss from "../../alerts.css?url";
 import appCss from "../../styles.css?url";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   overview: {
     en: "Overview",
     ru: "Главная",

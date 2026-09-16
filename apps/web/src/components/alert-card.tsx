@@ -1,9 +1,9 @@
 import type { AlertPlayback } from "@streambrew/packages/alerts.js";
 import { fmtAmount } from "@web/lib/fmt";
-import { createI18n, useI18n } from "@web/lib/i18n";
+import { createTranslations, useI18n } from "@web/lib/i18n";
 import { cn } from "@web/lib/utils";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   anonymous: { en: "Anonymous", ru: "Аноним" },
   supported: { en: "sent", ru: "отправил(а)" },
   testMessage: {
