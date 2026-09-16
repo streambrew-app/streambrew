@@ -21,7 +21,14 @@ it("initializes shared, isolated, and repeatable worktree environments", async (
   const initialize = (path: string, args: string[] = []) =>
     $`just env-init ${args}`.cwd(path).env(environment).quiet();
   const sharedKeys = ["COMPOSE_PROJECT_NAME", "PGPORT", "NATS_PORT"];
-  const isolatedKeys = ["PGDATABASE", "APP_PORT", "CHAT_PORT", "DONATIONS_PORT", "NATS_NAMESPACE"];
+  const isolatedKeys = [
+    "PGDATABASE",
+    "APP_PORT",
+    "CHAT_PORT",
+    "DONATIONS_PORT",
+    "NATS_NAMESPACE",
+    "RESTREAM_INGEST_URL",
+  ];
 
   try {
     await mkdir(bin);
@@ -54,6 +61,7 @@ it("initializes shared, isolated, and repeatable worktree environments", async (
       expect(env["DATABASE_URL"]).toBe(
         `postgresql://test:test@127.0.0.1:${env["PGPORT"]}/${env["PGDATABASE"]}?sslmode=disable`,
       );
+      expect(env["RESTREAM_INGEST_URL"]).toMatch(/^rtmp:\/\/127\.0\.0\.1:\d+$/);
       expect((await stat(join(path, ".env"))).mode & 0o777).toBe(0o600);
       const before = await file(join(path, ".env")).text();
       await initialize(path);

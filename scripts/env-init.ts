@@ -40,6 +40,7 @@ assert(
 const appPort = await hashPort(`${repository}:${branch}:app`);
 const chatPort = await hashPort(`${repository}:${branch}:chat`);
 const donationsPort = await hashPort(`${repository}:${branch}:donations`);
+const restreamIngestPort = await hashPort(`${repository}:${branch}:restream-ingest`);
 const natsPort = await hashPort(`${repository}:nats`);
 const settings = {
   APP_PORT: appPort,
@@ -57,6 +58,7 @@ const settings = {
   PGSSLMODE: "disable",
   PGPORT: await hashPort(`${repository}:db`),
   PGDATABASE: `streambrew_${suffix}`,
+  RESTREAM_INGEST_URL: `rtmp://127.0.0.1:${restreamIngestPort}`,
   COMPOSE_PROJECT_NAME:
     sharedProject ||
     `${sanitizeName(basename(dirname(repository))).slice(0, 32)}_dev_${repositoryHash}`,
