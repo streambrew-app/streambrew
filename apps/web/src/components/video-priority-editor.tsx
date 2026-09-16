@@ -7,7 +7,7 @@ import { cn } from "@web/lib/utils";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
-import { createI18n, useI18n } from "../lib/i18n";
+import { createTranslations, useI18n } from "../lib/i18n";
 import { Icons } from "./icons";
 import { Button } from "./ui/button";
 import { Field, FieldError, FieldLabel } from "./ui/field";
@@ -18,7 +18,7 @@ type HourMinuteParts = {
   minutes: number;
 };
 
-const i18n = createI18n({
+const i18n = createTranslations({
   selectQueueFilter: {
     en: ({ label }: { label: string }) => `Select ${label} priority filter`,
     ru: ({ label }: { label: string }) => `Показать приоритет «${label}»`,

@@ -6,13 +6,13 @@ import { cn } from "@web/lib/utils";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
-import { createI18n, useI18n } from "../lib/i18n";
+import { createTranslations, useI18n } from "../lib/i18n";
 import { Icons } from "./icons";
 import { Field, FieldDescription, FieldError, FieldLabel } from "./ui/field";
 import { Input } from "./ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   showAllVideos: { en: "Show all videos", ru: "Показать все видео" },
   settings: { en: "Settings", ru: "Настройки" },
   publicVideoQueueSlug: {

@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LegalDocument, LegalSection } from "@web/components/legal-document";
-import { createI18n, createTranslator, useI18n } from "@web/lib/i18n";
+import { createTranslations, createTranslator, useI18n } from "@web/lib/i18n";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   privacyPolicy: {
     en: "Privacy policy",
     ru: "Политика конфиденциальности",

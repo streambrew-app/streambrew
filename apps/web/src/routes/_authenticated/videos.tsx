@@ -24,9 +24,9 @@ import {
   useVideoQueuesQ,
   useVideoQueueMutations,
 } from "../../hooks/api";
-import { createI18n, createTranslator, useI18n } from "../../lib/i18n";
+import { createTranslations, createTranslator, useI18n } from "../../lib/i18n";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   selectedVideo: {
     en: "Selected video",
     ru: "Выбранное видео",

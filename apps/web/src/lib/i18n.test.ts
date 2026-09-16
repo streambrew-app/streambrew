@@ -7,9 +7,9 @@ import {
 import { describe, expect, it } from "vitest";
 
 import { fmtAmount, fmtDate, fmtListDate, fmtRubles, formatMoneyInputValue } from "./fmt";
-import { createI18n, createTranslator, resolveLocale } from "./i18n";
+import { createTranslations, createTranslator, resolveLocale } from "./i18n";
 
-const testMessages = createI18n({
+const testMessages = createTranslations({
   save: {
     en: "Save",
     ru: "Сохранить",
@@ -20,12 +20,12 @@ const testMessages = createI18n({
   },
 });
 
-createI18n({
+createTranslations({
   // @ts-expect-error Every message must define both supported locales.
   save: { en: "Save" },
 });
 
-createI18n({
+createTranslations({
   save: {
     en: "Save",
     ru: "Сохранить",
@@ -34,7 +34,7 @@ createI18n({
   },
 });
 
-createI18n({
+createTranslations({
   greeting: {
     en: ({ name }: { name: string }) => `Hello, ${name}`,
     // @ts-expect-error Dynamic messages must accept the same arguments in every locale.

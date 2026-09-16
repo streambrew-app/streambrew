@@ -25,7 +25,7 @@ import { Skeleton } from "@web/components/ui/skeleton";
 import { Switch } from "@web/components/ui/switch";
 import { useAlertDashboard, useAlertMutations } from "@web/hooks/alerts";
 import { fmtAmount, fmtListDate } from "@web/lib/fmt";
-import { createI18n, createTranslator, useI18n } from "@web/lib/i18n";
+import { createTranslations, createTranslator, useI18n } from "@web/lib/i18n";
 import { preloadRouteQuery } from "@web/lib/trpc";
 import { cn } from "@web/lib/utils";
 import {
@@ -39,7 +39,7 @@ import {
   type SetStateAction,
 } from "react";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   alerts: { en: "Donation alerts", ru: "Алерты донатов" },
   connected: { en: "Connected", ru: "Подключено" },
   standby: { en: "Standby", ru: "Ожидание" },

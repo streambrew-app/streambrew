@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
-import { createI18n, createTranslator } from "@web/lib/i18n";
+import { createTranslations, createTranslator } from "@web/lib/i18n";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   adminPanel: {
     en: "Admin panel",
     ru: "Админская панель",

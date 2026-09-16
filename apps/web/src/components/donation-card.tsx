@@ -6,12 +6,12 @@ import type { Donation } from "@web/server/exports";
 import { clsx } from "clsx";
 
 import { useTextWithLinks } from "../hooks/use-text-with-links";
-import { createI18n, useI18n } from "../lib/i18n";
+import { createTranslations, useI18n } from "../lib/i18n";
 import { DonationSourceBadge } from "./donation-source";
 import { Icons } from "./icons";
 import { buttonVariants } from "./ui/button";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   donationVideosPending: {
     en: "Video links are awaiting processing",
     ru: "Ссылки на видео ожидают обработки",

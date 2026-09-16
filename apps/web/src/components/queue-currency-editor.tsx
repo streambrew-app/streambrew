@@ -9,14 +9,14 @@ import { formatMoneyInputValue } from "@web/lib/fmt";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
-import { createI18n, useI18n } from "../lib/i18n";
+import { createTranslations, useI18n } from "../lib/i18n";
 import { Icons } from "./icons";
 import { Button } from "./ui/button";
 import { Field, FieldError, FieldLabel } from "./ui/field";
 import { Input } from "./ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   queueCurrency: {
     en: "Queue currency",
     ru: "Валюта очереди",

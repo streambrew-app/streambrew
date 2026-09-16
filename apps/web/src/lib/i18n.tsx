@@ -38,7 +38,7 @@ type I18nContract<Messages extends I18nMessages> = {
   readonly [Key in keyof Messages]: LocalizedMessageContract<Messages[Key]>;
 };
 
-export function createI18n<const Messages extends I18nMessages>(
+export function createTranslations<const Messages extends I18nMessages>(
   messages: Messages & I18nContract<Messages>,
 ) {
   return messages;

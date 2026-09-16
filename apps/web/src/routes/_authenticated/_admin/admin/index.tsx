@@ -9,12 +9,12 @@ import { Button } from "@web/components/ui/button";
 import { Skeleton } from "@web/components/ui/skeleton";
 import { useAdminDashboardQ } from "@web/hooks/api";
 import { fmtDate } from "@web/lib/fmt";
-import { createI18n, createTranslator, useI18n, type TranslationKey } from "@web/lib/i18n";
+import { createTranslations, createTranslator, useI18n, type TranslationKey } from "@web/lib/i18n";
 import { preloadRouteQuery } from "@web/lib/trpc";
 import { cn } from "@web/lib/utils";
 import type { AppRouter } from "@web/server/api/trpc/index";
 
-const i18n = createI18n({
+const i18n = createTranslations({
   overview: { en: "Overview", ru: "Обзор" },
   refresh: { en: "Refresh metrics", ru: "Обновить показатели" },
   noOperationalIssues: { en: "No operational issues", ru: "Отклонений нет" },
