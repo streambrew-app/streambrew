@@ -4,7 +4,7 @@ StreamBrew connects donation sources through either OAuth or the realtime protoc
 alert widget. The provider-specific data and transport contracts live in the individual source
 guides:
 
-- [DonationAlerts](donation-alerts.md)
+- [DonationAlerts](../features/donation-alerts.md)
 - [donate.stream](donate-stream.md)
 - [Streamlabs](streamlabs.md)
 - [StreamElements](streamelements.md)

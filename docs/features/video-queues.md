@@ -45,7 +45,7 @@ are removed, and every video is reassigned by the retained thresholds. The same 
 fresh databases after the initial schema migration.
 
 Review and confirm the migration before running the command. Deploy the matching web and video
-revisions together using the [deployment workflow](deployment.md). Do not run the old web revision
+revisions together using the [deployment workflow](../operations/deployment.md). Do not run the old web revision
 after switching the schema: its user creation does not create the required default queue.
 
 ## Verification

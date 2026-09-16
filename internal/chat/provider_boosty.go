@@ -12,7 +12,7 @@ import (
 )
 
 // BoostyProvider is an unofficial, read-only client for Boosty's web chat API.
-// Protocol references and limitations are recorded in docs/boosty.md.
+// Protocol references and limitations are recorded in docs/integrations/boosty.md.
 type BoostyProvider struct {
 	client *http.Client
 	apiURL string

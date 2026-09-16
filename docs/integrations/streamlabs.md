@@ -69,7 +69,7 @@ authenticated API request returns 401, using the existing token-version
 compare-and-swap pattern. It should not invent a scheduled expiry.
 
 The Streamlabs flow should use and validate `state`. The existing
-[DonationAlerts ownership ADR](adr/0004-donations-service-ownership.md) records
+[DonationAlerts ownership ADR](../adr/0004-donations-service-ownership.md) records
 the absence of `state` there as a known login-CSRF risk; that compatibility gap
 should not be copied into a new provider.
 
@@ -227,8 +227,8 @@ realtime collection, reconciliation, and persistence. Connect should report
 success only after identity and the complete initial history are stored
 atomically. Reconnects should replace listeners through `token_version`, and a
 failed stale refresh must not overwrite a newer connection. See
-[ADR 0004](adr/0004-donations-service-ownership.md) and the current
-[`internal/donations` module](../internal/donations/application.go).
+[ADR 0004](../adr/0004-donations-service-ownership.md) and the current
+[`internal/donations` module](../../internal/donations/application.go).
 
 Streamlabs-specific differences are:
 

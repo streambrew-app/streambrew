@@ -49,4 +49,4 @@ network interruption, long and Cyrillic messages, audio and TTS, a hidden
 Browser Source, bursts, and a donation originating from the renderer itself.
 StreamBrew subsequently chose and implemented its own Browser Source; its current
 architecture and operating guide are documented in
-[Donation alerts](../donation-alerts.md).
+[Donation alerts](../features/donation-alerts.md).

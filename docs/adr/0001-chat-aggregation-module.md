@@ -35,7 +35,7 @@ success or failure, and successful sends are not rolled back when another provid
 VK Video is a read-only provider implemented through VK ID OAuth and the official video Long Poll
 API. Boosty uses an unofficial read-only HTTP client and a manually supplied session token
 as an explicitly accepted exception (2026-09-06). The token resolves the owning account;
-arbitrary channel URLs are not accepted. See [Boosty integration](../boosty.md) for the
+arbitrary channel URLs are not accepted. See [Boosty integration](../integrations/boosty.md) for the
 protocol evidence and operational limitations.
 
 ## Consequences

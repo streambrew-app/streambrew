@@ -40,7 +40,7 @@ Apply each language's casing conventions: SQL uses `snake_case`, TypeScript uses
 
 ## Related domain guides
 
-- [Donation integrations](integrations.md) and [donation alerts](donation-alerts.md).
-- [Currencies](currencies.md), [video queues](video-queues.md), and [video metadata](video-metadata.md).
-- [Multichat terminology and behavior](multichat.md#domain-language).
-- [Multistream architecture and operations](restream.md).
+- [Donation integrations](integrations/README.md) and [donation alerts](features/donation-alerts.md).
+- [Currencies](features/currencies.md), [video queues](features/video-queues.md), and [video metadata](features/video-metadata.md).
+- [Multichat terminology and behavior](features/multichat.md#domain-language).
+- [Multistream architecture and operations](features/restream.md).

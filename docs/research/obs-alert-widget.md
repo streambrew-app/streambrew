@@ -1,6 +1,6 @@
 # Custom OBS alert widget
 
-Research date: September 11, 2026. This document records the research that informed StreamBrew's own alert widget. The implemented architecture and operating guide live in [Donation alerts](../donation-alerts.md).
+Research date: September 11, 2026. This document records the research that informed StreamBrew's own alert widget. The implemented architecture and operating guide live in [Donation alerts](../features/donation-alerts.md).
 
 ## Requirements established by the research
 
@@ -138,4 +138,4 @@ remain outside this scope.
 
 Validation against target OBS versions should cover transparency, test audio, initial active and visible state, two scenes, Studio Mode, and reconnection. The full matrix also covers supported operating systems, restart without replay, duplicate sources, network and media failures, bursts, and audio routing into a recording.
 
-The implementation follows this design; see [Donation alerts](../donation-alerts.md) for its current behavior and deployment requirements.
+The implementation follows this design; see [Donation alerts](../features/donation-alerts.md) for its current behavior and deployment requirements.

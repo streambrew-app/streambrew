@@ -117,7 +117,7 @@ The original `{ amount, currency }` on `donation` is immutable. It is never
 overwritten by queue conversion. Crypto assets are not queue currencies in the
 initial StreamBrew rate table, so a video created from such a donation keeps
 the original donation amount but may have a null `queue_amount`; see
-[Currencies and video queues](currencies.md).
+[Currencies and video queues](../features/currencies.md).
 
 ### Tourniquet test alerts
 
@@ -144,15 +144,15 @@ insert can create an automatic donation alert playback.
 Because this source has no history or recovery API, every accepted Tourniquet
 payment is a live donation. It participates in the same source-enabled and
 freshness checks, transaction, TTS preparation, and OBS playback queue as the
-other integrations; see [Donation alerts](donation-alerts.md). An ignored test
+other integrations; see [Donation alerts](../features/donation-alerts.md). An ignored test
 event and a duplicate paid event create neither a donation nor a playback.
 
 Inserting a Tourniquet donation also uses the existing PostgreSQL trigger to
 create a `donation_video_scan` row. The video worker scans its message for
 supported YouTube links, persists each video idempotently, and fetches metadata
 through the normal retry queue; see
-[ADR 0005](adr/0005-donation-video-handoff.md) and
-[Video metadata](video-metadata.md). The integration does not create a
+[ADR 0005](../adr/0005-donation-video-handoff.md) and
+[Video metadata](../features/video-metadata.md). The integration does not create a
 synthetic donation for a video and does not change the original donation money.
 
 ## Token security and operations
@@ -176,7 +176,7 @@ The integration requires a forward database migration for the `tourniquet`
 donation-source enum value, its private connection table, and sufficient
 original donation/alert amount and asset capacity for Tourniquet crypto values.
 Deploy the matching web and donations-service revisions together. Following
-the repository's [release procedure](deployment.md#releases-and-migrations), a
+the repository's [release procedure](../operations/deployment.md#releases-and-migrations), a
 revision containing this migration stops before production deployment until an
 operator reviews it and reruns the **Production** workflow for the same
 revision with `apply_migrations=true`.

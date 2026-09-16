@@ -42,7 +42,9 @@ behavior belongs to the domain guides below.
   restream, and operational services.
 - `db` and API contracts: shared boundaries; keep terminology and behavior
   consistent across Go and TypeScript.
-- `docs`: domain behavior, engineering guides, operations, and architecture decisions.
+- `docs`: product context, glossary, and contribution guide; `features/` describes
+  product behavior, `integrations/` provider contracts, `engineering/` shared rules,
+  and `operations/` deployment. `adr/` records decisions; `research/` holds research.
 
 ## Working agreements
 
@@ -66,21 +68,21 @@ Before editing, read the guides for every area the task touches. Read any nested
 `AGENTS.md` governing the files you will change, even when working from the root.
 Keep these guides current when changing the behavior they describe.
 
-| Task                                                           | Read first                                                            |
-| -------------------------------------------------------------- | --------------------------------------------------------------------- |
-| Domain terms, identifiers, or translations                     | [Domain glossary](docs/glossary.md) and the relevant domain guide     |
-| Donation sources or ingestion                                  | [Donation integrations](docs/integrations.md)                         |
-| Donation alerts, playback, widgets, media, or settings         | [Donation alerts](docs/donation-alerts.md)                            |
-| Chat providers, collectors, streams, overlays, or integrations | [Multichat](docs/multichat.md)                                        |
-| Video queues, priority assignment, or rollout                  | [Video queues](docs/video-queues.md)                                  |
-| Money, conversion, or queue currency                           | [Currencies](docs/currencies.md)                                      |
-| Donation link scanning or video metadata                       | [Video metadata](docs/video-metadata.md)                              |
-| Multistream behavior or media infrastructure                   | [Multistream](docs/restream.md)                                       |
-| TypeScript or TSX in any package                               | [TypeScript guide](docs/typescript.md), including local skill loading |
-| Web application                                                | [Web instructions](apps/web/AGENTS.md)                                |
-| PostgreSQL schema or SQL in Go or TypeScript                   | [SQL guide](docs/sql.md)                                              |
-| Localized copy, locale handling, or formatting                 | [Internationalization](docs/i18n.md)                                  |
-| Environment variables, deployment, or infrastructure           | [Deployment](docs/deployment.md)                                      |
+| Task                                                           | Read first                                                                        |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Domain terms, identifiers, or translations                     | [Domain glossary](docs/glossary.md) and the relevant domain guide                 |
+| Donation sources or ingestion                                  | [Donation integrations](docs/integrations/README.md)                              |
+| Donation alerts, playback, widgets, media, or settings         | [Donation alerts](docs/features/donation-alerts.md)                               |
+| Chat providers, collectors, streams, overlays, or integrations | [Multichat](docs/features/multichat.md)                                           |
+| Video queues, priority assignment, or rollout                  | [Video queues](docs/features/video-queues.md)                                     |
+| Money, conversion, or queue currency                           | [Currencies](docs/features/currencies.md)                                         |
+| Donation link scanning or video metadata                       | [Video metadata](docs/features/video-metadata.md)                                 |
+| Multistream behavior or media infrastructure                   | [Multistream](docs/features/restream.md)                                          |
+| TypeScript or TSX in any package                               | [TypeScript guide](docs/engineering/typescript.md), including local skill loading |
+| Web application                                                | [Web instructions](apps/web/AGENTS.md)                                            |
+| PostgreSQL schema or SQL in Go or TypeScript                   | [SQL guide](docs/engineering/sql.md)                                              |
+| Localized copy, locale handling, or formatting                 | [Internationalization](docs/engineering/i18n.md)                                  |
+| Environment variables, deployment, or infrastructure           | [Deployment](docs/operations/deployment.md)                                       |
 
 ## Verification
 

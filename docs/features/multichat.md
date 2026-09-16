@@ -89,7 +89,7 @@ automatically with bounded exponential backoff.
 
 VK Video uses the official VK API `video.get` and `video.getLongPollServer` methods. It is read-only,
 uses the streamer's VK profile as its chat source, and never uses scraping or user cookies. Boosty
-uses a separate token connection flow; see [setup, protocol evidence, and limitations](boosty.md).
+uses a separate token connection flow; see [setup, protocol evidence, and limitations](../integrations/boosty.md).
 
 ## OAuth and credentials
 

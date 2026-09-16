@@ -98,7 +98,7 @@ therefore cannot play an unbounded stale burst.
 Widget-link integrations without a provider history API are live-only and do
 not run recovery. In particular, Tourniquet cannot import donations created
 before connection or recover events missed during a disconnect; see
-[Tourniquet donation integration](tourniquet.md#available-integration-surface).
+[Tourniquet donation integration](../integrations/tourniquet.md#available-integration-surface).
 
 StreamElements sends complete tips through the Astro `channel.tips` topic, so
 those live messages are stored directly. Its five-minute recovery pass requests
@@ -106,7 +106,7 @@ the complete ten-minute `after`/`before` window rather than stopping at the
 saved head ID; an hourly pass replays all available tip history. This protects
 against WebSocket gaps, mutable offset pages, and delayed or backdated tips.
 Database idempotency ensures that only a newly inserted donation can enqueue an
-alert or a video scan. See [the StreamElements integration contract](streamelements.md).
+alert or a video scan. See [the StreamElements integration contract](../integrations/streamelements.md).
 
 ## Queue and playback
 
@@ -331,7 +331,7 @@ separate bounded multipart endpoint.
 
 Apply the donation-alert migration before deploying application code that uses
 this feature. Deployment requires an explicit manual run with
-`apply_migrations=true`, as described in [deployment.md](deployment.md).
+`apply_migrations=true`, as described in [deployment.md](../operations/deployment.md).
 
 ## Validation matrix
 
@@ -350,4 +350,4 @@ Before a release, verify:
 - invalid, oversized, spoofed, corrupt, and over-duration media.
 
 The supporting protocol and product research lives in
-[the OBS alert widget research](research/obs-alert-widget.md).
+[the OBS alert widget research](../research/obs-alert-widget.md).
