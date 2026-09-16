@@ -31,11 +31,11 @@ code. Documentation may be updated alongside the behavior it describes.
    failures introduced by the change, then verify again. Report pre-existing
    failures or unavailable checks explicitly; do not describe them as passing.
 4. Hand a green, review-ready PR to the human for review, approval, and merge.
-   The merge authorization boundary is defined in [AGENTS.md](AGENTS.md#working-agreements).
+   The merge authorization boundary is defined in [AGENTS.md](../AGENTS.md#working-agreements).
 5. Turn recurring review findings into automated repository checks when practical.
 
 Green CI establishes automated correctness only. Follow the decision and approval
-boundaries in [AGENTS.md](AGENTS.md#working-agreements) for product and architecture
+boundaries in [AGENTS.md](../AGENTS.md#working-agreements) for product and architecture
 choices.
 
 ## Shared engineering conventions
@@ -60,11 +60,11 @@ choices.
 
 Use repository-wide `just` recipes for checks; they cover the TypeScript workspace,
 Go service entrypoints, and application packages under `internal`.
-The [root command list](AGENTS.md#verification) describes the main checks.
+The [root command list](../AGENTS.md#verification) describes the main checks.
 For documentation-only changes, check Markdown formatting, relative links and
 anchors, and the coverage of moved instructions. Application tests are not needed
 locally for prose-only edits; required PR checks still apply.
 
-Development prerequisites and local setup are in [README.md](README.md#start-locally).
+Development prerequisites and local setup are in [README.md](../README.md#start-locally).
 The schema and migration authorization boundaries in the root also apply to
 commands shown in setup guides.

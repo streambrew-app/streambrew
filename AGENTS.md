@@ -8,7 +8,7 @@ platform accounts. Viewers can consult a streamer's public video queues.
 
 The interface supports Russian and English, desktop and mobile, and light and dark
 themes. Prioritize legible messages and predictable controls during live broadcasts.
-See [PRODUCT.md](PRODUCT.md) for product and design context.
+See [product context](docs/product.md) for product and design context.
 
 ## Core concepts
 
@@ -46,7 +46,7 @@ behavior belongs to the domain guides below.
 
 ## Working agreements
 
-- Before changing code, read [CONTRIBUTING.md](CONTRIBUTING.md). Work through an
+- Before changing code, read [contribution guide](docs/contributing.md). Work through an
   open issue, a task branch, and a PR. Read-only tasks do not require an issue.
 - Complete code work with a green, review-ready PR. Merge a specific PR only when
   the user explicitly requests that merge.
@@ -93,4 +93,4 @@ CI checks; report failures and unavailable checks explicitly.
 - `just check`: run lint, formatting checks, and tests.
 
 For development setup, read [README.md](README.md#start-locally); for documentation
-validation and PR completion, follow [CONTRIBUTING.md](CONTRIBUTING.md#validation).
+validation and PR completion, follow [contribution guide](docs/contributing.md#validation).

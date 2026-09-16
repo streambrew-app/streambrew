@@ -2,7 +2,7 @@
 
 Read this guide before changing TypeScript or TSX in any workspace package,
 including `apps/web` and `packages`. Shared engineering conventions live in
-[CONTRIBUTING.md](../CONTRIBUTING.md#shared-engineering-conventions).
+[contribution guide](contributing.md#shared-engineering-conventions).
 
 ## Local skills
 

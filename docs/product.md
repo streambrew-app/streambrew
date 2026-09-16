@@ -25,21 +25,21 @@ Streamers need legible messages and predictable controls during live broadcasts.
 
 ## Capabilities and Constraints
 
-Preserve existing routes and functionality during the redesign. Follow the [domain glossary](docs/glossary.md)
-for terminology, [DESIGN.md](DESIGN.md) for interface conventions,
+Preserve existing routes and functionality during the redesign. Follow the [domain glossary](glossary.md)
+for terminology, [design guide](design.md) for interface conventions,
 and the domain guides for behavior. Support Russian and English, light and dark
 themes, desktop and mobile web. Keep decorative artwork separate from controls.
 
 ## Brand Commitments
 
 The coffee-and-cosmos direction, emotional brief, and interface conventions are
-maintained in [DESIGN.md](DESIGN.md#original-associations).
+maintained in [design guide](design.md#original-associations).
 
 ## Evidence on Hand
 
 Product facts above come from the user's AGENTS.md and the existing route tree.
 Brand intent comes from the user's request and the original associations preserved
-in DESIGN.md. Existing brand
+in the design guide. Existing brand
 assets are in apps/web/assets. No new marketing claims or performance figures
 are authorized by the redesign brief.
 
