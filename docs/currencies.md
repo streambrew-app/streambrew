@@ -1,10 +1,14 @@
 # Currencies and video queues
 
-Terminology in this document follows the [glossary](../AGENTS.md#glossary).
+Terminology in this document follows the [glossary](glossary.md).
 
 StreamBrew preserves each donation's original `{ amount, currency }` as the
 financial event received from a platform. Donations are never converted or
 given a queue currency in the database.
+
+The owning user's `queue_currency` is the single currency for all of their
+video amounts and priority thresholds. Store converted money only as
+`video.queue_amount`; do not add currency fields to videos or priorities.
 
 The original amount supports up to 20 digits before the decimal point and 18
 after it. Its currency may be a three-letter fiat code or a provider's asset
