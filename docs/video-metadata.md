@@ -6,6 +6,13 @@ open segment has a NULL end until metadata arrives. Such videos remain visible
 under “Без приоритета” within their assigned video queue. A known segment permits priority assignment even before
 the full provider duration is known.
 
+A donation scan is complete only after its supported links have been persisted,
+including a scan that finds no links. `videos_parsed_at` records completion;
+metadata retries belong to `video_metadata_job`, not to donation parsing.
+Missing watch time leaves `video_priority_id` NULL while preserving any known
+`queue_amount`. Watch time is calculated as `end_seconds - start_seconds`;
+it is unknown while the end is NULL and is not stored separately.
+
 Metadata comes from YouTube Data API v3 `videos.list`, requesting
 `contentDetails.duration`, `snippet.title`, and `snippet.liveBroadcastContent`
 in one request. ISO 8601 durations are normalized to positive integer seconds.

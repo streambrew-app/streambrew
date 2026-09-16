@@ -6,6 +6,10 @@ zero-threshold default priority. Use video priority, not queue, for a threshold 
 queue does not create priorities; editing a priority affects every queue. Labels are trimmed at the
 tRPC seam and unique per user.
 
+Videos originate either from a donation or from a manual addition by their owner.
+A donation can produce zero or more videos; a manual addition never creates a
+synthetic donation. `/videos` switches between independent video queues.
+
 Each video belongs to exactly one queue. Unknown duration or amount leaves its priority NULL,
 not its queue. Both donation scanning and manual additions choose the user's default queue when
 no queue is supplied. Changing that default never moves existing videos. Moving a video is one

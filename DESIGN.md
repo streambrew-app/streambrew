@@ -72,8 +72,8 @@ remain calm and compact. Repeated signatures are the arched landing illustration
 coffee cup, orbital paths, and roasted-gold navigation.
 
 This is the canonical guide for StreamBrew's visual direction and UI conventions.
-Product context lives in [PRODUCT.md](PRODUCT.md); terminology and domain
-invariants live in [AGENTS.md](AGENTS.md). Exact tokens and component behavior
+Product context lives in [PRODUCT.md](PRODUCT.md); terminology lives in the [domain glossary](docs/glossary.md), and
+[AGENTS.md](AGENTS.md#task-guides) routes to domain behavior guides. Exact tokens and component behavior
 are defined in [styles.css](apps/web/styles.css) and the existing UI components.
 Review evidence belongs in the [redesign review](.impeccable/review/final-review.md),
 not in the design rules.
