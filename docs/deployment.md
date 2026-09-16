@@ -121,6 +121,14 @@ for the repository/environment subject format.
 
 ## GitHub configuration
 
+When adding an environment variable, immediately wire it through
+`.github/workflows/production.yml` so deployments include it in the generated
+production environment file. Add it to the required or optional production
+environment list as appropriate; declaring it only in a step's `env` block is
+insufficient. Store non-sensitive configuration in GitHub Environment Variables
+(`vars`) and credentials or other sensitive values in GitHub Environment Secrets
+(`secrets`).
+
 Infrastructure variables:
 
 | Name                              | Example                    | Required |
