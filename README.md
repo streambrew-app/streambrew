@@ -10,6 +10,9 @@ list them.
 
 Related documentation:
 
+- [product context](docs/product.md);
+- [design guide](docs/design.md);
+- [contribution guide](docs/contributing.md);
 - [currency and video-queue rules](docs/currencies.md);
 - [donation alerts and OBS widget behavior](docs/donation-alerts.md);
 - [multichat architecture and provider setup](docs/multichat.md);
