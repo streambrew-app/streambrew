@@ -3,7 +3,7 @@ import { cn } from "@web/lib/utils";
 import type { ReactNode } from "react";
 
 import { createTranslations, useI18n } from "../lib/i18n";
-import { Icons } from "./icons";
+import { DonationSourceIcons, Icons } from "./icons";
 
 const translations = createTranslations({
   connected: {
@@ -22,38 +22,38 @@ const translations = createTranslations({
 
 const sources = {
   donationalerts: {
-    mark: "DA",
-    markClassName: "from-orange-400 to-rose-500",
+    iconClassName: "bg-[#1f1f1f]",
+    iconImageClassName: "h-[68%] w-auto",
     name: "DonationAlerts",
     url: "https://www.donationalerts.com/dashboard/activity-feed/donations",
   },
   donate_stream: {
-    mark: "d·s",
-    markClassName: "from-sky-500 to-violet-600",
+    iconClassName: "bg-[#1f1f1f]",
+    iconImageClassName: "size-[64%]",
     name: "donate.stream",
     url: "https://lk.donate.stream/donate-alerts",
   },
   streamlabs: {
-    mark: "SL",
-    markClassName: "from-emerald-400 to-cyan-600",
+    iconClassName: "bg-[#80f5d2]",
+    iconImageClassName: "size-full",
     name: "Streamlabs",
     url: "https://streamlabs.com/dashboard",
   },
   tourniquet: {
-    mark: "TQ",
-    markClassName: "from-indigo-500 to-fuchsia-600",
+    iconClassName: "bg-[#ffff00]",
+    iconImageClassName: "size-full",
     name: "Tourniquet",
     url: "https://tourniquet.app/profile/widgets",
   },
   streamelements: {
-    mark: "SE",
-    markClassName: "from-[#0b6e78] to-[#155e75]",
+    iconClassName: "bg-[#0b6e78]",
+    iconImageClassName: "size-[72%]",
     name: "StreamElements",
     url: "https://streamelements.com/dashboard/revenue/tips",
   },
 } satisfies Record<
   DonationSource,
-  { mark: string; markClassName: string; name: string; url: string }
+  { iconClassName: string; iconImageClassName: string; name: string; url: string }
 >;
 
 export function donationSourceDetails(source: DonationSource) {
@@ -91,19 +91,50 @@ type MarkProps = {
   source: DonationSource;
 };
 
-export function DonationSourceMark({ className, size = "sm", source }: MarkProps) {
+export function DonationSourceIcon({
+  className,
+  size = "sm",
+  source,
+}: {
+  className?: string;
+  size?: "xs" | "sm" | "lg";
+  source: DonationSource;
+}) {
   const details = sources[source];
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        "grid shrink-0 place-items-center overflow-hidden",
+        details.iconClassName,
+        size === "xs"
+          ? "size-3.5 rounded-[3px]"
+          : size === "sm"
+            ? "size-9 rounded-lg"
+            : "size-12 rounded-xl shadow-sm",
+        className,
+      )}
+    >
+      <img
+        alt=""
+        className={cn("block object-contain", details.iconImageClassName)}
+        src={DonationSourceIcons[source]}
+      />
+    </span>
+  );
+}
+
+export function DonationSourceMark({ className, size = "sm", source }: MarkProps) {
   return (
     <DonationSourceLink
       className={cn(
-        "grid shrink-0 place-items-center bg-linear-to-br font-bold text-white transition-transform outline-none hover:-rotate-2 hover:scale-105 focus-visible:ring-3 focus-visible:ring-ring/50",
-        details.markClassName,
-        size === "sm" ? "size-9 rounded-lg text-[11px]" : "size-12 rounded-xl text-sm shadow-sm",
+        "shrink-0 rounded-lg transition-transform outline-none hover:-rotate-2 hover:scale-105 focus-visible:ring-3 focus-visible:ring-ring/50",
+        size === "lg" && "rounded-xl",
         className,
       )}
       source={source}
     >
-      {details.mark}
+      <DonationSourceIcon size={size} source={source} />
     </DonationSourceLink>
   );
 }
@@ -165,6 +196,7 @@ export function DonationSourceBadge({
       )}
       source={source}
     >
+      <DonationSourceIcon size="xs" source={source} />
       {details.name}
       <Icons.externalLink aria-hidden="true" size={10} />
     </DonationSourceLink>

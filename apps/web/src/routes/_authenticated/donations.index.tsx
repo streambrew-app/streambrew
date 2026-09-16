@@ -2,7 +2,7 @@ import { DonationSourceSchema } from "@streambrew/packages/schemas.js";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { CosmicPageHeader } from "@web/components/cosmic-page-header";
 import DonationCard from "@web/components/donation-card";
-import { donationSourceDetails } from "@web/components/donation-source";
+import { donationSourceDetails, DonationSourceIcon } from "@web/components/donation-source";
 import { EmptyState } from "@web/components/empty-state";
 import { Icons } from "@web/components/icons";
 import { DonationListSkeleton } from "@web/components/loading-skeletons";
@@ -11,6 +11,7 @@ import QueryErrorState from "@web/components/query-error-state";
 import { buttonVariants } from "@web/components/ui/button";
 import { Input } from "@web/components/ui/input";
 import { preloadRouteQuery } from "@web/lib/trpc";
+import { cn } from "@web/lib/utils";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 
@@ -169,8 +170,18 @@ function DonationsIndex() {
         </label>
         <label className="relative w-full sm:w-auto">
           <span className="sr-only">{t("donationSource")}</span>
+          {search.source && (
+            <DonationSourceIcon
+              className="pointer-events-none absolute top-1/2 left-2.5 z-10 -translate-y-1/2"
+              size="xs"
+              source={search.source}
+            />
+          )}
           <select
-            className="h-9 w-full appearance-none rounded-lg border border-input bg-background/70 py-0 pr-8 pl-3 text-xs font-semibold text-foreground outline-none focus:border-ring sm:w-40"
+            className={cn(
+              "h-9 w-full appearance-none rounded-lg border border-input bg-background/70 py-0 pr-8 text-xs font-semibold text-foreground outline-none focus:border-ring sm:w-40",
+              search.source ? "pl-8" : "pl-3",
+            )}
             onChange={(event) =>
               void navigate({
                 search: (previous) => ({

@@ -7,6 +7,7 @@ import { CosmicPageHeader } from "@web/components/cosmic-page-header";
 import { DonateStreamConnectionForm } from "@web/components/donate-stream-connection-form";
 import {
   donationSourceDetails,
+  DonationSourceIcon,
   DonationSourceMark,
   DonationSourceNameLink,
 } from "@web/components/donation-source";
@@ -83,13 +84,15 @@ function ConnectionNotice() {
   const search = Route.useSearch();
   const { t } = useI18n(translations);
   if (search.success === undefined || search.source === undefined) return null;
+  const sourceName = donationSourceDetails(search.source).name;
   return (
     <div
-      className={`rounded-xl border px-3.5 py-3 text-[13px] ${search.success ? "border-emerald-300/50 bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300" : "border-red-300/50 bg-red-50 text-red-700 dark:bg-red-400/10 dark:text-red-300"}`}
+      className={`flex items-center gap-2 rounded-xl border px-3.5 py-3 text-[13px] ${search.success ? "border-emerald-300/50 bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300" : "border-red-300/50 bg-red-50 text-red-700 dark:bg-red-400/10 dark:text-red-300"}`}
       role="status"
     >
+      <DonationSourceIcon size="xs" source={search.source} />
       {t(search.success ? "connectedSuccessfully" : "connectionFailed", {
-        source: donationSourceDetails(search.source).name,
+        source: sourceName,
       })}
     </div>
   );
@@ -277,14 +280,16 @@ function WidgetIntegrationCard({
 function DisconnectError({ disconnectM }: { disconnectM: DisconnectMutation }) {
   const { t } = useI18n(translations);
   if (!disconnectM.isError || !disconnectM.variables) return null;
+  const source = disconnectM.variables.source;
 
   return (
     <div
-      className="rounded-xl border border-red-300/50 bg-red-50 px-3.5 py-3 text-[13px] text-red-700 dark:bg-red-400/10 dark:text-red-300"
+      className="flex items-center gap-2 rounded-xl border border-red-300/50 bg-red-50 px-3.5 py-3 text-[13px] text-red-700 dark:bg-red-400/10 dark:text-red-300"
       role="alert"
     >
+      <DonationSourceIcon size="xs" source={source} />
       {t("disconnectFailed", {
-        source: donationSourceDetails(disconnectM.variables.source).name,
+        source: donationSourceDetails(source).name,
       })}
     </div>
   );
