@@ -17,7 +17,7 @@ import { z } from "zod";
 import { useDonationPageQ } from "../../hooks/api";
 import { createTranslations, useI18n } from "../../lib/i18n";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   donations: {
     en: "Donations",
     ru: "Донаты",
@@ -117,7 +117,7 @@ function DonationsIndex() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const donationsQ = useDonationPageQ(search);
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const [query, setQuery] = useState(search.query);
 
   useEffect(() => setQuery(search.query), [search.query]);
@@ -285,7 +285,7 @@ function DonationsIndex() {
 }
 
 function EmptyDonations({ hasFilters }: { hasFilters: boolean }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   return (
     <EmptyState
       description={hasFilters ? t("tryAnotherSearch") : t("donationsWillAppear")}

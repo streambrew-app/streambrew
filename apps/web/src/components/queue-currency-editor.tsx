@@ -16,7 +16,7 @@ import { Field, FieldError, FieldLabel } from "./ui/field";
 import { Input } from "./ui/input";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   queueCurrency: {
     en: "Queue currency",
     ru: "Валюта очереди",
@@ -68,7 +68,7 @@ function largerCurrency(left: QueueCurrency, right: QueueCurrency) {
 }
 
 function QueueCurrencyHeading() {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
 
   return (
     <div className="flex items-center gap-1.5">
@@ -90,7 +90,7 @@ function QueueCurrencyHeading() {
 }
 
 export function QueueCurrencyEditor() {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const userInfo = useUserInfo();
   const updateQueueCurrencyM = useUpdateQueueCurrencyM();
   const [isEditing, setIsEditing] = useState(false);

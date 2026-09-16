@@ -21,7 +21,7 @@ import { z } from "zod";
 import { useAuthUrlQ, useDisconnectM, useUserInfoSafe } from "../../hooks/api";
 import { createTranslations, createTranslator, useI18n } from "../../lib/i18n";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   integrations: { en: "Integrations", ru: "Интеграции" },
   disconnecting: { en: "Disconnecting…", ru: "Отключаем…" },
   loadingAuthorization: { en: "Loading authorization…", ru: "Получаем ссылку…" },
@@ -64,7 +64,9 @@ export const Route = createFileRoute("/_authenticated/integrations")({
   component: RouteComponent,
   head: ({ match }) => ({
     meta: [
-      { title: `${createTranslator(match.context.locale, i18n)("integrations")} · StreamBrew` },
+      {
+        title: `${createTranslator(match.context.locale, translations)("integrations")} · StreamBrew`,
+      },
     ],
   }),
   loader: async ({ context }) => {
@@ -79,7 +81,7 @@ export const Route = createFileRoute("/_authenticated/integrations")({
 
 function ConnectionNotice() {
   const search = Route.useSearch();
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   if (search.success === undefined || search.source === undefined) return null;
   return (
     <div
@@ -111,7 +113,7 @@ function DonationConnectionAction({
   disconnectM: DisconnectMutation;
   source: OAuthDonationSource;
 }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const sourceName = donationSourceDetails(source).name;
   const disconnecting = disconnectM.isPending && disconnectM.variables?.source === source;
   if (connected) {
@@ -231,7 +233,7 @@ function WidgetIntegrationCard({
   onConnect: () => void;
   source: WidgetDonationSource;
 }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const disconnecting = disconnectM.isPending && disconnectM.variables?.source === source;
   const label = disconnecting
     ? t("disconnecting")
@@ -273,7 +275,7 @@ function WidgetIntegrationCard({
 }
 
 function DisconnectError({ disconnectM }: { disconnectM: DisconnectMutation }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   if (!disconnectM.isError || !disconnectM.variables) return null;
 
   return (
@@ -297,7 +299,7 @@ function OAuthIntegrationCards({
   disconnectM: DisconnectMutation;
   userInfo: ReturnType<typeof useUserInfoSafe>;
 }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const streamElementsStatus: DonationSourceConnectionStatus | null =
     userInfo?.streamElementsConnectionStatus ?? null;
   const streamElementsIssue =
@@ -340,7 +342,7 @@ function RouteComponent() {
   const authUrlQ = useAuthUrlQ();
   const [widgetFormSource, setWidgetFormSource] = useState<WidgetDonationSource | null>(null);
   const disconnectM = useDisconnectM();
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
 
   return (
     <section className="cosmic-panel flex h-full min-h-0 min-w-0 flex-col overflow-hidden">

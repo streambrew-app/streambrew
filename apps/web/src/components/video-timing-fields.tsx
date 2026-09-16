@@ -23,7 +23,7 @@ type HourMinuteParts = {
   minutes: number;
 };
 
-const i18n = createTranslations({
+const translations = createTranslations({
   videoStart: {
     en: "Start",
     ru: "Начало",
@@ -126,7 +126,7 @@ export function VideoTimingFields({
   maximumEndSeconds = null,
   showOpenEndHelp = true,
 }: Props) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const { formState, getValues, register, trigger, watch } = useFormContext<VideoTimingValues>();
   const id = useId();
   const startId = `${id}-start`;

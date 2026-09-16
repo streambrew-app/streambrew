@@ -38,7 +38,7 @@ import PageLoadingSkeleton from "./-components/page-loading-skeleton";
 import alertCss from "../../alerts.css?url";
 import appCss from "../../styles.css?url";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   overview: {
     en: "Overview",
     ru: "Главная",
@@ -231,7 +231,7 @@ function AuthenticatedApplication() {
 function AuthenticatedApplicationContent() {
   const { theme, viewer } = Route.useRouteContext();
   const { isDark, toggleDark } = useDark(theme);
-  const { locale, setLocale, t } = useI18n(i18n);
+  const { locale, setLocale, t } = useI18n(translations);
   const { setOpenMobile } = useSidebar();
   const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
   const [isDevelopmentWarningVisible, setIsDevelopmentWarningVisible] = useState(true);

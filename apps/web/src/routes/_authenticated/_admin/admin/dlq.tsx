@@ -13,7 +13,7 @@ import { createTranslations, createTranslator, useI18n } from "@web/lib/i18n";
 import { preloadRouteQuery } from "@web/lib/trpc";
 import { z } from "zod";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   deadLetters: {
     en: "Dead letters",
     ru: "Ошибочные сообщения",
@@ -74,7 +74,9 @@ export const Route = createFileRoute("/_authenticated/_admin/admin/dlq")({
   },
   head: ({ match }) => ({
     meta: [
-      { title: `${createTranslator(match.context.locale, i18n)("deadLetters")} · StreamBrew` },
+      {
+        title: `${createTranslator(match.context.locale, translations)("deadLetters")} · StreamBrew`,
+      },
     ],
   }),
 });
@@ -82,7 +84,7 @@ export const Route = createFileRoute("/_authenticated/_admin/admin/dlq")({
 function DeadLettersPage() {
   const search = Route.useSearch();
   const deadLettersQ = useChatDeadLettersQ(search.before);
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
 
   return (
     <section className="cosmic-panel flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
@@ -155,7 +157,7 @@ function DeadLettersPage() {
 }
 
 function DeadLetterRow({ deadLetter }: { deadLetter: ChatDeadLetter }) {
-  const { locale, t } = useI18n(i18n);
+  const { locale, t } = useI18n(translations);
   const payload = decodeBase64(deadLetter.payload);
   const failedAt = fmtListDate(deadLetter.failedAt, locale);
 

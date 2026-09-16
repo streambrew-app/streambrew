@@ -14,7 +14,7 @@ type HourMinuteParts = {
   minutes: number;
 };
 
-const i18n = createTranslations({
+const translations = createTranslations({
   openYoutubeVideo: {
     en: "Open YouTube video in a new tab",
     ru: "Открыть видео YouTube в новой вкладке",
@@ -72,7 +72,7 @@ const getYoutubeThumbnailUrl = (videoId: string) =>
   `https://i.ytimg.com/vi/${encodeURIComponent(videoId)}/hqdefault.jpg`;
 
 export function SharedVideoCard({ showPriorityLabel = true, video }: Props) {
-  const { locale, t } = useI18n(i18n);
+  const { locale, t } = useI18n(translations);
   const youtubeVideoId = getYoutubeVideoId(video.url);
   const { startTime, endTime } = getSharedVideoTimingParts(video);
   const timingLabel =

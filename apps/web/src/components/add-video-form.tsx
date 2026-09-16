@@ -13,7 +13,7 @@ import { Input } from "./ui/input";
 import { VideoQueueSelect } from "./video-queue-controls";
 import { parseVideoTiming, VideoTimingFields, type VideoTimingValues } from "./video-timing-fields";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   videoQueue: {
     en: "Video queue",
     ru: "Очередь видео",
@@ -77,7 +77,7 @@ type AddVideoFormValues = VideoTimingValues & {
 
 export function AddVideoForm({ onCancel, videoQueueId, queues }: Props) {
   const [selectedQueueId, setSelectedQueueId] = useState(videoQueueId);
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const userInfo = useUserInfoSafe();
   const addVideoM = useAddVideoM();
   const urlErrorId = "manual-video-url-error";

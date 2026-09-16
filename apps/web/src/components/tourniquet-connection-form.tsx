@@ -3,7 +3,7 @@ import { createTranslations, useI18n } from "@web/lib/i18n";
 
 import { WidgetConnectionForm } from "./widget-connection-form";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   title: { en: "Connect Tourniquet", ru: "Подключить Турникет" },
   description: {
     en: "StreamBrew receives new paid donations through your alert widget. Tourniquet does not provide past or missed donations.",
@@ -36,7 +36,7 @@ const i18n = createTranslations({
 });
 
 export function TourniquetConnectionForm({ onClose }: { onClose: () => void }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const connect = useConnectTourniquetM();
   return (
     <WidgetConnectionForm

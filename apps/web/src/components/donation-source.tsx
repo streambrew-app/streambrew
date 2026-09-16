@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { createTranslations, useI18n } from "../lib/i18n";
 import { Icons } from "./icons";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   connected: {
     en: "Connected",
     ru: "Подключено",
@@ -69,7 +69,7 @@ function DonationSourceLink({
   className?: string;
   source: DonationSource;
 }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const details = sources[source];
 
   return (
@@ -131,7 +131,7 @@ export function DonationSourceNameLink({
 }
 
 export function DonationSourceConnectionStatus({ connected }: { connected: boolean }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
 
   return (
     <span

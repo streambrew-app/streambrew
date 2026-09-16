@@ -9,7 +9,7 @@ import { CosmicArt } from "./cosmic-art";
 import { Icons } from "./icons";
 import { Button } from "./ui/button";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   signIn: {
     en: "Sign in",
     ru: "Войти",
@@ -102,7 +102,7 @@ const i18n = createTranslations({
 
 export default function SignIn() {
   const [isSigningIn, setIsSigningIn] = useState(false);
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
 
   const handleSignIn = async () => {
     setIsSigningIn(true);

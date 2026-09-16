@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Icons } from "@web/components/icons";
 import { createTranslations, useI18n } from "@web/lib/i18n";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   adminPanel: {
     en: "Admin panel",
     ru: "Админская панель",
@@ -21,7 +21,7 @@ const tabClassName =
   "flex min-h-9 shrink-0 items-center gap-2 rounded-lg border border-transparent px-3 text-sm font-medium text-white/70 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:-outline-offset-4 focus-visible:outline-white/70 data-[status=active]:focus-visible:outline-coffee-tab-foreground data-[status=active]:border-coffee-tab-border data-[status=active]:bg-coffee-tab data-[status=active]:font-semibold data-[status=active]:text-coffee-tab-foreground data-[status=active]:hover:bg-coffee-tab-hover [&_svg]:size-4";
 
 export function AdminTabs() {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
 
   return (
     <nav

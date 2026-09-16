@@ -39,7 +39,7 @@ import {
   type SetStateAction,
 } from "react";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   alerts: { en: "Donation alerts", ru: "Алерты донатов" },
   connected: { en: "Connected", ru: "Подключено" },
   standby: { en: "Standby", ru: "Ожидание" },
@@ -216,7 +216,9 @@ const i18n = createTranslations({
 export const Route = createFileRoute("/_authenticated/alerts")({
   component: AlertsPage,
   head: ({ match }) => ({
-    meta: [{ title: `${createTranslator(match.context.locale, i18n)("alerts")} · StreamBrew` }],
+    meta: [
+      { title: `${createTranslator(match.context.locale, translations)("alerts")} · StreamBrew` },
+    ],
   }),
   loader: async ({ context }) => {
     if (!context.viewer) return;
@@ -255,7 +257,7 @@ function previewPlayback(settings: AlertSettings): AlertPlayback {
 }
 
 function AlertsPage() {
-  const i18nContext = useI18n(i18n);
+  const i18nContext = useI18n(translations);
   const dashboardQuery = useAlertDashboard();
   const dashboard = dashboardQuery.data;
 
@@ -301,7 +303,7 @@ function AlertsPage() {
   );
 }
 
-type Translator = ReturnType<typeof useI18n<typeof i18n>>["t"];
+type Translator = ReturnType<typeof useI18n<typeof translations>>["t"];
 type SetSetting = <Key extends keyof AlertSettings>(key: Key, value: AlertSettings[Key]) => void;
 type AlertDashboardData = NonNullable<ReturnType<typeof useAlertDashboard>["data"]>;
 type AlertActions = ReturnType<typeof useAlertMutations>;

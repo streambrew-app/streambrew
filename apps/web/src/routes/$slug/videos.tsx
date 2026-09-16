@@ -21,7 +21,7 @@ type HourMinuteParts = {
   minutes: number;
 };
 
-const i18n = createTranslations({
+const translations = createTranslations({
   videoQueues: {
     en: "Video queues",
     ru: "Очереди видео",
@@ -93,7 +93,7 @@ type SharedPriority = {
 };
 
 function SharedPriorityHeader({ priority }: { priority: SharedPriority }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
 
   return (
     <header className="flex items-center justify-between gap-4 border-y border-border bg-secondary/50 px-4 py-2.5 sm:px-5">
@@ -116,7 +116,7 @@ function SharedVideoGroups({
   isLastPage: boolean;
   priorities: Array<SharedPriority & { videoCount: number }>;
 }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const { groups, unassignedVideos } = groupVideosByPriority(items);
   const emptyPriorities = isLastPage
     ? priorities.filter((priority) => priority.videoCount === 0)
@@ -173,7 +173,7 @@ export const Route = createFileRoute("/$slug/videos")({
   head: ({ match, params }) => ({
     meta: [
       {
-        title: `${createTranslator(match.context.locale, i18n)("videoQueueBy", { slug: `@${params.slug}` })} · StreamBrew`,
+        title: `${createTranslator(match.context.locale, translations)("videoQueueBy", { slug: `@${params.slug}` })} · StreamBrew`,
       },
     ],
   }),
@@ -226,7 +226,7 @@ function useSharedVideoQueuePage() {
 type SharedVideoQueuePage = ReturnType<typeof useSharedVideoQueuePage>;
 
 function SharedQueueNavigation({ page }: { page: SharedVideoQueuePage }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   if (!page.videosQ.data) return null;
   return (
     <nav
@@ -254,7 +254,7 @@ function SharedQueueNavigation({ page }: { page: SharedVideoQueuePage }) {
 }
 
 function SharedQueueStatusNavigation({ page }: { page: SharedVideoQueuePage }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const data = page.videosQ.data;
   if (!data) return null;
   const statusLink = (status: "queue" | "watched") => ({
@@ -302,7 +302,7 @@ function SharedQueueStatusNavigation({ page }: { page: SharedVideoQueuePage }) {
 }
 
 function SharedQueueVideos({ page }: { page: SharedVideoQueuePage }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const data = page.videosQ.data;
   if (!data) return null;
   const isQueue = data.status === "queue";
@@ -334,7 +334,7 @@ function SharedQueueVideos({ page }: { page: SharedVideoQueuePage }) {
 }
 
 function SharedQueuePagination({ page }: { page: SharedVideoQueuePage }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   const data = page.videosQ.data;
   if (!data || data.items.length === 0) return null;
   return (
@@ -370,7 +370,7 @@ function SharedQueueData({ page }: { page: SharedVideoQueuePage }) {
 }
 
 function SharedQueueState({ page }: { page: SharedVideoQueuePage }) {
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
   if (page.videosQ.isLoading) {
     return <VideoListSkeleton aria-busy="true" aria-label={t("loadingVideoQueue")} />;
   }
@@ -395,7 +395,7 @@ function SharedQueueState({ page }: { page: SharedVideoQueuePage }) {
 
 function SharedVideoQueue() {
   const page = useSharedVideoQueuePage();
-  const { t } = useI18n(i18n);
+  const { t } = useI18n(translations);
 
   return (
     <main className="relative h-dvh overflow-hidden bg-background p-0 text-foreground sm:p-3">

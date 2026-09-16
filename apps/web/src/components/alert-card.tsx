@@ -3,7 +3,7 @@ import { fmtAmount } from "@web/lib/fmt";
 import { createTranslations, useI18n } from "@web/lib/i18n";
 import { cn } from "@web/lib/utils";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   anonymous: { en: "Anonymous", ru: "Аноним" },
   supported: { en: "sent", ru: "отправил(а)" },
   testMessage: {
@@ -23,7 +23,7 @@ export function AlertCard({
   playback: AlertPlayback;
   stage?: "entering" | "exiting" | "hidden" | "shown";
 }) {
-  const { locale, t } = useI18n(i18n);
+  const { locale, t } = useI18n(translations);
   const author = playback.author?.trim() || t("anonymous");
   const message = playback.message?.trim() || (playback.kind === "test" ? t("testMessage") : "");
 

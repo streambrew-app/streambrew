@@ -11,7 +11,7 @@ import { DonationSourceBadge } from "./donation-source";
 import { Icons } from "./icons";
 import { buttonVariants } from "./ui/button";
 
-const i18n = createTranslations({
+const translations = createTranslations({
   donationVideosPending: {
     en: "Video links are awaiting processing",
     ru: "Ссылки на видео ожидают обработки",
@@ -59,7 +59,7 @@ export default function DonationCard({
   expandMessage = false,
   ...props
 }: Props) {
-  const { locale, t } = useI18n(i18n);
+  const { locale, t } = useI18n(translations);
   const author = donation.author ?? t("anonymous");
   const messageChunks = useTextWithLinks(donation.message ?? t("sentDonation"));
 

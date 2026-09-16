@@ -39,9 +39,9 @@ type I18nContract<Messages extends I18nMessages> = {
 };
 
 export function createTranslations<const Messages extends I18nMessages>(
-  messages: Messages & I18nContract<Messages>,
+  translations: Messages & I18nContract<Messages>,
 ) {
-  return messages;
+  return translations;
 }
 
 export type TranslationKey<Messages extends I18nMessages> = keyof Messages & string;
@@ -56,13 +56,13 @@ export type Translate<Messages extends I18nMessages> = <Key extends TranslationK
 
 export function createTranslator<const Messages extends I18nMessages>(
   locale: Locale,
-  messages: Messages,
+  translations: Messages,
 ): Translate<Messages> {
   return <Key extends TranslationKey<Messages>>(
     key: Key,
     ...args: TranslationArguments<Messages, Key>
   ) => {
-    const message: unknown = messages[key][locale];
+    const message: unknown = translations[key][locale];
     if (typeof message === "string") return message;
     if (typeof message !== "function") throw new TypeError(`Translation ${key} is not a message.`);
     const translated: unknown = Reflect.apply(message, undefined, args);
@@ -100,8 +100,8 @@ export function I18nProvider({
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 
-export function useI18n<const Messages extends I18nMessages>(messages: Messages) {
+export function useI18n<const Messages extends I18nMessages>(translations: Messages) {
   const context = useContext(I18nContext);
   if (!context) throw new Error("useI18n must be used within I18nProvider");
-  return { ...context, t: createTranslator(context.locale, messages) };
+  return { ...context, t: createTranslator(context.locale, translations) };
 }
