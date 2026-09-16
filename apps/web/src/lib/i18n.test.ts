@@ -114,7 +114,7 @@ describe("localized formatters", () => {
     [new Date(2026, 8, 9, 13, 45), "en", "yesterday, 01:45 PM"],
     [new Date(2026, 8, 9, 13, 45), "ru", "вчера, 13:45"],
     [new Date(2026, 8, 8, 13, 45), "en", "Sep 8, 01:45 PM"],
-    [new Date(2026, 8, 8, 13, 45), "ru", "8 сент., 13:45"],
+    [new Date(2026, 8, 8, 13, 45), "ru", "8 сентября, 13:45"],
   ] as const)("formats list date %s for %s", (date, locale, expected) => {
     expect(fmtListDate(date, locale, new Date(2026, 8, 10, 9))).toBe(expected);
   });

@@ -14,12 +14,16 @@ export function formatMoneyInputValue(amount: MoneyAmount) {
 }
 
 export function fmtDate(date: Date, locale: Locale) {
-  return new Intl.DateTimeFormat(localeTag[locale], {
+  const calendarDate = new Intl.DateTimeFormat(localeTag[locale], {
     day: "numeric",
-    month: "short",
+    month: locale === "ru" ? "long" : "short",
+  }).format(date);
+  const time = new Intl.DateTimeFormat(localeTag[locale], {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
+
+  return `${calendarDate}, ${time}`;
 }
 
 export function fmtListDate(date: Date, locale: Locale, now = new Date()) {
