@@ -8,7 +8,7 @@ application runtime portable:
 | ------------------ | ------------------------------- | --------------------------------------------------------------------- | -------------------------------------- |
 | `infra/bootstrap`  | local, operator-held            | S3 state bucket and GitHub OIDC role                                  | once from an authenticated workstation |
 | `infra/aws`        | `streambrew/aws.tfstate`        | Lightsail instance, firewall, snapshots, and S3 backups               | manual `AWS infrastructure` workflow   |
-| `infra/production` | `streambrew/production.tfstate` | Docker network, containers, persistent volumes, and deployed revision | every production release               |
+| `infra/production` | `streambrew/production.tfstate` | Docker network, containers, persistent volumes, and deployed revision | published stable GitHub Release        |
 
 `compose.yaml` remains a development and emergency-recovery reference. Normal
 production releases do not copy the repository to the server and do not run
@@ -115,7 +115,10 @@ Set the outputs on the `Production` GitHub environment:
 - `AWS_TERRAFORM_ROLE_ARN` from `deployment_role_arn`;
 - `TF_STATE_REGION` and `AWS_REGION` to the selected region.
 
-Protect the environment so only `master` can deploy. See GitHub's
+Configure the environment with custom deployment branch and tag rules: allow the
+`master` branch for manual infrastructure, migration, rollback, and recovery runs,
+and allow `v*` tags for automatic releases. A push to `master` does not start an
+application deployment. See GitHub's
 [AWS OIDC guide](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws)
 for the repository/environment subject format.
 
@@ -238,16 +241,32 @@ persistent volumes are no-op.
 
 ## Releases and migrations
 
-A push to `master` publishes immutable application and PostgreSQL/WAL-G images,
-discovers the current Lightsail IP, uploads runtime files, and applies only
-`infra/production`. Images are pulled before Terraform changes containers.
-PostgreSQL is excluded from routine restarts unless `restart_database=true` is
-selected in a manual run.
+Merging to `master` makes a revision releasable but does not deploy it. To release
+production, publish a non-prerelease GitHub Release with a `vX.Y.Z` tag pointing to
+a commit on `master`. Drafts do not trigger the workflows; prereleases, malformed
+tags, and tags outside `master` fail validation before images are published. Treat
+release publication as deployment intent: the GitHub Release remains published if
+deployment fails, so confirm the `Production` environment deployment before
+announcing completion.
+
+The release workflows run CI for the tagged commit. `Production` then publishes
+immutable application and PostgreSQL/WAL-G images, discovers the current Lightsail
+IP, uploads runtime files, and applies only `infra/production`. Images continue to
+use content or commit identifiers rather than the mutable release label. Images are
+pulled before Terraform changes containers. PostgreSQL is excluded from routine
+restarts unless `restart_database=true` is selected in a manual run.
+
+The restream workflow compares the tagged commit with the previous published stable
+release. It publishes and deploys the media image only when restream code,
+infrastructure, workflow, or Go module files changed. It deploys conservatively when
+there is no previous stable release or the previous release is not an ancestor of
+the new one.
 
 If `db/migrations` differs from the revision recorded in Terraform state, an
 automatic release stops before deployment. Review the SQL and rerun `Production`
-for the same revision with `apply_migrations=true`. Migrations are forward-only
-and are not automatically reversed.
+manually for the exact release tag with `apply_migrations=true`. Manual dispatch is
+also the recovery path for redeploying or rolling back to an explicitly selected
+revision. Migrations are forward-only and are not automatically reversed.
 
 The workflow verifies all ten containers, `/api/health`, and an API routing
 probe. If Terraform apply or verification fails, it reapplies the previous image

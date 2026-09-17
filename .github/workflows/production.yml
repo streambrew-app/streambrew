@@ -1,9 +1,9 @@
 name: Production
 
 on:
-  push:
-    branches:
-      - master
+  release:
+    types:
+      - published
   workflow_dispatch:
     inputs:
       revision:
@@ -42,18 +42,41 @@ jobs:
       - name: Check out revision
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.revision || github.sha }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.revision || github.event.release.tag_name }}
           fetch-depth: 0
 
-      - name: Record commit SHA
+      - name: Validate and record revision
         id: revision
+        env:
+          RELEASE_PRERELEASE: ${{ github.event.release.prerelease || false }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || '' }}
         run: |
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+
+          sha="$(git rev-parse HEAD)"
+          if [[ "${{ github.event_name }}" == release ]]; then
+            if [[ "$RELEASE_PRERELEASE" == true ]]; then
+              echo "Prereleases cannot deploy to production." >&2
+              exit 1
+            fi
+            if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Production release tag must match vX.Y.Z, got: $RELEASE_TAG" >&2
+              exit 1
+            fi
+
+            git fetch --no-tags origin \
+              +refs/heads/master:refs/remotes/origin/master
+            if ! git merge-base --is-ancestor "$sha" origin/master; then
+              echo "Release tag $RELEASE_TAG does not point to a commit on master." >&2
+              exit 1
+            fi
+          fi
+
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
           echo "postgres_tag=$(git rev-parse HEAD:docker/postgres-walg)" >> "$GITHUB_OUTPUT"
 
   quality:
     name: CI
-    if: github.event_name == 'workflow_dispatch'
     needs: resolve
     permissions:
       contents: read
@@ -66,7 +89,7 @@ jobs:
     if: >-
       always() &&
       needs.resolve.result == 'success' &&
-      (github.event_name == 'push' || needs.quality.result == 'success')
+      needs.quality.result == 'success'
     needs:
       - resolve
       - quality

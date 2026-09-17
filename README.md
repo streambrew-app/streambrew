@@ -129,7 +129,8 @@ confirmation because it affects every checkout.
 Production runs on Terraform-managed AWS infrastructure. The manual
 `AWS infrastructure` workflow manages Lightsail, its firewall and snapshots,
 and S3 backups. `Production` builds immutable application and PostgreSQL/WAL-G
-images and applies only the portable Docker runtime over SSH, so routine
+images for a published stable GitHub Release and applies only the portable Docker
+runtime over SSH. Merging to `master` does not deploy production, and routine
 releases neither plan nor replace cloud resources. Bootstrap, first deployment,
 migrations, rollback, networking, and backup guidance lives in
 [the deployment guide](docs/operations/deployment.md).

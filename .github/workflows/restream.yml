@@ -1,16 +1,9 @@
 name: Restream media plane
 
 on:
-  push:
-    branches:
-      - master
-    paths:
-      - apps/restream/**
-      - internal/restream/**
-      - infra/hetzner/**
-      - .github/workflows/restream.yml
-      - go.mod
-      - go.sum
+  release:
+    types:
+      - published
   workflow_dispatch:
     inputs:
       revision:
@@ -28,21 +21,79 @@ jobs:
     permissions:
       contents: read
     outputs:
+      deploy: ${{ steps.revision.outputs.deploy }}
       sha: ${{ steps.revision.outputs.sha }}
     steps:
       - name: Check out revision
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.revision || github.sha }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.revision || github.event.release.tag_name }}
           fetch-depth: 0
 
-      - name: Record commit SHA
+      - name: Validate revision and detect changes
         id: revision
-        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_PRERELEASE: ${{ github.event.release.prerelease || false }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || '' }}
+        run: |
+          set -euo pipefail
+
+          sha="$(git rev-parse HEAD)"
+          deploy=true
+          if [[ "${{ github.event_name }}" == release ]]; then
+            if [[ "$RELEASE_PRERELEASE" == true ]]; then
+              echo "Prereleases cannot deploy to production." >&2
+              exit 1
+            fi
+            if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "Production release tag must match vX.Y.Z, got: $RELEASE_TAG" >&2
+              exit 1
+            fi
+
+            git fetch --no-tags origin \
+              +refs/heads/master:refs/remotes/origin/master
+            if ! git merge-base --is-ancestor "$sha" origin/master; then
+              echo "Release tag $RELEASE_TAG does not point to a commit on master." >&2
+              exit 1
+            fi
+
+            releases="$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+              --jq 'sort_by(.published_at) | reverse | .[] | select(.draft == false and .prerelease == false) | [.tag_name, .published_at] | @tsv')"
+            previous_tag=""
+            while IFS=$'\t' read -r tag _published_at; do
+              if [[ "$tag" != "$RELEASE_TAG" && "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+                previous_tag="$tag"
+                break
+              fi
+            done <<< "$releases"
+
+            if [[ -n "$previous_tag" ]] && previous_sha="$(git rev-parse "$previous_tag^{commit}" 2>/dev/null)"; then
+              if git merge-base --is-ancestor "$previous_sha" "$sha"; then
+                if git diff --quiet "$previous_sha" "$sha" -- \
+                  apps/restream \
+                  internal/restream \
+                  infra/hetzner \
+                  .github/workflows/restream.yml \
+                  go.mod \
+                  go.sum; then
+                  deploy=false
+                  echo "No restream changes since $previous_tag; skipping deployment."
+                fi
+              else
+                echo "Previous release $previous_tag is not an ancestor; deploying conservatively."
+              fi
+            else
+              echo "No previous published stable release found; deploying restream."
+            fi
+          fi
+
+          echo "deploy=$deploy" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
 
   quality:
     name: CI
-    if: github.event_name == 'workflow_dispatch'
+    if: needs.resolve.outputs.deploy == 'true'
     needs: resolve
     permissions:
       contents: read
@@ -55,7 +106,8 @@ jobs:
     if: >-
       always() &&
       needs.resolve.result == 'success' &&
-      (github.event_name == 'push' || needs.quality.result == 'success')
+      needs.resolve.outputs.deploy == 'true' &&
+      needs.quality.result == 'success'
     needs:
       - resolve
       - quality
