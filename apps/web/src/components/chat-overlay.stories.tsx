@@ -9,7 +9,7 @@ function OverlayPreview({
   messageSurface?: "card" | "transparent";
 }) {
   return (
-    <div className={`flex h-full min-h-0 overflow-hidden ${className}`}>
+    <div className={`flex min-h-0 overflow-hidden ${className}`}>
       <ChatFeed
         emptyLabel="Ожидаем сообщения…"
         messages={chatFeedMessages}
@@ -32,7 +32,7 @@ LightBackground.meta = { width: "xsmall" };
 export function TransparentBackground() {
   return (
     <div
-      className="h-full min-h-0 overflow-hidden"
+      className="min-h-0 overflow-hidden [&>*]:h-full"
       style={{
         backgroundColor: "var(--input)",
         backgroundImage:

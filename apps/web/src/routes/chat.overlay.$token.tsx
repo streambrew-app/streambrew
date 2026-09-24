@@ -6,7 +6,7 @@ import { cn } from "@web/lib/utils";
 
 export const Route = createFileRoute("/chat/overlay/$token")({
   component: () => (
-    <div className="fixed -inset-px">
+    <div className="fixed -inset-px [&>*]:h-full">
       <ChatOverlay />
     </div>
   ),
@@ -30,7 +30,7 @@ function ChatOverlay() {
   return (
     <main
       className={cn(
-        "flex h-full min-w-0 overflow-hidden font-sans text-white",
+        "flex min-w-0 overflow-hidden font-sans text-white",
         background === "black"
           ? "bg-black"
           : background === "white"

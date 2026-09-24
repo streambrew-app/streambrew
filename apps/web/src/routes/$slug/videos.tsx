@@ -398,6 +398,8 @@ function SharedVideoQueue() {
   const { t } = useI18n(translations);
 
   return (
+    // The public queue route owns its viewport-sized scroll boundary.
+    // oxlint-disable-next-line tw-no-self-positioning/no-dimensions
     <main className="relative h-dvh overflow-hidden bg-background p-0 text-foreground sm:p-3">
       <div className="cosmic-starlight pointer-events-none absolute inset-0" />
       <section className="cosmic-panel relative mx-auto flex h-full min-h-0 w-full max-w-4xl flex-col overflow-hidden [&_[data-slot=shared-queue-videos]]:flex-1">

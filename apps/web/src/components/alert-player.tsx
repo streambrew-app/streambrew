@@ -71,10 +71,7 @@ export function AlertPlayer({
   return (
     <div
       aria-live="polite"
-      className={cn(
-        "relative flex h-full items-end justify-center overflow-hidden p-[4%]",
-        className,
-      )}
+      className={cn("relative flex items-end justify-center overflow-hidden p-[4%]", className)}
     >
       {playback && (
         <AlertCard

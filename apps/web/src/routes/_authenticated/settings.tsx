@@ -25,7 +25,7 @@ function Settings() {
   const { t } = useI18n(translations);
 
   return (
-    <section className="cosmic-panel flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
+    <section className="cosmic-panel flex min-h-0 min-w-0 flex-col overflow-hidden">
       <CosmicPageHeader title={t("settings")} variant="beans" />
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain p-4 sm:p-5">
         <PublicQueueSettingsEditor />

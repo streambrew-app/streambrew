@@ -289,6 +289,8 @@ function SelectedQueueLink({
   const { t } = useI18n(translations);
 
   return (
+    // The selected queue tab matches the fixed height of its sibling controls.
+    // oxlint-disable-next-line tw-no-self-positioning/no-dimensions
     <div className="grid h-7 min-w-0 max-w-full grid-cols-[minmax(0,1fr)_auto] items-center overflow-hidden rounded-[min(var(--radius-md),12px)]">
       <Link
         to="/videos"
