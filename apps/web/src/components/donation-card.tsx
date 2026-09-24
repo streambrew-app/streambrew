@@ -66,7 +66,7 @@ export default function DonationCard({
   return (
     <div
       className={clsx(
-        "relative grid min-w-0 grid-cols-[36px_minmax(0,1fr)_auto] items-start gap-3 overflow-hidden px-4 py-4 sm:px-5",
+        "grid min-w-0 grid-cols-[36px_minmax(0,1fr)_auto] items-start gap-3 overflow-hidden px-4 py-4 sm:px-5",
         props.className,
       )}
     >

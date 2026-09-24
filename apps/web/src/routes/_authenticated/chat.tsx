@@ -241,12 +241,12 @@ const chatTranslations = createTranslations({
   },
 });
 
-function ProviderMark({ provider }: { provider: ChatProvider }) {
+function ProviderMark({ className, provider }: { className?: string; provider: ChatProvider }) {
   const meta = providerMeta[provider];
   return (
     <span
       aria-hidden="true"
-      className="grid size-8 shrink-0 place-items-center rounded-lg bg-background"
+      className={cn("grid shrink-0 place-items-center rounded-lg bg-background", className)}
     >
       <img alt="" className="size-5" src={meta.logo} />
     </span>
@@ -495,6 +495,7 @@ function ChatComposer({ page }: { page: ChatPageModel }) {
     >
       <div className="flex gap-2">
         <Input
+          className="w-full"
           maxLength={MAX_CHAT_MESSAGE_LENGTH}
           onChange={(event) => page.state.setMessage(event.target.value)}
           placeholder={t("placeholder")}
@@ -540,6 +541,7 @@ function ChatFeedPanel({ page }: { page: ChatPageModel }) {
       />
       <ChatFeed
         capabilitiesForSource={page.capabilitiesForSource}
+        className="relative"
         emptyLabel={page.stream.connectionError?.detail ?? t("empty")}
         messages={page.stream.messages}
         onModerate={(command) => page.mutations.moderate.mutate(command)}
@@ -550,11 +552,13 @@ function ChatFeedPanel({ page }: { page: ChatPageModel }) {
 }
 
 function ConnectionIdentity({
+  className,
   connection,
   locale,
   source,
   sourceState,
 }: {
+  className?: string;
   connection: ChatProviderConnection;
   locale: "ru" | "en";
   source?: ChatSource;
@@ -562,13 +566,13 @@ function ConnectionIdentity({
 }) {
   const provider = providerMeta[connection.provider];
   return (
-    <div className="flex min-w-0 flex-1 items-center gap-2">
+    <div className={cn("flex min-w-0 items-center gap-2", className)}>
       <Tooltip>
         <TooltipTrigger
           aria-label={provider.label}
           className="shrink-0 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         >
-          <ProviderMark provider={connection.provider} />
+          <ProviderMark className="size-8" provider={connection.provider} />
         </TooltipTrigger>
         <TooltipContent>{provider.label}</TooltipContent>
       </Tooltip>
@@ -709,12 +713,13 @@ function ConnectionCard({
   return (
     <article
       className={cn(
-        "relative flex shrink-0 flex-col gap-2 overflow-hidden rounded-xl border border-border p-3 transition-colors",
+        "flex shrink-0 flex-col gap-2 overflow-hidden rounded-xl border border-border p-3 transition-colors",
         source?.enabled === false ? "bg-muted/55" : "bg-muted/30",
       )}
     >
       <div className="flex items-center justify-between gap-2">
         <ConnectionIdentity
+          className="flex-1"
           connection={connection}
           locale={locale}
           source={source}

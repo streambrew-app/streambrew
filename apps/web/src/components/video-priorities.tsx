@@ -35,6 +35,7 @@ const translations = createTranslations({
 });
 
 type Props = {
+  className?: string;
   videoQueueId?: number;
   selectedVideoPriorityId: number | "unassigned" | null;
   remainingSecondsByPriorityId: Record<number, number>;
@@ -42,6 +43,7 @@ type Props = {
 };
 
 export default function VideoPriorities({
+  className,
   videoQueueId,
   selectedVideoPriorityId,
   remainingSecondsByPriorityId,
@@ -55,7 +57,7 @@ export default function VideoPriorities({
   );
 
   return (
-    <section className="mt-3 flex flex-col gap-2 border-t border-border pt-3">
+    <section className={cn("flex flex-col gap-2 border-t border-border pt-3", className)}>
       <div className="flex flex-col gap-0.5 px-1">
         <h2 className="text-xs font-semibold text-card-foreground">{t("queues")}</h2>
         <p className="text-[10px] text-muted-foreground">{t("minimumDonation")}</p>
@@ -111,6 +113,7 @@ export default function VideoPriorities({
       ) : prioritiesQ.data?.length ? (
         prioritiesQ.data.map((priority) => (
           <VideoPriorityEditor
+            className="relative"
             videoQueueId={videoQueueId}
             isSelected={priority.videoPriorityId === selectedVideoPriorityId}
             key={priority.videoPriorityId}

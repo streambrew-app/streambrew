@@ -107,11 +107,7 @@ export function DonationSourceIcon({
       className={cn(
         "grid shrink-0 place-items-center overflow-hidden",
         details.iconClassName,
-        size === "xs"
-          ? "size-3.5 rounded-[3px]"
-          : size === "sm"
-            ? "size-9 rounded-lg"
-            : "size-12 rounded-xl shadow-sm",
+        size === "xs" ? "rounded-[3px]" : size === "sm" ? "rounded-lg" : "rounded-xl shadow-sm",
         className,
       )}
     >
@@ -134,7 +130,11 @@ export function DonationSourceMark({ className, size = "sm", source }: MarkProps
       )}
       source={source}
     >
-      <DonationSourceIcon size={size} source={source} />
+      <DonationSourceIcon
+        className={size === "lg" ? "size-12" : "size-9"}
+        size={size}
+        source={source}
+      />
     </DonationSourceLink>
   );
 }
@@ -196,7 +196,7 @@ export function DonationSourceBadge({
       )}
       source={source}
     >
-      <DonationSourceIcon size="xs" source={source} />
+      <DonationSourceIcon className="size-3.5" size="xs" source={source} />
       {details.name}
       <Icons.externalLink aria-hidden="true" size={10} />
     </DonationSourceLink>

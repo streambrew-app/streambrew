@@ -162,7 +162,7 @@ function DonationsIndex() {
           />
           <span className="sr-only">{t("searchDonations")}</span>
           <Input
-            className="h-9 bg-background/70 pr-3 pl-9 text-xs md:text-xs"
+            className="w-full h-9 bg-background/70 pr-3 pl-9 text-xs md:text-xs"
             onChange={(event) => setQuery(event.target.value)}
             placeholder={t("searchBySupporter")}
             value={query}
@@ -172,7 +172,7 @@ function DonationsIndex() {
           <span className="sr-only">{t("donationSource")}</span>
           {search.source && (
             <DonationSourceIcon
-              className="pointer-events-none absolute top-1/2 left-2.5 z-10 -translate-y-1/2"
+              className="pointer-events-none absolute top-1/2 left-2.5 z-10 size-3.5 -translate-y-1/2"
               size="xs"
               source={search.source}
             />
@@ -247,7 +247,7 @@ function DonationsIndex() {
         </div>
       )}
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      <div className="min-h-0 overflow-y-auto overscroll-contain" data-slot="donation-list">
         {donationsQ.isLoading ? (
           <DonationListSkeleton aria-busy="true" aria-label={t("loadingDonations")} />
         ) : donationsQ.isError ? (

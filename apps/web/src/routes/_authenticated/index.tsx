@@ -229,7 +229,11 @@ function Overview() {
             </div>
           )}
           {donationOverviewQ.isLoading ? (
-            <DashboardSkeleton aria-busy="true" aria-label={t("loadingDonations")} />
+            <DashboardSkeleton
+              aria-busy="true"
+              aria-label={t("loadingDonations")}
+              className="mt-7"
+            />
           ) : donationOverviewQ.isError ? (
             <QueryErrorState
               className="mt-7 rounded-2xl border border-border bg-card sm:mt-9"

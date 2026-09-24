@@ -19,6 +19,7 @@ import {
   TooltipTrigger,
 } from "@web/components/ui/tooltip";
 import { useUserInfoSafe } from "@web/hooks/api";
+import { cn } from "@web/lib/utils";
 import { parseCookie } from "cookie-es";
 import { Suspense, useEffect, useRef, useState } from "react";
 
@@ -210,7 +211,11 @@ export function AuthenticatedRoot() {
   const { viewer } = Route.useRouteContext();
 
   if (!viewer) {
-    return <SignIn />;
+    return (
+      <div>
+        <SignIn className="relative" />
+      </div>
+    );
   }
 
   return (
@@ -261,13 +266,17 @@ function AuthenticatedApplicationContent() {
   }, []);
 
   if (!viewer || !userInfo) {
-    return <SignIn />;
+    return (
+      <div>
+        <SignIn className="relative" />
+      </div>
+    );
   }
 
   const user = viewer.user;
 
   return (
-    <main className="flex h-dvh w-full min-w-0 bg-background font-sans text-foreground transition-colors duration-300">
+    <main className="flex h-dvh min-w-0 bg-background font-sans text-foreground transition-colors duration-300">
       <Sidebar>
         <aside className="coffee-sidebar relative flex size-full flex-col overflow-hidden border-r border-sidebar-border bg-sidebar px-4 pt-7 pb-5 transition-colors duration-300">
           <div className="relative z-10 flex items-center gap-3">
@@ -435,7 +444,12 @@ function AuthenticatedApplicationContent() {
               </div>
             </div>
             <div className="flex items-center gap-2.5 border-t border-sidebar-border px-2 pt-5">
-              <AccountAvatar key={user.image} image={user.image} name={user.name} />
+              <AccountAvatar
+                className="size-8"
+                key={user.image}
+                image={user.image}
+                name={user.name}
+              />
               <div className="min-w-0 grow">
                 <strong className="block truncate text-xs text-sidebar-foreground">
                   {user.name}
@@ -516,13 +530,21 @@ function AuthenticatedApplicationContent() {
   );
 }
 
-function AccountAvatar({ image, name }: { image: string | null; name: string }) {
+function AccountAvatar({
+  className,
+  image,
+  name,
+}: {
+  className?: string;
+  image: string | null;
+  name: string;
+}) {
   const [failed, setFailed] = useState(false);
 
   return image && !failed ? (
     <img
       alt=""
-      className="size-8 shrink-0 rounded-lg object-cover"
+      className={cn("shrink-0 rounded-lg object-cover", className)}
       src={image}
       ref={(element) => {
         if (element?.complete && element.naturalWidth === 0) setFailed(true);
@@ -532,7 +554,10 @@ function AccountAvatar({ image, name }: { image: string | null; name: string }) 
   ) : (
     <span
       aria-hidden="true"
-      className="grid size-8 shrink-0 place-items-center rounded-lg bg-sidebar-accent text-[11px] font-semibold text-sidebar-primary"
+      className={cn(
+        "grid shrink-0 place-items-center rounded-lg bg-sidebar-accent text-[11px] font-semibold text-sidebar-primary",
+        className,
+      )}
     >
       {name
         .split(/\s+/)

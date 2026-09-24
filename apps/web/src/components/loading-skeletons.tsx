@@ -113,7 +113,7 @@ export function VideoPrioritiesSkeleton({ className, ...props }: Props) {
 
 export function DashboardSkeleton({ className, ...props }: Props) {
   return (
-    <div className={cn("mt-7 flex flex-col gap-4", className)} {...props}>
+    <div className={cn("flex flex-col gap-4", className)} {...props}>
       <section className="grid gap-4 md:grid-cols-3">
         {[0, 1, 2].map((index) => (
           <article

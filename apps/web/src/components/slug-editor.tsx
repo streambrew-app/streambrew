@@ -126,12 +126,12 @@ function SlugActionButton({ editor }: { editor: SlugEditorModel }) {
   );
 }
 
-function SlugField({ editor }: { editor: SlugEditorModel }) {
+function SlugField({ className, editor }: { className?: string; editor: SlugEditorModel }) {
   const { formState, register, setCopied, t } = editor;
   const hasError = Boolean(formState.errors.slug);
 
   return (
-    <Field className="min-w-0 flex-1 sm:w-64 sm:flex-none" data-invalid={hasError}>
+    <Field className={cn("min-w-0", className)} data-invalid={hasError}>
       <FieldLabel className="sr-only" htmlFor="public-video-queue-slug">
         {t("publicVideoQueueSlug")}
       </FieldLabel>
@@ -235,7 +235,7 @@ export function SlugEditor({ className, showAllVideos = false }: Props) {
     <div className={cn("border-b border-border px-3 py-2 sm:px-5", className)}>
       <form className="flex flex-col gap-1.5" onSubmit={editor.handleSubmit(editor.saveSlug)}>
         <div className="flex min-w-0 items-start gap-1">
-          <SlugField editor={editor} />
+          <SlugField className="flex-1 sm:w-64 sm:flex-none" editor={editor} />
           <div className="flex shrink-0 items-center gap-1">
             <SettingsLink editor={editor} />
             {showAllVideos && <AllVideosLink editor={editor} />}

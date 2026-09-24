@@ -13,6 +13,7 @@ import VideoCard from "@web/components/video-card";
 import VideoPriorities from "@web/components/video-priorities";
 import { VideoQueueControls, VideoQueueSelect } from "@web/components/video-queue-controls";
 import { preloadRouteQuery } from "@web/lib/trpc";
+import { cn } from "@web/lib/utils";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 
@@ -339,10 +340,15 @@ function VideoQueueResults({ page }: { page: VideoQueuePage }) {
   );
 }
 
-function VideoQueueContent({ page }: { page: VideoQueuePage }) {
+function VideoQueueContent({ className, page }: { className?: string; page: VideoQueuePage }) {
   const { t } = useI18n(translations);
   return (
-    <div className="order-2 min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain lg:order-1">
+    <div
+      className={cn(
+        "order-2 min-h-0 min-w-0 overflow-y-auto overscroll-contain lg:order-1",
+        className,
+      )}
+    >
       {page.search.videoId && (
         <div className="flex flex-wrap items-center gap-2 border-b border-border bg-secondary/40 px-4 py-2">
           <p className="text-sm">{t("selectedVideo")}</p>
@@ -415,10 +421,15 @@ function VideoStatusFilters({ page }: { page: VideoQueuePage }) {
   );
 }
 
-function VideoQueueSidebar({ page }: { page: VideoQueuePage }) {
+function VideoQueueSidebar({ className, page }: { className?: string; page: VideoQueuePage }) {
   const { t } = useI18n(translations);
   return (
-    <aside className="relative order-1 flex shrink-0 flex-col overflow-hidden border-b border-border bg-muted/40 p-3 lg:order-2 lg:min-h-0 lg:w-72 lg:border-b-0 lg:border-l">
+    <aside
+      className={cn(
+        "order-1 flex shrink-0 flex-col overflow-hidden border-b border-border bg-muted/40 p-3 lg:order-2 lg:min-h-0 lg:border-b-0 lg:border-l",
+        className,
+      )}
+    >
       <VideoStatusFilters page={page} />
       <div className="shrink-0 pt-2 lg:hidden">
         <Button
@@ -437,6 +448,7 @@ function VideoQueueSidebar({ page }: { page: VideoQueuePage }) {
         id="queue-priorities"
       >
         <VideoPriorities
+          className="mt-3"
           remainingSecondsByPriorityId={page.videosQ.data?.remainingSecondsByPriorityId ?? {}}
           selectedVideoPriorityId={page.selectedVideoPriorityId}
           videoCountByPriorityId={page.videosQ.data?.priorityCounts ?? {}}
@@ -489,8 +501,8 @@ function VideoQueue() {
       {page.move.error && <FieldError className="px-4 py-2">{t("videoMoveFailed")}</FieldError>}
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
-          <VideoQueueContent page={page} />
-          <VideoQueueSidebar page={page} />
+          <VideoQueueContent className="flex-1" page={page} />
+          <VideoQueueSidebar className="lg:w-72" page={page} />
         </div>
       </div>
       <VideoQueuePagination page={page} />

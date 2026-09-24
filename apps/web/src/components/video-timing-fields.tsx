@@ -148,6 +148,7 @@ export function VideoTimingFields({
       <Field data-invalid={Boolean(formState.errors.startTime)}>
         <FieldLabel htmlFor={startId}>{t("videoStart")}</FieldLabel>
         <Input
+          className="w-full"
           aria-describedby={`${startParsedId} ${helpId}${formState.errors.startTime ? ` ${startErrorId}` : ""}`}
           aria-invalid={Boolean(formState.errors.startTime)}
           autoComplete="off"
@@ -170,6 +171,7 @@ export function VideoTimingFields({
       <Field data-invalid={Boolean(formState.errors.endTime)}>
         <FieldLabel htmlFor={endId}>{t("videoEnd")}</FieldLabel>
         <Input
+          className="w-full"
           aria-describedby={`${endParsedId} ${helpId}${formState.errors.endTime ? ` ${endErrorId}` : ""}`}
           aria-invalid={Boolean(formState.errors.endTime)}
           autoComplete="off"

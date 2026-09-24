@@ -169,7 +169,11 @@ function SharedVideoGroups({
 }
 
 export const Route = createFileRoute("/$slug/videos")({
-  component: SharedVideoQueue,
+  component: () => (
+    <div className="relative">
+      <SharedVideoQueue />
+    </div>
+  ),
   head: ({ match, params }) => ({
     meta: [
       {
@@ -307,7 +311,7 @@ function SharedQueueVideos({ page }: { page: SharedVideoQueuePage }) {
   if (!data) return null;
   const isQueue = data.status === "queue";
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+    <div data-slot="shared-queue-videos" className="min-h-0 overflow-y-auto overscroll-contain">
       {isQueue ? (
         <SharedVideoGroups
           isLastPage={data.totalPages === 0 || data.page === data.totalPages}
@@ -398,9 +402,9 @@ function SharedVideoQueue() {
   const { t } = useI18n(translations);
 
   return (
-    <main className="relative h-dvh overflow-hidden bg-background p-0 text-foreground sm:p-3">
+    <main className="h-dvh overflow-hidden bg-background p-0 text-foreground sm:p-3">
       <div className="cosmic-starlight pointer-events-none absolute inset-0" />
-      <section className="cosmic-panel relative mx-auto flex h-full min-h-0 w-full max-w-4xl flex-col overflow-hidden">
+      <section className="cosmic-panel relative mx-auto flex h-full min-h-0 w-full max-w-4xl flex-col overflow-hidden [&_[data-slot=shared-queue-videos]]:flex-1">
         <CosmicPageHeader title={t("videoQueueBy", { slug: `@${page.slug}` })} />
         <SharedQueueState page={page} />
       </section>
