@@ -83,7 +83,9 @@ The [socket session](../../internal/donationalerts/socket_session.go) handles
 heartbeats, expiring connection and subscription tokens, and recovery positions.
 Recovery state is held in memory across reconnects within a listener run. Failed
 persistence does not advance the accepted position. Incomplete socket recovery
-is logged; REST reconciliation provides an additional recovery path.
+is logged; REST reconciliation provides an additional recovery path. Duplicate
+empty command acknowledgements are debug-level diagnostics; unexpected reply IDs
+and replies with content remain warnings.
 
 Transport failures reconnect with bounded backoff. An unauthorized provider
 response returns control to the shared application, which refreshes OAuth tokens

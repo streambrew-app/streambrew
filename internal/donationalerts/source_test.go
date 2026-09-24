@@ -346,6 +346,74 @@ func TestSourceSendsProtocolHeartbeatAndAnswersNativePing(t *testing.T) {
 	}
 }
 
+func TestSourceDoesNotWarnForDuplicateEmptyReply(t *testing.T) {
+	var logs bytes.Buffer
+	previousLogger := slog.Default()
+	slog.SetDefault(slog.New(slog.NewJSONHandler(&logs, nil)))
+	defer slog.SetDefault(previousLogger)
+	server := newDonationAlertsServer(t, func(writer http.ResponseWriter, request *http.Request) {
+		switch request.URL.Path {
+		case "/api/v1/user/oauth":
+			_, _ = writer.Write([]byte(`{"data":{"id":42,"socket_connection_token":"socket-token"}}`))
+		case "/api/v1/centrifuge/subscribe":
+			_, _ = writer.Write([]byte(`{"channels":[{"channel":"$alerts:donation_42","token":"channel-token"}]}`))
+		default:
+			http.NotFound(writer, request)
+		}
+	}, func(ctx context.Context, connection *websocket.Conn, _ int32) {
+		for {
+			command, err := readSocketCommand(ctx, connection)
+			if err != nil {
+				return
+			}
+			switch command.Method {
+			case methodConnect:
+				writeSocketReply(t, ctx, connection, command.ID, map[string]any{"client": testSocketClientID, "version": "2.2.1"})
+			case methodSubscribe:
+				writeSocketReply(t, ctx, connection, command.ID, map[string]any{"recoverable": true, "epoch": "epoch"})
+			case methodPing:
+				writeSocketBatch(t, ctx, connection,
+					map[string]any{"id": command.ID},
+					map[string]any{"id": command.ID},
+					map[string]any{"id": command.ID, "error": map[string]any{"code": 100, "message": "unexpected"}},
+					map[string]any{"id": command.ID + 1000},
+					map[string]any{"result": map[string]any{"channel": testChannel, "data": publicationValue(t, 1, 1, 1)}},
+				)
+				return
+			}
+		}
+	})
+	defer server.Close()
+
+	client := newUnthrottledClient(server.Client())
+	client.BaseURL = server.URL
+	source := NewSource(client)
+	source.webSocketURL = websocketURL(server.URL)
+	source.pingInterval = 20 * time.Millisecond
+	source.commandTimeout = 200 * time.Millisecond
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+	var received Donation
+	if err := source.Run(ctx, "access-token", func(donation Donation) error {
+		received = donation
+		cancel()
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if received.SourceDonationID != "1" {
+		t.Fatalf("unexpected donation: %#v", received)
+	}
+	if count := strings.Count(logs.String(), "DonationAlerts websocket message ignored"); count != 2 {
+		t.Fatalf("ignored message warnings = %d; logs=%s", count, logs.String())
+	}
+	for _, detail := range []string{"unexpected", `"id":1003`} {
+		if !strings.Contains(logs.String(), detail) {
+			t.Fatalf("warning is missing %q: %s", detail, logs.String())
+		}
+	}
+}
+
 func TestSourceReconnectsWhenHeartbeatIsNotAcknowledged(t *testing.T) {
 	var socketConnections atomic.Int32
 	var logs bytes.Buffer
