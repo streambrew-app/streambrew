@@ -211,11 +211,7 @@ export function AuthenticatedRoot() {
   const { viewer } = Route.useRouteContext();
 
   if (!viewer) {
-    return (
-      <div>
-        <SignIn className="relative" />
-      </div>
-    );
+    return <SignIn />;
   }
 
   return (
@@ -266,11 +262,7 @@ function AuthenticatedApplicationContent() {
   }, []);
 
   if (!viewer || !userInfo) {
-    return (
-      <div>
-        <SignIn className="relative" />
-      </div>
-    );
+    return <SignIn />;
   }
 
   const user = viewer.user;

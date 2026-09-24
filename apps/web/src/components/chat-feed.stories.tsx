@@ -10,7 +10,6 @@ export function EditorFeed() {
     <div className="flex h-full min-h-0 bg-background p-4 text-foreground">
       <section className="cosmic-panel flex h-full min-h-0 w-full max-w-3xl flex-col overflow-hidden">
         <ChatFeed
-          className="relative"
           capabilitiesForSource={() => ["delete_message", "timeout_user", "ban_user"]}
           emptyLabel="Сообщения появятся здесь, когда подключённый канал выйдет в эфир."
           messages={chatFeedMessages}
@@ -27,7 +26,6 @@ export function EmptyEditorFeed() {
     <div className="flex h-full min-h-0 bg-background p-4 text-foreground">
       <section className="cosmic-panel flex h-full min-h-0 w-full max-w-3xl flex-col overflow-hidden">
         <ChatFeed
-          className="relative"
           emptyLabel="Сообщения появятся здесь, когда подключённый канал выйдет в эфир."
           messages={[]}
         />

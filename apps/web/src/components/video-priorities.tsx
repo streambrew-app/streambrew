@@ -113,7 +113,6 @@ export default function VideoPriorities({
       ) : prioritiesQ.data?.length ? (
         prioritiesQ.data.map((priority) => (
           <VideoPriorityEditor
-            className="relative"
             videoQueueId={videoQueueId}
             isSelected={priority.videoPriorityId === selectedVideoPriorityId}
             key={priority.videoPriorityId}

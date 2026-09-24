@@ -75,7 +75,6 @@ type VideoPriorityFormValues = {
 };
 
 type Props = {
-  className?: string;
   videoQueueId?: number;
   priority: VideoPriority;
   isSelected: boolean;
@@ -135,23 +134,14 @@ function useVideoPriorityEditor(priority: VideoPriority) {
 
 type VideoPriorityEditorModel = ReturnType<typeof useVideoPriorityEditor>;
 
-function PrioritySummary({
-  className,
-  editor,
-  props,
-}: {
-  className?: string;
-  editor: VideoPriorityEditorModel;
-  props: Props;
-}) {
+function PrioritySummary({ editor, props }: { editor: VideoPriorityEditorModel; props: Props }) {
   const { isSelected, priority, remainingSeconds, videoCount, videoQueueId } = props;
   const { queueCurrency, startEditing, t } = editor;
 
   return (
     <div
       className={cn(
-        "flex items-center gap-2 rounded-lg border px-2 py-1.5",
-        className,
+        "relative flex items-center gap-2 rounded-lg border px-2 py-1.5",
         isSelected
           ? "border-ring/35 bg-secondary hover:bg-accent"
           : "border-border bg-card hover:bg-muted",
@@ -307,6 +297,6 @@ export default function VideoPriorityEditor(props: Props) {
   return editor.isEditing ? (
     <PriorityForm editor={editor} priority={props.priority} />
   ) : (
-    <PrioritySummary className={props.className} editor={editor} props={props} />
+    <PrioritySummary editor={editor} props={props} />
   );
 }

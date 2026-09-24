@@ -142,6 +142,8 @@ Keep flex children `min-w-0` and allow long names, messages, and URLs to wrap. S
 padding, increasing to 28 px at `sm`, and reserve room for faint right-side art.
 Reusable components receive external sizing and positioning of their root element
 through `className` instead of hardcoding margins, width, or grow behavior internally.
+Their roots may use `relative` to anchor their own absolutely positioned children;
+the parent still controls offsets of the root and its placement outside normal flow.
 Keep long content shrinkable and wrapping; illustrations need safe space around
 copy and interactive controls at every breakpoint.
 

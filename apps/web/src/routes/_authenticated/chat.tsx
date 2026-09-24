@@ -541,7 +541,6 @@ function ChatFeedPanel({ page }: { page: ChatPageModel }) {
       />
       <ChatFeed
         capabilitiesForSource={page.capabilitiesForSource}
-        className="relative"
         emptyLabel={page.stream.connectionError?.detail ?? t("empty")}
         messages={page.stream.messages}
         onModerate={(command) => page.mutations.moderate.mutate(command)}
@@ -713,7 +712,7 @@ function ConnectionCard({
   return (
     <article
       className={cn(
-        "flex shrink-0 flex-col gap-2 overflow-hidden rounded-xl border border-border p-3 transition-colors",
+        "relative flex shrink-0 flex-col gap-2 overflow-hidden rounded-xl border border-border p-3 transition-colors",
         source?.enabled === false ? "bg-muted/55" : "bg-muted/30",
       )}
     >

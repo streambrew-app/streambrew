@@ -200,7 +200,7 @@ function VideoThumbnail({
       : `${formatVideoTime(video.startSeconds)}–${formatVideoTime(video.endSeconds)}`;
 
   return (
-    <div className={clsx("aspect-video overflow-hidden rounded-lg bg-muted", className)}>
+    <div className={clsx("relative aspect-video overflow-hidden rounded-lg bg-muted", className)}>
       <a
         aria-label={
           video.source === "donation"
@@ -287,7 +287,7 @@ function VideoPreview({
   const { locale, t } = useI18n(translations);
   return (
     <div className="flex min-w-0 flex-col gap-2">
-      <VideoThumbnail author={author} className="relative w-full" video={video} />
+      <VideoThumbnail author={author} className="w-full" video={video} />
       {onStatusChange && (
         <VideoStatusControls
           isUpdating={isUpdating ?? false}
@@ -662,7 +662,7 @@ export default function VideoCard({
     video.source === "donation" ? (video.donation.author ?? t("anonymous")) : t("video");
 
   return (
-    <article className="@container min-w-0 px-4 py-4 sm:px-5">
+    <article className="@container relative min-w-0 px-4 py-4 sm:px-5">
       <div className="grid min-w-0 items-start gap-5 @3xl:grid-cols-[clamp(19rem,33%,25rem)_minmax(0,1fr)]">
         <VideoPreview
           author={author}

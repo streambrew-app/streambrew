@@ -13,7 +13,7 @@ type MetricProps = {
 
 function Metric({ title, value, note, subnote, icon: MetricIcon, iconClass }: MetricProps) {
   return (
-    <article className={`${panel} flex min-h-[148px] flex-col gap-4 overflow-hidden p-5`}>
+    <article className={`${panel} relative flex min-h-[148px] flex-col gap-4 overflow-hidden p-5`}>
       <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
         <span>{title}</span>
         <span className={`grid size-8 place-items-center rounded-full ${iconClass}`}>

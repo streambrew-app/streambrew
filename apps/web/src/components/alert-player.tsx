@@ -71,11 +71,14 @@ export function AlertPlayer({
   return (
     <div
       aria-live="polite"
-      className={cn("flex h-full items-end justify-center overflow-hidden p-[4%]", className)}
+      className={cn(
+        "relative flex h-full items-end justify-center overflow-hidden p-[4%]",
+        className,
+      )}
     >
       {playback && (
         <AlertCard
-          className="relative w-[min(92%,42rem)]"
+          className="w-[min(92%,42rem)]"
           imageSrc={imageSrc}
           playback={playback}
           stage={visibleStage}
