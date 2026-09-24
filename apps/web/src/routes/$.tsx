@@ -39,7 +39,7 @@ function NotFoundPage() {
   const { t } = useI18n(translations);
 
   return (
-    <main className="grid min-h-dvh place-items-center overflow-hidden bg-background px-5 py-8 text-foreground sm:px-8">
+    <main className="relative grid min-h-dvh place-items-center overflow-hidden bg-background px-5 py-8 text-foreground sm:px-8">
       <section className="relative flex w-full max-w-3xl flex-col items-start gap-9 overflow-hidden border-y border-border py-10 sm:gap-12 sm:py-14">
         <Link
           className="relative z-10 flex w-fit items-center gap-2 font-heading text-xl font-medium hover:text-primary focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:text-2xl"

@@ -426,7 +426,7 @@ function VideoQueueSidebar({ className, page }: { className?: string; page: Vide
   return (
     <aside
       className={cn(
-        "order-1 flex shrink-0 flex-col overflow-hidden border-b border-border bg-muted/40 p-3 lg:order-2 lg:min-h-0 lg:border-b-0 lg:border-l",
+        "relative order-1 flex shrink-0 flex-col overflow-hidden border-b border-border bg-muted/40 p-3 lg:order-2 lg:min-h-0 lg:border-b-0 lg:border-l",
         className,
       )}
     >

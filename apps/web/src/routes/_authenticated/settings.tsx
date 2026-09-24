@@ -29,7 +29,7 @@ function Settings() {
       <CosmicPageHeader title={t("settings")} variant="beans" />
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain p-4 sm:p-5">
         <PublicQueueSettingsEditor />
-        <QueueCurrencyEditor className="relative" />
+        <QueueCurrencyEditor />
       </div>
     </section>
   );

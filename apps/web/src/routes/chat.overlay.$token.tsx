@@ -39,7 +39,6 @@ function ChatOverlay() {
       )}
     >
       <ChatFeed
-        className="relative"
         emptyLabel="Waiting for chat…"
         messages={messages}
         overlay

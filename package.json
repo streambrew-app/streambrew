@@ -20,7 +20,7 @@
     "oxfmt": "^0.60.0",
     "oxlint-plugin-eslint": "1.85.0",
     "oxlint-tsgolint": "^7.0.2002",
-    "oxlint-tw-no-self-positioning": "0.1.2",
+    "oxlint-tw-no-self-positioning": "0.1.4",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"
   },

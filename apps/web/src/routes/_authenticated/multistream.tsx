@@ -217,25 +217,12 @@ function CopyButton({ label, onCopy }: { label: string; onCopy: () => void }) {
   );
 }
 
-function SignalRail({
-  className,
-  destinationCount,
-  status,
-}: {
-  className?: string;
-  destinationCount: number;
-  status?: string;
-}) {
+function SignalRail({ destinationCount, status }: { destinationCount: number; status?: string }) {
   const { t } = useI18n(translations);
   const isLive = status === "live";
   const isConnecting = status === "connecting";
   return (
-    <div
-      className={cn(
-        "overflow-hidden rounded-2xl bg-[#2d2229] px-4 py-4 text-[#fff8ed] shadow-[0_12px_32px_-24px_rgba(37,24,32,0.85)] sm:px-5",
-        className,
-      )}
-    >
+    <div className="relative overflow-hidden rounded-2xl bg-[#2d2229] px-4 py-4 text-[#fff8ed] shadow-[0_12px_32px_-24px_rgba(37,24,32,0.85)] sm:px-5">
       <div className="relative z-10 grid grid-cols-[auto_1fr_auto_1fr_auto] items-center gap-2 sm:gap-4">
         <div className="flex min-w-0 items-center gap-2">
           <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#fff8ed]/10 text-[#edbf88]">
@@ -932,11 +919,7 @@ function MultistreamPage() {
         <div className="flex flex-col gap-1 px-1">
           <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">{t("subtitle")}</p>
         </div>
-        <SignalRail
-          className="relative"
-          destinationCount={enabledCount}
-          status={config.session?.status}
-        />
+        <SignalRail destinationCount={enabledCount} status={config.session?.status} />
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_17rem]">
           <div className="flex min-w-0 flex-col gap-7">
             <IngestSetup ingest={config.ingest} isLive={isLive} />

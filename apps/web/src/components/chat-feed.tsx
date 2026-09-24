@@ -160,7 +160,6 @@ function Message({
 }
 
 export function ChatFeed({
-  className,
   messages,
   overlay = false,
   overlayMessageSurface = "card",
@@ -168,7 +167,6 @@ export function ChatFeed({
   capabilitiesForSource = () => [],
   onModerate,
 }: {
-  className?: string;
   messages: ChatMessage[];
   overlay?: boolean;
   overlayMessageSurface?: "card" | "transparent";
@@ -210,7 +208,7 @@ export function ChatFeed({
   }, [messages.length, nearBottom, overlay]);
 
   return (
-    <div className={cn("flex min-h-0 grow flex-col", className)}>
+    <div className="relative flex min-h-0 grow flex-col">
       <div
         aria-live={overlay ? "polite" : undefined}
         className={cn(

@@ -169,11 +169,7 @@ function SharedVideoGroups({
 }
 
 export const Route = createFileRoute("/$slug/videos")({
-  component: () => (
-    <div className="relative">
-      <SharedVideoQueue />
-    </div>
-  ),
+  component: SharedVideoQueue,
   head: ({ match, params }) => ({
     meta: [
       {
@@ -402,7 +398,7 @@ function SharedVideoQueue() {
   const { t } = useI18n(translations);
 
   return (
-    <main className="h-dvh overflow-hidden bg-background p-0 text-foreground sm:p-3">
+    <main className="relative h-dvh overflow-hidden bg-background p-0 text-foreground sm:p-3">
       <div className="cosmic-starlight pointer-events-none absolute inset-0" />
       <section className="cosmic-panel relative mx-auto flex h-full min-h-0 w-full max-w-4xl flex-col overflow-hidden [&_[data-slot=shared-queue-videos]]:flex-1">
         <CosmicPageHeader title={t("videoQueueBy", { slug: `@${page.slug}` })} />
