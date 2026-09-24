@@ -360,7 +360,9 @@ func (handler *HTTPHandler) handleOauthCallback(response http.ResponseWriter, re
 		if returnURL == "" {
 			returnURL = strings.TrimSuffix(handler.webURL, "/") + "/chat"
 		}
-		slog.Error("OAuth callback failed", "provider", provider, "error", err)
+		if oauthErrorType != "invalid oauth callback" && oauthErrorType != "expired oauth attempt" {
+			slog.Error("OAuth callback failed", "provider", provider, "error", err)
+		}
 	}
 	redirect, parseErr := sameOriginRedirect(handler.webURL, returnURL)
 	if parseErr != nil {
