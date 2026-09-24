@@ -1,7 +1,9 @@
 package chat
 
 import (
+	"bytes"
 	"context"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -261,7 +263,45 @@ func TestHTTPHandlerOauthCallbackUsesForwardedPublicURL(t *testing.T) {
 	}
 }
 
+func TestHTTPHandlerIgnoresUnsolicitedOauthCallbacks(t *testing.T) {
+	var logs bytes.Buffer
+	previousLogger := slog.Default()
+	slog.SetDefault(slog.New(slog.NewJSONHandler(&logs, nil)))
+	t.Cleanup(func() { slog.SetDefault(previousLogger) })
+
+	oauth := NewOauth(&oauthTestStore{}, "https://web.example/api/chat", nil, http.DefaultClient)
+	handler := NewHTTPHandler(&httpTestApplication{}, &httpTestActivity{}, oauth, &httpTestStore{}, httpTestSecret, "https://web.example", nil, nil, nil)
+	for _, scenario := range []struct {
+		target    string
+		errorType string
+	}{
+		{"/oauth/youtube/callback", "invalid oauth callback"},
+		{"/oauth/kick/callback", "invalid oauth callback"},
+		{"/oauth/twitch/callback", "invalid oauth callback"},
+		{"/oauth/vk_video/callback", "invalid oauth callback"},
+		{"/oauth/youtube/callback?state=unknown&code=unknown", "expired oauth attempt"},
+	} {
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, authorizedRequest(http.MethodGet, scenario.target, ""))
+		location, err := url.Parse(response.Header().Get("Location"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if response.Code != http.StatusFound || location.Query().Get("chat_oauth") != "error" || location.Query().Get("chat_oauth_error") != scenario.errorType {
+			t.Fatalf("target=%s status=%d location=%s", scenario.target, response.Code, location)
+		}
+	}
+	if logs.Len() != 0 {
+		t.Fatalf("unsolicited callbacks produced operational logs: %s", logs.String())
+	}
+}
+
 func TestHTTPHandlerOauthCallbackReportsSafeErrorType(t *testing.T) {
+	var logs bytes.Buffer
+	previousLogger := slog.Default()
+	slog.SetDefault(slog.New(slog.NewJSONHandler(&logs, nil)))
+	t.Cleanup(func() { slog.SetDefault(previousLogger) })
+
 	handler, oauth := newHTTPTestHandler(&httpTestApplication{})
 	oauth.callbackError = &OauthError{Type: "oauth token exchange failed", Detail: "provider response contained a secret", ReturnURL: "https://web.example/chat"}
 	response := httptest.NewRecorder()
@@ -272,6 +312,9 @@ func TestHTTPHandlerOauthCallbackReportsSafeErrorType(t *testing.T) {
 	}
 	if response.Code != http.StatusFound || location.Query().Get("chat_oauth") != "error" || location.Query().Get("chat_oauth_error") != "oauth token exchange failed" || strings.Contains(location.String(), "secret") {
 		t.Fatalf("status=%d location=%s", response.Code, location)
+	}
+	if !strings.Contains(logs.String(), `"msg":"OAuth callback failed"`) {
+		t.Fatalf("OAuth exchange failure was not logged: %s", logs.String())
 	}
 }
 

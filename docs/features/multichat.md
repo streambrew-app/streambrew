@@ -96,6 +96,9 @@ uses a separate token connection flow; see [setup, protocol evidence, and limita
 OAuth attempts use random state, PKCE-S256, a ten-minute expiry, and single-use rows. Provider
 access and refresh tokens are encrypted with AES-256-GCM before storage. Chat credentials are
 separate from Better Auth sign-in accounts.
+Incomplete or expired public OAuth callbacks return the usual connection error to the browser
+without sending an operational alert. Exchange, profile, and storage failures remain operational
+errors.
 
 Token refresh is centralized in the chat service. Updates use `token_version` as a compare-and-swap
 guard so concurrent replicas cannot overwrite a newer token. Provider calls retry with the next
