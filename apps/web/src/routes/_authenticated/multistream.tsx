@@ -16,6 +16,7 @@ import { Switch } from "@web/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@web/components/ui/tooltip";
 import { useRestreamConfigQ, useRestreamMutations } from "@web/hooks/restream";
 import { preloadRouteQuery } from "@web/lib/trpc";
+import { cn } from "@web/lib/utils";
 import { useState, type FormEvent } from "react";
 
 import { createTranslations, createTranslator, useI18n } from "../../lib/i18n";
@@ -179,16 +180,21 @@ export const Route = createFileRoute("/_authenticated/multistream")({
   },
 });
 
-function PlatformMark({ platform }: { platform: RestreamPlatform }) {
+function PlatformMark({ className, platform }: { className?: string; platform: RestreamPlatform }) {
   if (platform === "custom") {
     return (
-      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-secondary text-secondary-foreground">
+      <span
+        className={cn(
+          "grid shrink-0 place-items-center rounded-xl bg-secondary text-secondary-foreground",
+          className,
+        )}
+      >
         <Icons.platform aria-hidden="true" className="size-[18px]" />
       </span>
     );
   }
   return (
-    <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-secondary/70">
+    <span className={cn("grid shrink-0 place-items-center rounded-xl bg-secondary/70", className)}>
       <img alt="" className="size-5" src={PlatformIcons[platform]} />
     </span>
   );
@@ -211,12 +217,25 @@ function CopyButton({ label, onCopy }: { label: string; onCopy: () => void }) {
   );
 }
 
-function SignalRail({ destinationCount, status }: { destinationCount: number; status?: string }) {
+function SignalRail({
+  className,
+  destinationCount,
+  status,
+}: {
+  className?: string;
+  destinationCount: number;
+  status?: string;
+}) {
   const { t } = useI18n(translations);
   const isLive = status === "live";
   const isConnecting = status === "connecting";
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-[#2d2229] px-4 py-4 text-[#fff8ed] shadow-[0_12px_32px_-24px_rgba(37,24,32,0.85)] sm:px-5">
+    <div
+      className={cn(
+        "overflow-hidden rounded-2xl bg-[#2d2229] px-4 py-4 text-[#fff8ed] shadow-[0_12px_32px_-24px_rgba(37,24,32,0.85)] sm:px-5",
+        className,
+      )}
+    >
       <div className="relative z-10 grid grid-cols-[auto_1fr_auto_1fr_auto] items-center gap-2 sm:gap-4">
         <div className="flex min-w-0 items-center gap-2">
           <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#fff8ed]/10 text-[#edbf88]">
@@ -552,7 +571,7 @@ function DestinationRow({
   return (
     <article className="grid min-w-0 gap-3 border-t border-border/75 py-3 first:border-t-0 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
       <div className="flex min-w-0 items-center gap-3">
-        <PlatformMark platform={destination.platform} />
+        <PlatformMark className="size-9" platform={destination.platform} />
         <div className="flex min-w-0 flex-col gap-0.5">
           <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <h3 className="min-w-0 truncate text-sm font-semibold">{destination.label}</h3>
@@ -674,6 +693,7 @@ function DestinationForm({ draft, onClose }: { draft: DestinationDraft; onClose:
         <Field>
           <FieldLabel htmlFor="restream-label">{t("label")}</FieldLabel>
           <Input
+            className="w-full"
             id="restream-label"
             maxLength={64}
             onChange={(event) => setValue((current) => ({ ...current, label: event.target.value }))}
@@ -685,6 +705,7 @@ function DestinationForm({ draft, onClose }: { draft: DestinationDraft; onClose:
         <Field>
           <FieldLabel htmlFor="restream-server">{t("serverUrl")}</FieldLabel>
           <Input
+            className="w-full"
             autoCapitalize="none"
             autoCorrect="off"
             id="restream-server"
@@ -701,6 +722,7 @@ function DestinationForm({ draft, onClose }: { draft: DestinationDraft; onClose:
         <Field>
           <FieldLabel htmlFor="restream-destination-key">{t("destinationKey")}</FieldLabel>
           <Input
+            className="w-full"
             autoCapitalize="none"
             autoComplete="off"
             autoCorrect="off"
@@ -910,7 +932,11 @@ function MultistreamPage() {
         <div className="flex flex-col gap-1 px-1">
           <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">{t("subtitle")}</p>
         </div>
-        <SignalRail destinationCount={enabledCount} status={config.session?.status} />
+        <SignalRail
+          className="relative"
+          destinationCount={enabledCount}
+          status={config.session?.status}
+        />
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_17rem]">
           <div className="flex min-w-0 flex-col gap-7">
             <IngestSetup ingest={config.ingest} isLive={isLive} />

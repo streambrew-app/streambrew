@@ -34,7 +34,7 @@ function AlertOverlay() {
   }, []);
 
   return (
-    <main className="alert-overlay-root size-full overflow-hidden bg-transparent">
+    <main className="alert-overlay-root h-full overflow-hidden bg-transparent">
       {token === null ? null : <ConnectedAlertOverlay token={token} />}
     </main>
   );

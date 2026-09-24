@@ -25,7 +25,7 @@ function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props) {
     <SheetPrimitive.Backdrop
       data-slot="sheet-overlay"
       className={cn(
-        "fixed inset-0 z-50 bg-black/10 transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0 supports-backdrop-filter:backdrop-blur-xs",
+        "z-50 bg-black/10 transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0 supports-backdrop-filter:backdrop-blur-xs",
         className,
       )}
       {...props}
@@ -45,7 +45,7 @@ function SheetContent({
 }) {
   return (
     <SheetPortal>
-      <SheetOverlay />
+      <SheetOverlay className="fixed inset-0" />
       <SheetPrimitive.Popup
         data-slot="sheet-content"
         data-side={side}
@@ -82,11 +82,7 @@ function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
 
 function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
-    <div
-      data-slot="sheet-footer"
-      className={cn("mt-auto flex flex-col gap-2 p-4", className)}
-      {...props}
-    />
+    <div data-slot="sheet-footer" className={cn("flex flex-col gap-2 p-4", className)} {...props} />
   );
 }
 

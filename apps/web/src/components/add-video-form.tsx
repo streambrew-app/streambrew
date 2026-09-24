@@ -130,6 +130,7 @@ export function AddVideoForm({ onCancel, videoQueueId, queues }: Props) {
             <Field className="min-w-0" data-invalid={Boolean(formState.errors.url)}>
               <FieldLabel htmlFor="manual-video-url">{t("manualVideoUrl")}</FieldLabel>
               <Input
+                className="w-full"
                 aria-describedby={formState.errors.url ? urlErrorId : undefined}
                 aria-invalid={Boolean(formState.errors.url)}
                 disabled={addVideoM.isPending}

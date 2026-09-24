@@ -246,6 +246,7 @@ export function BoostyConnectionForm({ onClose }: { onClose: () => void }) {
               <BoostyInstructionText text={t("boostyDeviceId")} />
             </span>
             <Input
+              className="w-full"
               autoComplete="off"
               autoCapitalize="none"
               data-1p-ignore
@@ -281,7 +282,7 @@ export function BoostyConnectionForm({ onClose }: { onClose: () => void }) {
               required
               spellCheck={false}
               // Tokens are not passwords; keep them masked without login-form heuristics.
-              className="[-webkit-text-security:disc]"
+              className="w-full [-webkit-text-security:disc]"
               type="text"
               value={auth}
             />

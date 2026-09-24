@@ -57,7 +57,7 @@ export function WidgetConnectionForm({
     <Dialog open onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <div className="flex items-start gap-3">
-          <DonationSourceIcon source={source} />
+          <DonationSourceIcon className="size-9" source={source} />
           <div className="flex min-w-0 flex-col gap-2">
             <DialogTitle>{translate("title")}</DialogTitle>
             <DialogDescription>{translate("description")}</DialogDescription>
@@ -67,6 +67,7 @@ export function WidgetConnectionForm({
           <Field data-invalid={isError || undefined}>
             <FieldLabel htmlFor={fieldId}>{translate("widgetURLLabel")}</FieldLabel>
             <Input
+              className="w-full"
               aria-invalid={isError || undefined}
               autoComplete="off"
               id={fieldId}

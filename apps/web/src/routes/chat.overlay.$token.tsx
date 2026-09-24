@@ -5,7 +5,11 @@ import { ChatOverlaySearchSchema } from "@web/lib/chat-overlay";
 import { cn } from "@web/lib/utils";
 
 export const Route = createFileRoute("/chat/overlay/$token")({
-  component: ChatOverlay,
+  component: () => (
+    <div className="fixed -inset-px">
+      <ChatOverlay />
+    </div>
+  ),
   validateSearch: ChatOverlaySearchSchema,
   head: () => ({
     meta: [{ title: "Chat overlay · StreamBrew" }],
@@ -26,7 +30,7 @@ function ChatOverlay() {
   return (
     <main
       className={cn(
-        "fixed -inset-px flex min-w-0 overflow-hidden font-sans text-white",
+        "flex h-full min-w-0 overflow-hidden font-sans text-white",
         background === "black"
           ? "bg-black"
           : background === "white"
@@ -35,6 +39,7 @@ function ChatOverlay() {
       )}
     >
       <ChatFeed
+        className="relative"
         emptyLabel="Waiting for chat…"
         messages={messages}
         overlay

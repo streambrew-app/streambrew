@@ -1,6 +1,7 @@
 import { rurl } from "@lebedevna/readonly-url";
 import { Link } from "@tanstack/react-router";
 import { signIn } from "@web/lib/auth-client";
+import { cn } from "@web/lib/utils";
 import { useState } from "react";
 
 import productMark from "../../assets/logo.png";
@@ -100,7 +101,7 @@ const translations = createTranslations({
   },
 });
 
-export default function SignIn() {
+export default function SignIn({ className }: { className?: string }) {
   const [isSigningIn, setIsSigningIn] = useState(false);
   const { t } = useI18n(translations);
 
@@ -134,7 +135,12 @@ export default function SignIn() {
   ] as const;
 
   return (
-    <main className="landing-world relative flex min-h-dvh flex-col items-center overflow-hidden px-5 text-foreground sm:px-8">
+    <main
+      className={cn(
+        "landing-world flex min-h-dvh flex-col items-center overflow-hidden px-5 text-foreground sm:px-8",
+        className,
+      )}
+    >
       <div className="cosmic-starlight pointer-events-none absolute inset-0" />
 
       <header className="relative z-10 flex w-full max-w-6xl items-center justify-between gap-4 border-b border-border/60 py-5 sm:py-7">

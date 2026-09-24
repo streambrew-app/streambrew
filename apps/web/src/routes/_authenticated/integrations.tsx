@@ -90,7 +90,7 @@ function ConnectionNotice() {
       className={`flex items-center gap-2 rounded-xl border px-3.5 py-3 text-[13px] ${search.success ? "border-emerald-300/50 bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300" : "border-red-300/50 bg-red-50 text-red-700 dark:bg-red-400/10 dark:text-red-300"}`}
       role="status"
     >
-      <DonationSourceIcon size="xs" source={search.source} />
+      <DonationSourceIcon className="size-3.5" size="xs" source={search.source} />
       {t(search.success ? "connectedSuccessfully" : "connectionFailed", {
         source: sourceName,
       })}
@@ -287,7 +287,7 @@ function DisconnectError({ disconnectM }: { disconnectM: DisconnectMutation }) {
       className="flex items-center gap-2 rounded-xl border border-red-300/50 bg-red-50 px-3.5 py-3 text-[13px] text-red-700 dark:bg-red-400/10 dark:text-red-300"
       role="alert"
     >
-      <DonationSourceIcon size="xs" source={source} />
+      <DonationSourceIcon className="size-3.5" size="xs" source={source} />
       {t("disconnectFailed", {
         source: donationSourceDetails(source).name,
       })}

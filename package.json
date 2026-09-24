@@ -8,7 +8,7 @@
   "type": "module",
   "dependencies": {
     "@dotenvx/dotenvx": "^2.19.2",
-    "oxlint": "^1.79.0"
+    "oxlint": "^1.85.0"
   },
   "devDependencies": {
     "@tanstack/intent": "^0.3.7",
@@ -18,8 +18,9 @@
     "dbmate": "2.35.1",
     "fallow": "3.24.0",
     "oxfmt": "^0.60.0",
-    "oxlint-plugin-eslint": "1.79.0",
-    "oxlint-tsgolint": "^7.0.2001",
+    "oxlint-plugin-eslint": "1.85.0",
+    "oxlint-tsgolint": "^7.0.2002",
+    "oxlint-tw-no-self-positioning": "0.1.2",
     "typescript": "^7.0.2",
     "vitest": "^4.1.10"
   },

@@ -19,7 +19,7 @@ export function LegalDocument({
   title: string;
 }) {
   return (
-    <main className="relative min-h-dvh bg-background px-5 py-6 text-foreground sm:px-8 sm:py-10">
+    <main className="min-h-dvh bg-background px-5 py-6 text-foreground sm:px-8 sm:py-10">
       <article className="relative mx-auto flex w-full max-w-3xl flex-col gap-10 sm:gap-12">
         <header className="relative flex flex-col gap-8 overflow-hidden border-b border-border pb-8 sm:gap-12 sm:pb-10">
           <Link

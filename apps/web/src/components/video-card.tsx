@@ -184,7 +184,15 @@ const normalizeUrl = (url: string) => {
   return `${parsedUrl.hostname.toLowerCase()}${pathname}${parsedUrl.search}`;
 };
 
-function VideoThumbnail({ author, video }: { author: string; video: Video }) {
+function VideoThumbnail({
+  author,
+  className,
+  video,
+}: {
+  author: string;
+  className?: string;
+  video: Video;
+}) {
   const { t } = useI18n(translations);
   const timingLabel =
     video.endSeconds === null
@@ -192,7 +200,7 @@ function VideoThumbnail({ author, video }: { author: string; video: Video }) {
       : `${formatVideoTime(video.startSeconds)}–${formatVideoTime(video.endSeconds)}`;
 
   return (
-    <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-muted">
+    <div className={clsx("aspect-video overflow-hidden rounded-lg bg-muted", className)}>
       <a
         aria-label={
           video.source === "donation"
@@ -279,7 +287,7 @@ function VideoPreview({
   const { locale, t } = useI18n(translations);
   return (
     <div className="flex min-w-0 flex-col gap-2">
-      <VideoThumbnail author={author} video={video} />
+      <VideoThumbnail author={author} className="relative w-full" video={video} />
       {onStatusChange && (
         <VideoStatusControls
           isUpdating={isUpdating ?? false}
@@ -471,7 +479,7 @@ function VideoEditForm({
               aria-describedby={formState.errors.amount ? amountErrorId : undefined}
               aria-invalid={Boolean(formState.errors.amount)}
               autoComplete="off"
-              className="bg-card dark:bg-card"
+              className="w-full bg-card dark:bg-card"
               disabled={isUpdating}
               id={`video-amount-${video.videoId}`}
               min="0"
@@ -583,7 +591,7 @@ function DonationDetails({ video }: { video: Extract<Video, { source: "donation"
         })}
       </p>
       <Link
-        className="inline-flex w-fit items-center gap-1 rounded text-xs text-muted-foreground underline-offset-4 hover:text-primary hover:underline focus-visible:outline-2 focus-visible:outline-ring"
+        className="inline-flex items-center gap-1 rounded text-xs text-muted-foreground underline-offset-4 hover:text-primary hover:underline focus-visible:outline-2 focus-visible:outline-ring"
         to="/donations"
         search={{
           donationId: video.donation.donationId.toString(),
@@ -654,7 +662,7 @@ export default function VideoCard({
     video.source === "donation" ? (video.donation.author ?? t("anonymous")) : t("video");
 
   return (
-    <article className="@container relative min-w-0 px-4 py-4 sm:px-5">
+    <article className="@container min-w-0 px-4 py-4 sm:px-5">
       <div className="grid min-w-0 items-start gap-5 @3xl:grid-cols-[clamp(19rem,33%,25rem)_minmax(0,1fr)]">
         <VideoPreview
           author={author}

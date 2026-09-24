@@ -604,6 +604,7 @@ function ProductSection({ dashboard }: { dashboard: Dashboard }) {
         <div className="border-t border-border">
           <h3 className="px-4 pt-3 pb-1 text-sm font-semibold">{t("dynamics")}</h3>
           <PeriodTable
+            className="w-full"
             rows={[
               { label: t("registrations"), values: dashboard.users.registered },
               {
@@ -632,13 +633,15 @@ function ProductSection({ dashboard }: { dashboard: Dashboard }) {
 }
 
 function PeriodTable({
+  className,
   rows,
 }: {
+  className?: string;
   rows: Array<{ label: string; values: { day: number; week: number; month: number } }>;
 }) {
   const { locale, t } = useI18n(translations);
   return (
-    <table className="w-full border-collapse text-xs tabular-nums">
+    <table className={cn("border-collapse text-xs tabular-nums", className)}>
       <thead className="text-[11px] font-medium text-muted-foreground">
         <tr>
           <th className="px-4 py-2 text-left font-medium" scope="col" />

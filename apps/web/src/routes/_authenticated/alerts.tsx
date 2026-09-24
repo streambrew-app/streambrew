@@ -708,7 +708,7 @@ function OverlayPanel({
       </div>
       {overlay.overlayUrl ? (
         <>
-          <Input aria-label={t("obsLink")} readOnly value={overlay.overlayUrl} />
+          <Input className="w-full" aria-label={t("obsLink")} readOnly value={overlay.overlayUrl} />
           <p className="text-xs text-amber-700 dark:text-amber-300">{t("linkCreated")}</p>
         </>
       ) : (
@@ -1049,6 +1049,7 @@ function PresentationSettings({
             value={draft.accentColor}
           />
           <Input
+            className="w-full"
             aria-label={t("accent")}
             maxLength={7}
             onChange={(event) => setSetting("accentColor", event.currentTarget.value)}

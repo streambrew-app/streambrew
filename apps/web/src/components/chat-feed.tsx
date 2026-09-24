@@ -20,12 +20,14 @@ const providerColor = {
 } as const;
 
 function Message({
+  className,
   message,
   overlay,
   overlayMessageSurface,
   capabilities,
   onModerate,
 }: {
+  className?: string;
   message: ChatMessage;
   overlay: boolean;
   overlayMessageSurface: "card" | "transparent";
@@ -38,10 +40,11 @@ function Message({
       className={cn(
         "group/message flex gap-3 border-l-2 py-2 pl-3",
         overlay &&
-          "w-fit max-w-[min(46rem,calc(100vw-2rem))] border-l-0 rounded-xl px-3.5 py-2.5 text-white motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300",
+          "max-w-[min(46rem,calc(100vw-2rem))] border-l-0 rounded-xl px-3.5 py-2.5 text-white motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300",
         overlay &&
           overlayMessageSurface === "card" &&
           "bg-[#171018]/88 shadow-[0_8px_24px_rgba(15,8,14,0.28)] backdrop-blur-md",
+        className,
       )}
       style={overlay ? undefined : { borderColor: providerColor[message.provider] }}
     >
@@ -157,6 +160,7 @@ function Message({
 }
 
 export function ChatFeed({
+  className,
   messages,
   overlay = false,
   overlayMessageSurface = "card",
@@ -164,6 +168,7 @@ export function ChatFeed({
   capabilitiesForSource = () => [],
   onModerate,
 }: {
+  className?: string;
   messages: ChatMessage[];
   overlay?: boolean;
   overlayMessageSurface?: "card" | "transparent";
@@ -205,7 +210,7 @@ export function ChatFeed({
   }, [messages.length, nearBottom, overlay]);
 
   return (
-    <div className="relative flex min-h-0 grow flex-col">
+    <div className={cn("flex min-h-0 grow flex-col", className)}>
       <div
         aria-live={overlay ? "polite" : undefined}
         className={cn(
@@ -233,6 +238,7 @@ export function ChatFeed({
           >
             {messages.map((message) => (
               <Message
+                className={overlay ? "w-fit" : undefined}
                 key={`${message.provider}:${message.id}`}
                 message={message}
                 overlay={overlay}

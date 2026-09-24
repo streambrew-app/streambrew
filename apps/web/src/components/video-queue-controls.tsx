@@ -2,6 +2,7 @@ import type { VideoQueue } from "@streambrew/packages/schemas.js";
 import { Link } from "@tanstack/react-router";
 import { useVideoQueueMutations, useVideoQueuesQ } from "@web/hooks/api";
 import { createTranslations, useI18n } from "@web/lib/i18n";
+import { cn } from "@web/lib/utils";
 import { useState } from "react";
 
 import { Icons } from "./icons";
@@ -123,12 +124,23 @@ function QueueCancelButton({ form, onCancel }: { form: QueueFormModel; onCancel:
   );
 }
 
-function DefaultQueueSwitch({ form, queue }: { form: QueueFormModel; queue: VideoQueue }) {
+function DefaultQueueSwitch({
+  className,
+  form,
+  queue,
+}: {
+  className?: string;
+  form: QueueFormModel;
+  queue: VideoQueue;
+}) {
   const { t } = useI18n(translations);
 
   return (
     <Field
-      className="col-span-3 row-start-2 min-h-8 w-auto border-t border-input px-2 text-muted-foreground sm:col-span-1 sm:col-start-4 sm:row-start-1 sm:border-t-0 sm:border-l"
+      className={cn(
+        "col-span-3 row-start-2 min-h-8 border-t border-input px-2 text-muted-foreground sm:col-span-1 sm:col-start-4 sm:row-start-1 sm:border-t-0 sm:border-l",
+        className,
+      )}
       orientation="horizontal"
     >
       <Switch
@@ -146,10 +158,12 @@ function DefaultQueueSwitch({ form, queue }: { form: QueueFormModel; queue: Vide
 }
 
 function QueueFormControls({
+  className,
   form,
   onCancel,
   queue,
 }: {
+  className?: string;
   form: QueueFormModel;
   onCancel: () => void;
   queue?: VideoQueue;
@@ -161,7 +175,7 @@ function QueueFormControls({
     : "grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-lg border border-input bg-background/60 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/20 has-[input[aria-invalid=true]]:border-destructive sm:w-fit sm:grid-cols-[auto_16rem_auto]";
 
   return (
-    <Field className="min-w-0 flex-1 sm:w-auto sm:flex-none" data-invalid={isNameTaken}>
+    <Field className={cn("min-w-0", className)} data-invalid={isNameTaken}>
       <FieldLabel className="sr-only" htmlFor="video-queue-name">
         {t("queueName")}
       </FieldLabel>
@@ -180,7 +194,7 @@ function QueueFormControls({
           value={form.label}
         />
         <QueueCancelButton form={form} onCancel={onCancel} />
-        {queue && <DefaultQueueSwitch form={form} queue={queue} />}
+        {queue && <DefaultQueueSwitch className="w-auto" form={form} queue={queue} />}
       </div>
     </Field>
   );
@@ -217,7 +231,8 @@ function QueueForm({ id, queue, onCancel, onSaved }: QueueFormProps) {
   return (
     <form
       autoComplete="off"
-      className="flex w-full min-w-0 flex-col gap-1.5 sm:w-fit"
+      className="flex min-w-0 flex-col gap-1.5"
+      data-slot="queue-form"
       id={id}
       onSubmit={(event) => {
         event.preventDefault();
@@ -225,7 +240,12 @@ function QueueForm({ id, queue, onCancel, onSaved }: QueueFormProps) {
       }}
     >
       <div className="flex min-w-0 flex-col items-center gap-1 sm:flex-row">
-        <QueueFormControls form={form} onCancel={onCancel} queue={queue} />
+        <QueueFormControls
+          className="flex-1 sm:w-auto sm:flex-none"
+          form={form}
+          onCancel={onCancel}
+          queue={queue}
+        />
         {!queue && <NewQueueHelp />}
       </div>
       {form.mutation.error && (
@@ -389,7 +409,10 @@ export function VideoQueueControls({
 
   return (
     <div className="flex shrink-0 flex-col gap-1.5 border-b border-border px-3 py-2">
-      <nav aria-label={t("videoQueues")} className="flex min-w-0 flex-wrap items-center gap-1">
+      <nav
+        aria-label={t("videoQueues")}
+        className="flex min-w-0 flex-wrap items-center gap-1 [&_[data-slot=queue-form]]:w-full [&_[data-slot=queue-form]]:sm:w-fit"
+      >
         {queuesQ.isLoading && (
           <span role="status" className="text-sm text-muted-foreground">
             {t("loadingQueues")}

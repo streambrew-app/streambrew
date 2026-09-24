@@ -33,7 +33,7 @@ function FieldLabel({ className, ...props }: ComponentProps<typeof Label>) {
   return (
     <Label
       className={cn(
-        "group/field-label peer/field-label flex w-fit gap-2 text-xs leading-snug font-medium group-data-[disabled=true]/field:opacity-50",
+        "group/field-label peer/field-label inline-flex gap-2 text-xs leading-snug font-medium group-data-[disabled=true]/field:opacity-50",
         className,
       )}
       data-slot="field-label"

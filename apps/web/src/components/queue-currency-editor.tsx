@@ -6,6 +6,7 @@ import {
 } from "@streambrew/packages/schemas.js";
 import { useUpdateQueueCurrencyM, useUserInfo } from "@web/hooks/api";
 import { formatMoneyInputValue } from "@web/lib/fmt";
+import { cn } from "@web/lib/utils";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 
@@ -89,7 +90,7 @@ function QueueCurrencyHeading() {
   );
 }
 
-export function QueueCurrencyEditor() {
+export function QueueCurrencyEditor({ className }: { className?: string }) {
   const { t } = useI18n(translations);
   const userInfo = useUserInfo();
   const updateQueueCurrencyM = useUpdateQueueCurrencyM();
@@ -129,7 +130,7 @@ export function QueueCurrencyEditor() {
   };
 
   return (
-    <section className="cosmic-panel relative shrink-0 overflow-hidden p-4 sm:p-5">
+    <section className={cn("cosmic-panel shrink-0 overflow-hidden p-4 sm:p-5", className)}>
       <span className="absolute top-0 left-6 h-1 w-16 rounded-b-full bg-[#54cfa5]" />
       {!isEditing ? (
         <div className="flex flex-wrap items-center gap-3">
