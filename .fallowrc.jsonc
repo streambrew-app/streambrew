@@ -1,8 +1,14 @@
 {
   "$schema": "https://raw.githubusercontent.com/fallow-rs/fallow/main/schema.json",
   "minimumVersion": "3.24.0",
-  // TanStack Start loads src/start.ts by convention instead of an import edge.
-  "entry": ["apps/web/src/start.ts", "scripts/**/*.ts", "apps/web/src/**/*.stories.tsx"],
+  // These files are loaded by their tools rather than through import edges.
+  "entry": [
+    "oxlint.config.ts",
+    "oxfmt.config.ts",
+    "apps/web/src/start.ts",
+    "scripts/**/*.ts",
+    "apps/web/src/**/*.stories.tsx",
+  ],
   "ignorePatterns": [
     "apps/alerts/**",
     "apps/chat/**",
@@ -11,14 +17,13 @@
     "apps/web/.ladle/**",
   ],
   "ignoreFindings": ["apps/web/src/components/ui/**"],
-  // These tools are invoked from justfile recipes rather than imported by TypeScript.
+  // These tools are invoked from justfile recipes or loaded as tooling by config files.
   "ignoreDependencies": [
     "@dotenvx/dotenvx",
     "@tanstack/intent",
     "@ladle/react",
     "concurrently",
     "dbmate",
-    "oxfmt",
     "oxlint",
     "oxlint-tsgolint",
   ],

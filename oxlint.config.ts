@@ -1,0 +1,86 @@
+import { defineConfig } from "oxlint";
+
+export default defineConfig({
+  categories: {},
+  jsPlugins: [{ name: "eslint-js", specifier: "oxlint-plugin-eslint" }],
+  options: {
+    denyWarnings: true,
+    reportUnusedDisableDirectives: "error",
+    typeAware: true,
+    typeCheck: false,
+  },
+  ignorePatterns: ["apps/web/src/routeTree.gen.ts"],
+  settings: {
+    react: {
+      version: "19.1.1",
+    },
+    vitest: {
+      typecheck: false,
+    },
+  },
+  rules: {
+    "eslint-js/padding-line-between-statements": [
+      "error",
+      {
+        blankLine: "always",
+        prev: "function",
+        next: "function",
+      },
+    ],
+    "eslint-js/no-restricted-syntax": [
+      "error",
+      {
+        selector:
+          "NewExpression[callee.type='Identifier'][callee.name='URL'] > MemberExpression.arguments:nth-child(2)[computed=false][property.type='Identifier'][property.name='url'] > MetaProperty.object[meta.name='import'][property.name='meta']",
+        message: "Use import.meta.resolve(...) instead of new URL(..., import.meta.url).",
+      },
+    ],
+    "require-yield": "off",
+    "import/no-cycle": "error",
+    "no-restricted-imports": [
+      "error",
+      {
+        name: "neverthrow",
+        message: "Use typed native exceptions and Promise rejection for failures.",
+      },
+      {
+        name: "@lebedevna/neverthrow-utils",
+        message: "Use the shared native HTTP helpers and typed exceptions.",
+      },
+    ],
+  },
+  overrides: [
+    {
+      files: ["**/*.ts"],
+      rules: {
+        "no-use-before-define": "error",
+      },
+    },
+    {
+      files: ["**/*.tsx"],
+      excludeFiles: ["apps/web/src/routes/**"],
+      rules: {
+        "no-use-before-define": "error",
+      },
+    },
+    {
+      files: ["apps/web/src/components/**/*.{ts,tsx}", "apps/web/src/routes/**/*.{ts,tsx}"],
+      rules: {
+        "no-restricted-imports": [
+          "error",
+          {
+            name: "@tanstack/react-query",
+            importNames: ["useMutation", "useQuery"],
+            message: "Wrap queries and mutations in custom hooks under apps/web/src/hooks.",
+          },
+        ],
+      },
+    },
+    {
+      files: ["apps/web/src/server/sensors/db/store.test.ts"],
+      rules: {
+        "typescript/no-unsafe-type-assertion": "off",
+      },
+    },
+  ],
+});
