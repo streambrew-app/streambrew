@@ -3,10 +3,8 @@ import { noSelfPositioning } from "oxlint-tw-no-self-positioning";
 
 export default defineConfig({
   categories: {},
-  jsPlugins: [
-    ...noSelfPositioning.recommended.jsPlugins,
-    { name: "eslint-js", specifier: "oxlint-plugin-eslint" },
-  ],
+  extends: [noSelfPositioning.recommended],
+  jsPlugins: [{ name: "eslint-js", specifier: "oxlint-plugin-eslint" }],
   options: {
     denyWarnings: true,
     reportUnusedDisableDirectives: "error",
@@ -23,7 +21,6 @@ export default defineConfig({
     },
   },
   rules: {
-    ...noSelfPositioning.recommended.rules,
     "eslint-js/padding-line-between-statements": [
       "error",
       {
@@ -56,13 +53,6 @@ export default defineConfig({
   },
   overrides: [
     {
-      // The track width is intrinsic to the switch thumb's travel distance.
-      files: ["apps/web/src/components/ui/switch.tsx"],
-      rules: {
-        "tw-no-self-positioning/no-width": "off",
-      },
-    },
-    {
       files: ["**/*.ts"],
       rules: {
         "no-use-before-define": "error",
@@ -86,12 +76,6 @@ export default defineConfig({
             message: "Wrap queries and mutations in custom hooks under apps/web/src/hooks.",
           },
         ],
-      },
-    },
-    {
-      files: ["apps/web/src/server/sensors/db/store.test.ts"],
-      rules: {
-        "typescript/no-unsafe-type-assertion": "off",
       },
     },
   ],
