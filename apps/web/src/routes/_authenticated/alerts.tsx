@@ -263,7 +263,7 @@ function AlertsPage() {
 
   if (dashboardQuery.isError && !dashboard) {
     return (
-      <section className="cosmic-panel flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
+      <section className="cosmic-panel flex min-h-0 min-w-0 flex-col overflow-hidden">
         <CosmicPageHeader title={i18nContext.t("alerts")} variant="signal" />
         <QueryErrorState
           className="min-h-0 grow"
@@ -276,7 +276,7 @@ function AlertsPage() {
 
   if (!dashboard) {
     return (
-      <section className="cosmic-panel flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
+      <section className="cosmic-panel flex min-h-0 min-w-0 flex-col overflow-hidden">
         <CosmicPageHeader title={i18nContext.t("alerts")} variant="signal" />
         <div
           aria-label={i18nContext.t("loading")}
@@ -339,7 +339,7 @@ function AlertsDashboard({
   const loadedEditor = { ...editor, draft: editor.draft };
 
   return (
-    <section className="cosmic-panel flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
+    <section className="cosmic-panel flex min-h-0 min-w-0 flex-col overflow-hidden">
       <AlertsHeader actions={actions} dashboard={dashboard} setNotice={editor.setNotice} t={t} />
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain p-3 sm:p-4">
         <NoticeBanner notice={editor.notice} requestFailed={requestFailed} t={t} />
@@ -373,7 +373,7 @@ function AlertsDashboard({
 
 function AlertsLoading({ t }: { t: Translator }) {
   return (
-    <section className="cosmic-panel flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
+    <section className="cosmic-panel flex min-h-0 min-w-0 flex-col overflow-hidden">
       <CosmicPageHeader title={t("alerts")} variant="signal" />
       <div aria-label={t("loading")} className="grid gap-3 overflow-hidden p-4" role="status">
         <Skeleton className="h-72" />
@@ -518,6 +518,8 @@ function PlayerStatus({ dashboard, t }: { dashboard: AlertDashboardData; t: Tran
   return (
     <span
       className={cn(
+        // Status pills use the standard control height.
+        // oxlint-disable-next-line tw-no-self-positioning/no-dimensions
         "inline-flex h-8 items-center gap-2 rounded-lg border px-2.5 text-xs font-semibold",
         statusClass,
       )}
@@ -668,7 +670,7 @@ function PreviewPanel({
         </span>
       </div>
       <div className="cosmic-grid relative aspect-4/3 min-h-0 overflow-hidden rounded-xl border border-white/10 bg-[#171019]">
-        <AlertPlayer onFinished={() => setPreview(null)} playback={preview} />
+        <AlertPlayer className="h-full" onFinished={() => setPreview(null)} playback={preview} />
         {!preview && (
           <Button
             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"

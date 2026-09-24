@@ -87,7 +87,7 @@ function DeadLettersPage() {
   const { t } = useI18n(translations);
 
   return (
-    <section className="cosmic-panel flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
+    <section className="cosmic-panel flex min-h-0 min-w-0 flex-col overflow-hidden">
       <CosmicPageHeader
         actions={
           deadLettersQ.data ? (

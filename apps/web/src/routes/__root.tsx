@@ -268,6 +268,8 @@ function AuthenticatedApplicationContent() {
   const user = viewer.user;
 
   return (
+    // This route owns the viewport height of the authenticated shell.
+    // oxlint-disable-next-line tw-no-self-positioning/no-dimensions
     <main className="flex h-dvh min-w-0 bg-background font-sans text-foreground transition-colors duration-300">
       <Sidebar>
         <aside className="coffee-sidebar relative flex size-full flex-col overflow-hidden border-r border-sidebar-border bg-sidebar px-4 pt-7 pb-5 transition-colors duration-300">
@@ -503,7 +505,7 @@ function AuthenticatedApplicationContent() {
           </div>
         )}
         <div id="app-content" className="min-h-0 min-w-0 grow overflow-hidden">
-          <div className="mx-auto flex h-full min-h-0 w-full max-w-[1500px] flex-col p-0 sm:p-3">
+          <div className="mx-auto flex h-full min-h-0 w-full max-w-[1500px] flex-col p-0 sm:p-3 [&>*]:h-full">
             <Suspense
               fallback={
                 <div aria-busy="true" className="flex min-h-full flex-col gap-3">

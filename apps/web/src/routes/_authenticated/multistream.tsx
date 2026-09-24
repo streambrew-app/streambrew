@@ -888,7 +888,7 @@ function MultistreamPage() {
   const config = configQ.data;
   if (configQ.isError) {
     return (
-      <section className="cosmic-panel flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
+      <section className="cosmic-panel flex min-h-0 min-w-0 flex-col overflow-hidden">
         <CosmicPageHeader title={t("multistream")} variant="signal" />
         <QueryErrorState
           className="min-h-0 flex-1"
@@ -902,7 +902,7 @@ function MultistreamPage() {
     return (
       <section
         aria-busy="true"
-        className="cosmic-panel flex h-full min-h-0 min-w-0 animate-pulse flex-col overflow-hidden"
+        className="cosmic-panel flex min-h-0 min-w-0 animate-pulse flex-col overflow-hidden"
       >
         <CosmicPageHeader title={t("multistream")} variant="signal" />
         <div className="m-5 h-32 rounded-2xl bg-muted/60" />
@@ -913,7 +913,7 @@ function MultistreamPage() {
   const enabledCount = config.destinations.filter((destination) => destination.enabled).length;
 
   return (
-    <section className="cosmic-panel flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
+    <section className="cosmic-panel flex min-h-0 min-w-0 flex-col overflow-hidden">
       <CosmicPageHeader title={t("multistream")} variant="signal" />
       <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto overscroll-contain p-3 sm:p-5">
         <div className="flex flex-col gap-1 px-1">

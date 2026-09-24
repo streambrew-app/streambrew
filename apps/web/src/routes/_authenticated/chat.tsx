@@ -389,7 +389,7 @@ type ChatSource = ChatConfig["sources"][number];
 function ChatLoadingState({ page }: { page: ChatPageModel }) {
   const { t } = useI18n(chatTranslations);
   return (
-    <section className="cosmic-panel grid h-full min-h-0 place-items-center overflow-hidden p-6 text-center">
+    <section className="cosmic-panel grid min-h-0 place-items-center overflow-hidden p-6 text-center">
       {page.configQuery.isError ? (
         <div className="flex flex-col items-center gap-3">
           <p className="text-sm text-destructive">{page.configQuery.error?.message}</p>
@@ -522,10 +522,15 @@ function ChatComposer({ page }: { page: ChatPageModel }) {
   );
 }
 
-function ChatFeedPanel({ page }: { page: ChatPageModel }) {
+function ChatFeedPanel({ className, page }: { className?: string; page: ChatPageModel }) {
   const { t } = useI18n(chatTranslations);
   return (
-    <article className="cosmic-panel isolate flex h-[max(24rem,55dvh)] min-h-0 min-w-0 shrink-0 flex-col overflow-hidden xl:h-auto">
+    <article
+      className={cn(
+        "cosmic-panel isolate flex min-h-0 min-w-0 shrink-0 flex-col overflow-hidden",
+        className,
+      )}
+    >
       <CosmicPageHeader
         actions={
           <a
@@ -737,9 +742,11 @@ function ConnectionCard({
 }
 
 function AvailableProviderButton({
+  className,
   page,
   provider,
 }: {
+  className?: string;
   page: ChatPageModel;
   provider: ChatProviderAvailability;
 }) {
@@ -761,7 +768,7 @@ function AvailableProviderButton({
   };
   return (
     <Button
-      className="h-auto justify-start gap-2 p-2.5"
+      className={cn("justify-start gap-2 p-2.5", className)}
       disabled={!connectable || page.mutations.startOauth.isPending}
       onClick={connect}
       title={provider.detail}
@@ -788,7 +795,12 @@ function AvailableProviders({ page }: { page: ChatPageModel }) {
         <BoostyConnectionForm onClose={() => page.state.setBoostyFormOpen(false)} />
       )}
       {page.availability.map((provider) => (
-        <AvailableProviderButton key={provider.provider} page={page} provider={provider} />
+        <AvailableProviderButton
+          className="h-auto"
+          key={provider.provider}
+          page={page}
+          provider={provider}
+        />
       ))}
     </div>
   );
@@ -947,10 +959,10 @@ function ChatPage() {
   if (!page.config) return <ChatLoadingState page={page} />;
 
   return (
-    <section className="flex h-full min-h-0 min-w-0 flex-col gap-3">
+    <section className="flex min-h-0 min-w-0 flex-col gap-3">
       <ChatOauthNotice page={page} />
       <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain xl:grid xl:grid-cols-[330px_minmax(0,1fr)] xl:grid-rows-[minmax(0,1fr)] xl:overflow-hidden">
-        <ChatFeedPanel page={page} />
+        <ChatFeedPanel className="h-[max(24rem,55dvh)] xl:h-auto" page={page} />
         <ConnectionsPanel page={page} />
       </div>
       <DisconnectDialog page={page} />

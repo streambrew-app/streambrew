@@ -217,7 +217,7 @@ function Overview() {
   );
 
   return (
-    <section className="cosmic-panel flex h-full min-h-0 min-w-0 flex-col overflow-hidden" id="top">
+    <section className="cosmic-panel flex min-h-0 min-w-0 flex-col overflow-hidden" id="top">
       <CosmicPageHeader title={t("overview")} />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <div className="flex flex-col gap-4 p-4 sm:p-5">

@@ -34,16 +34,19 @@ function AlertOverlay() {
   }, []);
 
   return (
+    // The OBS overlay fills its document so alert placement remains stable.
+    // oxlint-disable-next-line tw-no-self-positioning/no-dimensions
     <main className="alert-overlay-root h-full overflow-hidden bg-transparent">
-      {token === null ? null : <ConnectedAlertOverlay token={token} />}
+      {token === null ? null : <ConnectedAlertOverlay className="h-full" token={token} />}
     </main>
   );
 }
 
-function ConnectedAlertOverlay({ token }: { token: string }) {
+function ConnectedAlertOverlay({ className, token }: { className?: string; token: string }) {
   const overlay = useAlertOverlay(token);
   return (
     <AlertPlayer
+      className={className}
       active={overlay.active}
       interruptionKey={overlay.interruptionKey}
       onDiagnostic={overlay.onDiagnostic}

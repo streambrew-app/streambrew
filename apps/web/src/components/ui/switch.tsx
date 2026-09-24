@@ -12,7 +12,7 @@ function Switch({ className, size = "default", ...props }: SwitchProps) {
       className={cn(
         "inline-flex shrink-0 cursor-pointer items-center rounded-full border border-transparent bg-input p-0.5 shadow-inner outline-none transition-colors duration-200 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 data-checked:bg-primary data-disabled:pointer-events-none data-disabled:cursor-default data-disabled:opacity-50 motion-reduce:transition-none",
         // The track width is intrinsic to the thumb's travel distance.
-        // oxlint-disable-next-line tw-no-self-positioning/no-width
+        // oxlint-disable-next-line tw-no-self-positioning/no-dimensions
         size === "sm" ? "h-5 w-9" : "h-6 w-11",
         className,
       )}

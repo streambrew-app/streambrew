@@ -160,7 +160,7 @@ function Sidebar({
     return (
       <div
         data-slot="sidebar"
-        className={cn("flex h-full flex-col bg-sidebar text-sidebar-foreground", className)}
+        className={cn("flex flex-col bg-sidebar text-sidebar-foreground", className)}
         {...props}
       >
         {children}
@@ -297,7 +297,7 @@ function SidebarInput({ className, ...props }: React.ComponentProps<typeof Input
     <Input
       data-slot="sidebar-input"
       data-sidebar="input"
-      className={cn("h-8 bg-background shadow-none", className)}
+      className={cn("bg-background shadow-none", className)}
       {...props}
     />
   );
@@ -554,6 +554,8 @@ function SidebarMenuBadge({ className, ...props }: React.ComponentProps<"div">) 
       data-slot="sidebar-menu-badge"
       data-sidebar="menu-badge"
       className={cn(
+        // Badge height stays aligned with menu controls while its width follows the count.
+        // oxlint-disable-next-line tw-no-self-positioning/no-dimensions
         "pointer-events-none flex h-5 min-w-5 items-center justify-center rounded-md px-1 text-xs font-medium text-sidebar-foreground tabular-nums select-none group-data-[collapsible=icon]:hidden peer-hover/menu-button:text-sidebar-accent-foreground peer-data-active/menu-button:text-sidebar-accent-foreground",
         className,
       )}
@@ -577,6 +579,8 @@ function SidebarMenuSkeleton({
     <div
       data-slot="sidebar-menu-skeleton"
       data-sidebar="menu-skeleton"
+      // The skeleton matches the menu button's fixed height.
+      // oxlint-disable-next-line tw-no-self-positioning/no-dimensions
       className={cn("flex h-8 items-center gap-2 rounded-md px-2", className)}
       {...props}
     >

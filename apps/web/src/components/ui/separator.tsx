@@ -7,6 +7,8 @@ function Separator({ className, orientation = "horizontal", ...props }: Separato
       data-slot="separator"
       orientation={orientation}
       className={cn(
+        // A horizontal separator's one-pixel thickness is intrinsic.
+        // oxlint-disable-next-line tw-no-self-positioning/no-dimensions
         "shrink-0 bg-border data-horizontal:h-px data-vertical:border-l data-vertical:self-stretch",
         className,
       )}

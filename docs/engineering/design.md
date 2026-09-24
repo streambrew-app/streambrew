@@ -144,6 +144,7 @@ Reusable components receive external sizing and positioning of their root elemen
 through `className` instead of hardcoding margins, width, or grow behavior internally.
 Their roots may use `relative` to anchor their own absolutely positioned children;
 the parent still controls offsets of the root and its placement outside normal flow.
+The authenticated shell sets the height of route roots from its content wrapper.
 Keep long content shrinkable and wrapping; illustrations need safe space around
 copy and interactive controls at every breakpoint.
 

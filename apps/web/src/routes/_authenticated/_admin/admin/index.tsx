@@ -216,7 +216,7 @@ function AdminOverviewPage() {
   const attentionCount = dashboardQ.data ? getAttentionCount(dashboardQ.data) : 0;
 
   return (
-    <section className="cosmic-panel flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
+    <section className="cosmic-panel flex min-h-0 min-w-0 flex-col overflow-hidden">
       <CosmicPageHeader
         actions={
           <div className="flex items-center gap-2">
