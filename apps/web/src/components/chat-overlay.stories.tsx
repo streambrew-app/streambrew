@@ -31,16 +31,7 @@ LightBackground.meta = { width: "xsmall" };
 
 export function TransparentBackground() {
   return (
-    <div
-      className="min-h-0 overflow-hidden [&>*]:h-full"
-      style={{
-        backgroundColor: "var(--input)",
-        backgroundImage:
-          "linear-gradient(45deg,var(--muted) 25%,transparent 25%),linear-gradient(-45deg,var(--muted) 25%,transparent 25%),linear-gradient(45deg,transparent 75%,var(--muted) 75%),linear-gradient(-45deg,transparent 75%,var(--muted) 75%)",
-        backgroundPosition: "0 0,0 12px,12px -12px,-12px 0",
-        backgroundSize: "24px 24px",
-      }}
-    >
+    <div className="overlay-preview-checkerboard min-h-0 overflow-hidden [&>*]:h-full">
       <OverlayPreview className="bg-transparent" />
     </div>
   );

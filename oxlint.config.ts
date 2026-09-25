@@ -4,7 +4,7 @@ import { noSelfPositioning } from "oxlint-tw-no-self-positioning";
 export default defineConfig({
   categories: {},
   extends: [noSelfPositioning.recommended],
-  jsPlugins: [{ name: "eslint-js", specifier: "oxlint-plugin-eslint" }],
+  jsPlugins: [{ name: "eslint-js", specifier: "oxlint-plugin-eslint" }, "@shadcn/lint"],
   options: {
     denyWarnings: true,
     reportUnusedDisableDirectives: "error",
@@ -21,6 +21,25 @@ export default defineConfig({
     },
   },
   rules: {
+    "shadcn/no-restyle": "error",
+    "shadcn/no-raw-colors": "error",
+    "shadcn/no-arbitrary-values": "error",
+    "shadcn/no-inline-styles": "error",
+    "shadcn/no-unknown-classes": [
+      "error",
+      {
+        // Defined in alerts.css, which is linked by the document but not imported by styles.css.
+        allow: [
+          "alert-overlay-root",
+          "alert-card-entering",
+          "alert-card-exiting",
+          "alert-signal",
+          "alert-range",
+          "overlay-document",
+        ],
+      },
+    ],
+    "shadcn/require-static-classes": "error",
     "eslint-js/padding-line-between-statements": [
       "error",
       {

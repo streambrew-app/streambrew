@@ -13,6 +13,7 @@ import { createTranslations, createTranslator, useI18n, type TranslationKey } fr
 import { preloadRouteQuery } from "@web/lib/trpc";
 import { cn } from "@web/lib/utils";
 import type { AppRouter } from "@web/server/api/trpc/index";
+import type { CSSProperties } from "react";
 
 const translations = createTranslations({
   overview: { en: "Overview", ru: "Обзор" },
@@ -437,7 +438,10 @@ function ResourceRow({
           className="col-span-2 h-1.5 overflow-hidden rounded-full bg-muted"
           role="progressbar"
         >
-          <div className={cn("h-full rounded-full", tone)} style={{ width: `${width}%` }} />
+          <div
+            className={cn("h-full w-(--progress-width) rounded-full", tone)}
+            style={{ "--progress-width": `${width}%` } as CSSProperties}
+          />
         </div>
       )}
     </div>

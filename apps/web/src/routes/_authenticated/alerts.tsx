@@ -33,6 +33,7 @@ import {
   useRef,
   useState,
   type ChangeEvent,
+  type CSSProperties,
   type Dispatch,
   type FormEvent,
   type ReactNode,
@@ -1399,8 +1400,8 @@ function PlaybackRow({
     <div className="flex min-w-0 items-center gap-3 rounded-xl border border-border bg-muted/20 p-3">
       <span
         aria-hidden="true"
-        className="size-2 shrink-0 rounded-full"
-        style={{ backgroundColor: playback.accentColor }}
+        className="size-2 shrink-0 rounded-full bg-(--alert-accent)"
+        style={{ "--alert-accent": playback.accentColor } as CSSProperties}
       />
       <div className="min-w-0 grow">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">

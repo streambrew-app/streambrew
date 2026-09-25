@@ -154,7 +154,7 @@ export default function SignIn() {
       </header>
 
       <div className="relative z-10 flex w-full max-w-6xl flex-col gap-20 pb-8 sm:gap-28 sm:pb-12">
-        <section className="landing-intro grid items-center gap-6 pt-10 lg:min-h-[680px] lg:grid-cols-[1fr_1fr] lg:gap-0 lg:pt-0">
+        <section className="grid items-center gap-6 pt-10 lg:min-h-[680px] lg:grid-cols-[1fr_1fr] lg:gap-0 lg:pt-0">
           <div className="relative z-10 flex flex-col justify-center gap-7 py-5 lg:py-16 lg:pr-7">
             <div className="flex max-w-2xl flex-col gap-4">
               <h1 className="font-heading text-[clamp(2.75rem,5.4vw,4.75rem)] leading-[1.06] font-medium tracking-[-0.035em] text-balance">
