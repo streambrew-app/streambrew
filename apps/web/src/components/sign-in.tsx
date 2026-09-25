@@ -167,7 +167,7 @@ export default function SignIn() {
             <div className="flex flex-col items-start gap-3">
               <Button
                 aria-busy={isSigningIn}
-                className="h-12 rounded-xl px-6 text-sm shadow-lg shadow-primary/15"
+                className="h-12"
                 disabled={isSigningIn}
                 onClick={() => void handleSignIn()}
                 size="lg"

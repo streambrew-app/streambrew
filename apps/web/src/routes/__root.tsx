@@ -378,11 +378,16 @@ function AuthenticatedApplicationContent() {
               <div className="flex items-center gap-1.5">
                 <Tooltip>
                   <TooltipTrigger
-                    aria-label={t(isDark ? "switchToLightMode" : "switchToDarkMode")}
-                    aria-pressed={isDark}
-                    className="grid size-8 cursor-pointer place-items-center rounded-lg border border-sidebar-border bg-sidebar-accent/55 text-sidebar-foreground/70 transition hover:border-sidebar-ring/50 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sidebar-ring"
-                    onClick={() => toggleDark()}
-                    type="button"
+                    render={
+                      <Button
+                        aria-label={t(isDark ? "switchToLightMode" : "switchToDarkMode")}
+                        aria-pressed={isDark}
+                        onClick={() => toggleDark()}
+                        size="icon"
+                        type="button"
+                        variant="outline"
+                      />
+                    }
                   >
                     {isDark ? (
                       <Icons.sun aria-hidden="true" size={15} />
@@ -399,11 +404,10 @@ function AuthenticatedApplicationContent() {
                     aria-expanded={isLanguageMenuOpen}
                     aria-haspopup="menu"
                     aria-label={t("language")}
-                    className="size-8 rounded-lg border border-sidebar-border bg-sidebar-accent/55 p-0 text-base text-sidebar-foreground/70 transition hover:border-sidebar-ring/50 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sidebar-ring"
                     onClick={() => setIsLanguageMenuOpen((isOpen) => !isOpen)}
-                    size="xs"
+                    size="icon"
                     type="button"
-                    variant="ghost"
+                    variant="outline"
                   >
                     <span aria-hidden="true">{localeFlags[locale]}</span>
                   </Button>
@@ -418,14 +422,13 @@ function AuthenticatedApplicationContent() {
                         .map((item) => (
                           <Button
                             aria-label={t(item === "ru" ? "russian" : "english")}
-                            className="size-8 rounded-md p-0 text-base hover:bg-accent"
                             key={item}
                             onClick={() => {
                               setLocale(item);
                               setIsLanguageMenuOpen(false);
                             }}
                             role="menuitem"
-                            size="xs"
+                            size="icon"
                             type="button"
                             variant="ghost"
                           >
@@ -454,12 +457,17 @@ function AuthenticatedApplicationContent() {
               </div>
               <Tooltip>
                 <TooltipTrigger
-                  aria-label={t("signOut")}
-                  className="cursor-pointer text-sidebar-foreground/55 hover:text-sidebar-primary"
-                  onClick={() => {
-                    void signOut().then(() => window.location.assign("/"));
-                  }}
-                  type="button"
+                  render={
+                    <Button
+                      aria-label={t("signOut")}
+                      onClick={() => {
+                        void signOut().then(() => window.location.assign("/"));
+                      }}
+                      size="icon-sm"
+                      type="button"
+                      variant="ghost"
+                    />
+                  }
                 >
                   <Icons.logout aria-hidden="true" size={18} />
                 </TooltipTrigger>
@@ -471,10 +479,7 @@ function AuthenticatedApplicationContent() {
       </Sidebar>
       <div className="flex min-h-0 min-w-0 grow flex-col">
         <header className="flex h-14 shrink-0 items-center gap-2 border-b border-sidebar-border bg-sidebar px-3 pt-[env(safe-area-inset-top)] text-sidebar-foreground lg:hidden">
-          <SidebarTrigger
-            aria-label={t("openNavigation")}
-            className="text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          />
+          <SidebarTrigger aria-label={t("openNavigation")} />
           <Link
             to="/"
             className="flex items-center gap-2 font-heading text-xl font-semibold tracking-tight text-sidebar-foreground"

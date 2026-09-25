@@ -242,12 +242,11 @@ function AdminOverviewPage() {
             )}
             <Button
               aria-label={t("refresh")}
-              className="border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white"
               disabled={dashboardQ.isFetching}
               onClick={() => void dashboardQ.refetch()}
               size="icon-sm"
               type="button"
-              variant="outline"
+              variant="secondary"
             >
               <Icons.retry
                 aria-hidden="true"

@@ -77,9 +77,14 @@ function QueueCurrencyHeading() {
       </h2>
       <Tooltip>
         <TooltipTrigger
-          aria-label={t("queueCurrencyDescription")}
-          className="grid size-5 cursor-pointer place-items-center rounded-full text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-          type="button"
+          render={
+            <Button
+              aria-label={t("queueCurrencyDescription")}
+              size="icon-xs"
+              type="button"
+              variant="ghost"
+            />
+          }
         >
           <Icons.help aria-hidden="true" size={14} />
         </TooltipTrigger>
@@ -179,7 +184,7 @@ export function QueueCurrencyEditor() {
                   aria-describedby={formState.errors.rate ? "queue-currency-rate-error" : undefined}
                   aria-invalid={Boolean(formState.errors.rate)}
                   autoComplete="off"
-                  className="h-9 w-24 bg-background"
+                  className="h-9 w-24"
                   id="queue-currency-rate"
                   min="0"
                   step="any"

@@ -102,7 +102,7 @@ function SlugActionButton({ editor }: { editor: SlugEditorModel }) {
         render={
           <Button
             aria-label={t(slugAction)}
-            className="h-8 border-0 border-l border-input"
+            className="h-8"
             shape="square"
             disabled={(formState.isDirty && !formState.isValid) || setSlugM.isPending}
             onClick={formState.isDirty ? undefined : () => void copyShareUrl()}
@@ -151,7 +151,7 @@ function SlugField({ className, editor }: { className?: string; editor: SlugEdit
           aria-describedby={`slug-help${hasError ? " slug-error" : ""}`}
           aria-invalid={hasError}
           appearance="bare"
-          className="min-w-0 flex-1 font-medium tabular-nums"
+          className="min-w-0 flex-1"
           id="public-video-queue-slug"
           maxLength={47}
           {...register("slug", {
@@ -169,7 +169,9 @@ function SlugField({ className, editor }: { className?: string; editor: SlugEdit
             validate: (value) => SlugSchema.safeParse(value).success || t("slugInvalid"),
           })}
         />
-        <SlugActionButton editor={editor} />
+        <div className="border-l border-input">
+          <SlugActionButton editor={editor} />
+        </div>
       </div>
       <FieldError errors={[formState.errors.slug]} id="slug-error" />
     </Field>

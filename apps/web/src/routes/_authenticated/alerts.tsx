@@ -1016,7 +1016,7 @@ function PresentationSettings({
         <h2 className="font-heading text-lg font-semibold">{t("settings")}</h2>
         <p className="pt-1 text-xs text-muted-foreground">{t("alertsEnabledDescription")}</p>
       </div>
-      <Field orientation="horizontal" className="justify-between gap-4">
+      <Field orientation="horizontal" className="justify-between">
         <FieldLabel htmlFor="alerts-enabled">{t("alertsEnabled")}</FieldLabel>
         <Switch
           checked={draft.enabled}
@@ -1134,7 +1134,7 @@ function SpeechSettings({
   return (
     <article className={cn(panelClass, "flex flex-col gap-5")}>
       <h2 className="font-heading text-lg font-semibold">{t("speech")}</h2>
-      <Field orientation="horizontal" className="justify-between gap-4">
+      <Field orientation="horizontal" className="justify-between">
         <FieldLabel htmlFor="tts-enabled">{t("speechEnabled")}</FieldLabel>
         <Switch
           checked={draft.ttsEnabled}
