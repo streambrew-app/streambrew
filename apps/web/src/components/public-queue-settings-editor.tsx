@@ -200,9 +200,9 @@ export function PublicQueueSettingsEditor() {
           </Button>
         </footer>
         {updateSettingsM.error && (
-          <FieldError className="border-t border-border px-4 py-3 sm:px-5">
-            {updateSettingsM.error.message}
-          </FieldError>
+          <div className="border-t border-border px-4 py-3 sm:px-5">
+            <FieldError>{updateSettingsM.error.message}</FieldError>
+          </div>
         )}
       </form>
     </article>

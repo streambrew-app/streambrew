@@ -154,15 +154,13 @@ function DonationsIndex() {
     <>
       <CosmicPageHeader title={t("donations")} variant="signal" />
       <div className="flex shrink-0 flex-col gap-2 border-b border-border bg-card px-4 py-3 sm:flex-row sm:px-5">
-        <label className="relative min-w-0 grow">
-          <Icons.search
-            aria-hidden="true"
-            size={16}
-            className="absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground"
-          />
+        <label className="flex h-9 min-w-0 grow items-center gap-1.5 rounded-lg border border-input bg-background/70 px-3 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
+          <Icons.search aria-hidden="true" size={16} className="shrink-0 text-muted-foreground" />
           <span className="sr-only">{t("searchDonations")}</span>
           <Input
-            className="w-full h-9 bg-background/70 pr-3 pl-9 text-xs md:text-xs"
+            appearance="bare"
+            className="min-w-0 grow"
+            density="compact"
             onChange={(event) => setQuery(event.target.value)}
             placeholder={t("searchBySupporter")}
             value={query}

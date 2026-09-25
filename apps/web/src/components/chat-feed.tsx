@@ -247,11 +247,7 @@ export function ChatFeed({
         ) : null}
       </div>
       {!overlay && unread > 0 && (
-        <Button
-          className="absolute right-4 bottom-4 rounded-full shadow-lg"
-          onClick={scrollToBottom}
-          size="sm"
-        >
+        <Button className="absolute right-4 bottom-4" onClick={scrollToBottom} size="sm">
           <Icons.unread aria-hidden="true" />
           {unread}
         </Button>

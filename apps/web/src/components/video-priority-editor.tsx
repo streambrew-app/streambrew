@@ -187,11 +187,9 @@ function PrioritySummary({ editor, props }: { editor: VideoPriorityEditorModel; 
 }
 
 function PriorityFields({
-  amountClassName,
   editor,
   priority,
 }: {
-  amountClassName?: string;
   editor: VideoPriorityEditorModel;
   priority: VideoPriority;
 }) {
@@ -200,7 +198,7 @@ function PriorityFields({
 
   return (
     <>
-      <Field className="min-w-0 grow gap-0" data-invalid={Boolean(formState.errors.label)}>
+      <Field className="min-w-0 grow" data-invalid={Boolean(formState.errors.label)}>
         <FieldLabel className="sr-only" htmlFor={`priority-label-${priority.videoPriorityId}`}>
           {t("name")}
         </FieldLabel>
@@ -215,10 +213,9 @@ function PriorityFields({
           {...register("label", { required: t("enterQueueName") })}
         />
       </Field>
-      <Field
-        className={cn("shrink-0 gap-0", amountClassName)}
-        data-invalid={Boolean(formState.errors.minPricePerMinute)}
-      >
+      {/* The amount control has one fixed width within this editor row. */}
+      {/* oxlint-disable-next-line tw-no-self-positioning/no-dimensions */}
+      <Field className="w-20 shrink-0" data-invalid={Boolean(formState.errors.minPricePerMinute)}>
         <FieldLabel className="sr-only" htmlFor={`priority-amount-${priority.videoPriorityId}`}>
           {t("minimumAmountPerMinute")}
         </FieldLabel>
@@ -269,7 +266,7 @@ function PriorityForm({
         >
           <Icons.cancel aria-hidden="true" />
         </Button>
-        <PriorityFields amountClassName="w-20" editor={editor} priority={priority} />
+        <PriorityFields editor={editor} priority={priority} />
         <Button
           aria-label={t(updateVideoPriorityM.isPending ? "savingQueue" : "saveQueue")}
           disabled={!formState.isValid || !formState.isDirty || updateVideoPriorityM.isPending}
@@ -281,14 +278,11 @@ function PriorityForm({
       </div>
       {(formState.errors.label || formState.errors.minPricePerMinute) && (
         <FieldError
-          className="text-micro"
           errors={[formState.errors.label, formState.errors.minPricePerMinute]}
           id={errorId}
         />
       )}
-      {updateVideoPriorityM.error && (
-        <FieldError className="text-micro">{updateVideoPriorityM.error.message}</FieldError>
-      )}
+      {updateVideoPriorityM.error && <FieldError>{updateVideoPriorityM.error.message}</FieldError>}
     </form>
   );
 }

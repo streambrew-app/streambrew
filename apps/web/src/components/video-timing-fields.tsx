@@ -206,12 +206,14 @@ export function VideoTimingFields({
           {endSeconds !== null && t("parsedVideoTime", getVideoTimeParts(endSeconds))}
         </FieldDescription>
       </Field>
-      <FieldDescription className="col-span-2 flex flex-col gap-0.5" id={helpId}>
-        {allowOpenEnd && showOpenEndHelp && <span>{t("manualVideoTimingHelp")}</span>}
+      <FieldDescription className="col-span-2" id={helpId}>
+        {allowOpenEnd && showOpenEndHelp && (
+          <span className="block">{t("manualVideoTimingHelp")}</span>
+        )}
         {watchDuration !== null ? (
-          <span>{t("watchDuration", watchDuration)}</span>
+          <span className="mt-0.5 block first:mt-0">{t("watchDuration", watchDuration)}</span>
         ) : (
-          !allowOpenEnd && <span>{t("videoTimingHelp")}</span>
+          !allowOpenEnd && <span className="mt-0.5 block first:mt-0">{t("videoTimingHelp")}</span>
         )}
       </FieldDescription>
     </div>

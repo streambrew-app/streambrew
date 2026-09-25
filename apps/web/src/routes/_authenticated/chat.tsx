@@ -265,8 +265,9 @@ function SourceState({
   return (
     <Tooltip>
       <TooltipTrigger
-        aria-label={t(normalized)}
-        className="inline-flex size-6 shrink-0 items-center justify-center rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        render={
+          <Button aria-label={t(normalized)} className="shrink-0" size="icon-xs" variant="ghost" />
+        }
       >
         <span aria-hidden="true" className="flex size-3 shrink-0 items-center justify-center">
           <span
@@ -429,7 +430,6 @@ function ChatOauthNotice({ page }: { page: ChatPageModel }) {
       </p>
       <Button
         aria-label={t("dismissChatOauthNotification")}
-        className="text-current hover:bg-black/5 hover:text-current dark:hover:bg-white/10"
         onClick={() =>
           void page.navigate({
             replace: true,
@@ -573,8 +573,9 @@ function ConnectionIdentity({
     <div className={cn("flex min-w-0 items-center gap-2", className)}>
       <Tooltip>
         <TooltipTrigger
-          aria-label={provider.label}
-          className="shrink-0 rounded-lg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          render={
+            <Button aria-label={provider.label} className="shrink-0" size="icon" variant="ghost" />
+          }
         >
           <ProviderMark className="size-8" provider={connection.provider} />
         </TooltipTrigger>
@@ -675,7 +676,6 @@ function ConnectionActions({
         <Switch
           aria-label={`${source.enabled ? t("disableSource") : t("enableSource")}: ${connection.displayName}`}
           checked={source.enabled}
-          className="data-checked:bg-status-success-solid dark:data-checked:bg-status-success-solid"
           disabled={setSourceEnabled.isPending}
           onCheckedChange={(enabled) =>
             setSourceEnabled.mutate({ enabled, sourceId: source.sourceId })
@@ -768,7 +768,7 @@ function AvailableProviderButton({
   };
   return (
     <Button
-      className={cn("justify-start gap-2 p-2.5", className)}
+      className={cn("justify-start", className)}
       disabled={!connectable || page.mutations.startOauth.isPending}
       onClick={connect}
       title={provider.detail}
@@ -820,7 +820,7 @@ function OverlayBackgroundPicker({ page }: { page: ChatPageModel }) {
         {options.map(([value, label]) => (
           <Button
             aria-pressed={page.state.overlayBackground === value}
-            className="min-w-0 px-1.5"
+            className="min-w-0"
             key={value}
             onClick={() => {
               page.state.setOverlayBackground(value);

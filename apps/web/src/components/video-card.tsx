@@ -249,11 +249,7 @@ function VideoStatusControls({
       <Button
         aria-label={t(isWatched ? "markVideoNotWatched" : "markVideoWatched")}
         aria-pressed={isWatched}
-        className={clsx(
-          "h-8",
-          isWatched &&
-            "bg-status-success-surface text-status-success-text hover:bg-status-success-border dark:bg-status-success-deep dark:text-status-success-dark-text dark:hover:bg-status-success-deep-hover",
-        )}
+        className="h-8"
         disabled={isUpdating}
         onClick={() => onStatusChange({ watchedAt: isWatched ? null : new Date() })}
         size="sm"
@@ -479,7 +475,7 @@ function VideoEditForm({
               aria-describedby={formState.errors.amount ? amountErrorId : undefined}
               aria-invalid={Boolean(formState.errors.amount)}
               autoComplete="off"
-              className="w-full bg-card dark:bg-card"
+              className="w-full"
               disabled={isUpdating}
               id={`video-amount-${video.videoId}`}
               min="0"

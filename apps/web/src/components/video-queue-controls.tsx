@@ -138,24 +138,25 @@ function DefaultQueueSwitch({
   const { t } = useI18n(translations);
 
   return (
-    <Field
+    <div
       className={cn(
-        "col-span-3 row-start-2 min-h-8 border-t border-input px-2 text-muted-foreground sm:col-span-1 sm:col-start-4 sm:row-start-1 sm:border-t-0 sm:border-l",
+        "col-span-3 row-start-2 flex min-h-8 items-center border-t border-input px-2 text-muted-foreground sm:col-span-1 sm:col-start-4 sm:row-start-1 sm:border-t-0 sm:border-l",
         className,
       )}
-      orientation="horizontal"
     >
-      <Switch
-        checked={form.isDefault}
-        disabled={queue.isDefault || form.mutation.isPending}
-        id="default-video-queue"
-        onCheckedChange={form.setIsDefault}
-        size="sm"
-      />
-      <FieldLabel className="whitespace-nowrap" htmlFor="default-video-queue">
-        {t("defaultVideoQueue")}
-      </FieldLabel>
-    </Field>
+      <Field orientation="horizontal">
+        <Switch
+          checked={form.isDefault}
+          disabled={queue.isDefault || form.mutation.isPending}
+          id="default-video-queue"
+          onCheckedChange={form.setIsDefault}
+          size="sm"
+        />
+        <FieldLabel className="whitespace-nowrap" htmlFor="default-video-queue">
+          {t("defaultVideoQueue")}
+        </FieldLabel>
+      </Field>
+    </div>
   );
 }
 
@@ -188,7 +189,7 @@ function QueueFormControls({
           aria-invalid={isNameTaken}
           autoComplete="off"
           appearance="bare"
-          className="col-start-2 row-start-1 min-w-0 font-medium"
+          className="col-start-2 row-start-1 min-w-0"
           disabled={form.mutation.isPending}
           id="video-queue-name"
           maxLength={64}
@@ -314,23 +315,25 @@ function SelectedQueueLink({
       >
         <span className="truncate">{queue.label}</span>
       </Link>
-      <Tooltip>
-        <TooltipTrigger
-          render={
-            <Button
-              aria-label={t("editVideoQueue")}
-              className="h-full w-5 border-l-secondary-foreground/10"
-              shape="square"
-              onClick={onEdit}
-              size="icon-sm"
-              variant="secondary"
-            >
-              <Icons.edit aria-hidden="true" className="size-3" />
-            </Button>
-          }
-        />
-        <TooltipContent>{t("editVideoQueue")}</TooltipContent>
-      </Tooltip>
+      <div className="h-full border-l border-secondary-foreground/10">
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                aria-label={t("editVideoQueue")}
+                className="h-full w-5"
+                shape="square"
+                onClick={onEdit}
+                size="icon-sm"
+                variant="secondary"
+              >
+                <Icons.edit aria-hidden="true" className="size-3" />
+              </Button>
+            }
+          />
+          <TooltipContent>{t("editVideoQueue")}</TooltipContent>
+        </Tooltip>
+      </div>
     </div>
   );
 }
