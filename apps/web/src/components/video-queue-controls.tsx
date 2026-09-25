@@ -80,7 +80,8 @@ function QueueSaveButton({ form }: { form: QueueFormModel }) {
         render={
           <Button
             aria-label={t(action)}
-            className="col-start-1 row-start-1 h-8 rounded-none"
+            className="col-start-1 row-start-1 h-8"
+            shape="square"
             disabled={!form.trimmedLabel || !form.isDirty || form.mutation.isPending}
             size="icon"
             type="submit"
@@ -108,7 +109,8 @@ function QueueCancelButton({ form, onCancel }: { form: QueueFormModel; onCancel:
         render={
           <Button
             aria-label={t("cancel")}
-            className="col-start-3 row-start-1 h-8 rounded-none"
+            className="col-start-3 row-start-1 h-8"
+            shape="square"
             disabled={form.mutation.isPending}
             onClick={onCancel}
             size="icon"
@@ -185,7 +187,8 @@ function QueueFormControls({
           aria-describedby={isNameTaken ? "video-queue-error" : undefined}
           aria-invalid={isNameTaken}
           autoComplete="off"
-          className="col-start-2 row-start-1 min-w-0 rounded-none border-0 bg-transparent font-medium focus-visible:ring-0 dark:bg-transparent"
+          appearance="bare"
+          className="col-start-2 row-start-1 min-w-0 font-medium"
           disabled={form.mutation.isPending}
           id="video-queue-name"
           maxLength={64}
@@ -316,7 +319,8 @@ function SelectedQueueLink({
           render={
             <Button
               aria-label={t("editVideoQueue")}
-              className="h-full w-5 rounded-none border-l-secondary-foreground/10"
+              className="h-full w-5 border-l-secondary-foreground/10"
+              shape="square"
               onClick={onEdit}
               size="icon-sm"
               variant="secondary"

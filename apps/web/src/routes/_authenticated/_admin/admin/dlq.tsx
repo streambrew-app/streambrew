@@ -211,7 +211,7 @@ function DeadLettersSkeleton() {
     <div aria-busy="true" className="divide-y divide-border">
       {[0, 1, 2].map((index) => (
         <div className="flex items-start gap-3 px-4 py-4 sm:px-5" key={index}>
-          <Skeleton className="size-9 shrink-0 rounded-lg" />
+          <Skeleton className="size-9 shrink-0" shape="panel" />
           <div className="flex min-w-0 grow flex-col gap-2">
             <Skeleton className="h-3 w-52 max-w-full" />
             <Skeleton className="h-3 w-80 max-w-full" />

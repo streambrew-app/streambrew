@@ -208,7 +208,8 @@ function PriorityFields({
           autoComplete="off"
           aria-describedby={formState.errors.label ? errorId : undefined}
           aria-invalid={Boolean(formState.errors.label)}
-          className="w-full h-6 rounded-md px-2 text-xs md:text-xs"
+          className="w-full h-6"
+          density="compact"
           id={`priority-label-${priority.videoPriorityId}`}
           maxLength={64}
           {...register("label", { required: t("enterQueueName") })}
@@ -225,7 +226,8 @@ function PriorityFields({
           autoComplete="off"
           aria-describedby={formState.errors.minPricePerMinute ? errorId : undefined}
           aria-invalid={Boolean(formState.errors.minPricePerMinute)}
-          className="w-full h-6 rounded-md px-2 text-xs md:text-xs"
+          className="w-full h-6"
+          density="compact"
           id={`priority-amount-${priority.videoPriorityId}`}
           min="0"
           step="any"

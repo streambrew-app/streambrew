@@ -150,7 +150,8 @@ export function AddVideoForm({ onCancel, videoQueueId, queues }: Props) {
                 <Input
                   aria-describedby={`${amountHelpId}${formState.errors.amount ? ` ${amountErrorId}` : ""}`}
                   aria-invalid={Boolean(formState.errors.amount)}
-                  className="min-w-0 grow rounded-none border-0 bg-transparent focus-visible:ring-0 dark:bg-transparent"
+                  appearance="bare"
+                  className="min-w-0 grow"
                   disabled={addVideoM.isPending}
                   id="manual-video-amount"
                   min="0"

@@ -10,11 +10,11 @@ export function DonationListSkeleton({ className, ...props }: Props) {
     <div className={cn("divide-y divide-border", className)} {...props}>
       {[0, 1, 2].map((index) => (
         <div className="flex gap-3 px-4 py-4 sm:items-center sm:px-5" key={index}>
-          <Skeleton className="size-9 shrink-0 rounded-lg" />
+          <Skeleton className="size-9 shrink-0" shape="panel" />
           <div className="flex min-w-0 grow flex-col gap-2">
             <div className="flex items-center gap-2">
               <Skeleton className="h-3 w-24" />
-              <Skeleton className="h-4 w-20 rounded" />
+              <Skeleton className="h-4 w-20" />
             </div>
             <Skeleton className="h-3 w-3/4 max-w-sm" />
           </div>
@@ -40,10 +40,10 @@ export function VideoListSkeleton({
           {withActions ? (
             <div className="grid min-w-0 items-start gap-5 @3xl:grid-cols-[clamp(19rem,33%,25rem)_minmax(0,1fr)]">
               <div className="flex min-w-0 flex-col gap-2">
-                <Skeleton className="aspect-video w-full rounded-lg" />
+                <Skeleton className="aspect-video w-full" shape="panel" />
                 <div className="flex gap-2">
-                  <Skeleton className="h-8 w-24 rounded-md" />
-                  <Skeleton className="h-8 w-24 rounded-md" />
+                  <Skeleton className="h-8 w-24" />
+                  <Skeleton className="h-8 w-24" />
                 </div>
               </div>
               <div className="flex min-w-0 flex-col gap-3 @3xl:min-h-full">
@@ -54,12 +54,12 @@ export function VideoListSkeleton({
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
                     <Skeleton className="h-4 w-20" />
-                    <Skeleton className="size-6 rounded-md" />
+                    <Skeleton className="size-6" />
                   </div>
                 </div>
                 <Skeleton className="h-5 w-3/4 max-w-sm" />
                 <div className="flex items-center gap-2">
-                  <Skeleton className="h-4 w-14 rounded-md" />
+                  <Skeleton className="h-4 w-14" />
                   <Skeleton className="h-3 w-24" />
                 </div>
                 <div className="flex flex-col gap-2">
@@ -71,12 +71,12 @@ export function VideoListSkeleton({
             </div>
           ) : (
             <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-start">
-              <Skeleton className="aspect-video w-full rounded-lg sm:w-60 sm:shrink-0" />
+              <Skeleton className="aspect-video w-full sm:w-60 sm:shrink-0" shape="panel" />
               <div className="flex min-w-0 grow flex-col gap-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-2">
                     <Skeleton className="h-3 w-24" />
-                    <Skeleton className="h-4 w-16 rounded-full" />
+                    <Skeleton className="h-4 w-16" shape="pill" />
                   </div>
                   <div className="flex flex-col items-end gap-2">
                     <Skeleton className="h-3 w-14" />
@@ -101,7 +101,7 @@ export function VideoPrioritiesSkeleton({ className, ...props }: Props) {
     <div className={cn("flex flex-col gap-2", className)} {...props}>
       {[0, 1].map((index) => (
         <div className="flex items-center gap-2 rounded-lg border border-border p-2" key={index}>
-          <Skeleton className="size-6 shrink-0 rounded-md" />
+          <Skeleton className="size-6 shrink-0" />
           <Skeleton className="h-3 min-w-0 grow" />
           <Skeleton className="h-3 w-16 shrink-0" />
           <Skeleton className="h-3 w-4 shrink-0" />
@@ -122,7 +122,7 @@ export function DashboardSkeleton({ className, ...props }: Props) {
           >
             <div className="flex items-center justify-between">
               <Skeleton className="h-3 w-24" />
-              <Skeleton className="size-8 rounded-lg" />
+              <Skeleton className="size-8" shape="panel" />
             </div>
             <Skeleton className="h-6 w-20" />
             <Skeleton className="h-2.5 w-32" />
@@ -146,7 +146,7 @@ export function DashboardSkeleton({ className, ...props }: Props) {
               <Skeleton className="h-4 w-32" />
               <Skeleton className="h-3 w-48" />
             </div>
-            <Skeleton className="h-7 w-20 rounded-md" />
+            <Skeleton className="h-7 w-20" />
           </div>
           <Skeleton className="h-40 w-full" />
           <div className="flex justify-between">
@@ -158,8 +158,8 @@ export function DashboardSkeleton({ className, ...props }: Props) {
         </article>
       </section>
       <section className="grid gap-4 xl:grid-cols-2">
-        <Skeleton className="h-30 rounded-xl" />
-        <Skeleton className="h-30 rounded-xl" />
+        <Skeleton className="h-30" shape="card" />
+        <Skeleton className="h-30" shape="card" />
       </section>
     </div>
   );

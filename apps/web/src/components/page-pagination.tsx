@@ -100,7 +100,7 @@ export function PagePagination({
         <div className="flex self-center rounded-xl border border-border bg-secondary/35 p-1 shadow-sm sm:col-start-2 sm:row-start-1">
           <Button
             aria-label={t("previousPage")}
-            className="shadow-sm"
+            elevation="subtle"
             disabled={disabled || isLoading || page === 1}
             onClick={() => onPageChange(page - 1)}
             size="icon"
@@ -126,7 +126,7 @@ export function PagePagination({
                 <Button
                   aria-current={item === page ? "page" : undefined}
                   aria-label={t("goToPage", { page: item })}
-                  className={item === page ? "shadow-sm" : undefined}
+                  elevation={item === page ? "subtle" : undefined}
                   disabled={disabled || isLoading}
                   key={item}
                   onClick={() => onPageChange(item)}
@@ -141,7 +141,7 @@ export function PagePagination({
           </div>
           <Button
             aria-label={t("nextPage")}
-            className="shadow-sm"
+            elevation="subtle"
             disabled={disabled || isLoading || page === totalPages}
             onClick={() => onPageChange(page + 1)}
             size="icon"
