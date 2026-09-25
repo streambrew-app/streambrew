@@ -91,7 +91,7 @@ function DeadLettersPage() {
       <CosmicPageHeader
         actions={
           deadLettersQ.data ? (
-            <span className="rounded-full border border-amber-200/40 bg-amber-950/60 px-2.5 py-1 text-xs font-semibold text-amber-100 tabular-nums">
+            <span className="rounded-full border border-status-warning-border/40 bg-status-warning-deep/60 px-2.5 py-1 text-xs font-semibold text-status-warning-on-deep tabular-nums">
               {t("deadLetterCount", { count: deadLettersQ.data.total })}
             </span>
           ) : undefined
@@ -127,7 +127,7 @@ function DeadLettersPage() {
           aria-label={t("deadLetterPagination")}
           className="flex shrink-0 flex-col items-stretch justify-between gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:px-5"
         >
-          <span className="text-[11px] text-muted-foreground">
+          <span className="text-caption text-muted-foreground">
             {t("deadLettersShown", { count: deadLettersQ.data.items.length })}
           </span>
           <div className="flex items-center gap-2">
@@ -172,7 +172,7 @@ function DeadLetterRow({ deadLetter }: { deadLetter: ChatDeadLetter }) {
             <code className="break-all text-xs font-semibold text-foreground">
               {deadLetter.sourceSubject}
             </code>
-            <span className="text-[11px] text-muted-foreground tabular-nums">
+            <span className="text-caption text-muted-foreground tabular-nums">
               #{deadLetter.sequence}
             </span>
           </span>
@@ -180,7 +180,7 @@ function DeadLetterRow({ deadLetter }: { deadLetter: ChatDeadLetter }) {
             {deadLetter.error}
           </span>
         </span>
-        <span className="col-start-2 flex shrink-0 items-center gap-2 text-[11px] text-muted-foreground tabular-nums sm:col-start-3 sm:row-start-1">
+        <span className="col-start-2 flex shrink-0 items-center gap-2 text-caption text-muted-foreground tabular-nums sm:col-start-3 sm:row-start-1">
           <time dateTime={deadLetter.failedAt.toISOString()}>{failedAt}</time>
           <Icons.chevronDown
             aria-hidden="true"
@@ -193,7 +193,7 @@ function DeadLetterRow({ deadLetter }: { deadLetter: ChatDeadLetter }) {
         <div className="flex items-center justify-between gap-3">
           <span className="text-xs font-semibold text-foreground">{t("deadLetterPayload")}</span>
           {deadLetter.payloadTruncated && (
-            <span className="text-[11px] font-medium text-amber-700 dark:text-amber-200">
+            <span className="text-caption font-medium text-status-warning-text dark:text-status-warning-dark-text">
               {t("deadLetterPayloadTruncated")}
             </span>
           )}

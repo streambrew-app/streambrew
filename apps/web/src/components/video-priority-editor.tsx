@@ -171,9 +171,9 @@ function PrioritySummary({ editor, props }: { editor: VideoPriorityEditorModel; 
       <div className="pointer-events-none flex min-w-0 grow flex-col gap-0.5 px-1.5 py-1 text-left">
         <div className="flex min-w-0 items-center gap-2 text-xs">
           <span className="min-w-0 grow truncate">{priority.label}</span>
-          <span className="shrink-0 text-[10px] font-bold">{videoCount}</span>
+          <span className="shrink-0 text-micro font-bold">{videoCount}</span>
         </div>
-        <div className="flex min-w-0 items-center justify-between gap-2 text-[10px] text-muted-foreground">
+        <div className="flex min-w-0 items-center justify-between gap-2 text-micro text-muted-foreground">
           <span className="truncate">
             {priority.minPricePerMinute} {queueCurrency}/{t("perMinute")}
           </span>
@@ -279,13 +279,13 @@ function PriorityForm({
       </div>
       {(formState.errors.label || formState.errors.minPricePerMinute) && (
         <FieldError
-          className="text-[10px]"
+          className="text-micro"
           errors={[formState.errors.label, formState.errors.minPricePerMinute]}
           id={errorId}
         />
       )}
       {updateVideoPriorityM.error && (
-        <FieldError className="text-[10px]">{updateVideoPriorityM.error.message}</FieldError>
+        <FieldError className="text-micro">{updateVideoPriorityM.error.message}</FieldError>
       )}
     </form>
   );

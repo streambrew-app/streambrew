@@ -43,7 +43,7 @@ describe("ChatFeed overlay", () => {
       />,
     );
 
-    expect(html).not.toContain("bg-[#171018]/88");
+    expect(html).not.toContain("bg-chat-overlay/88");
     expect(html).not.toContain("backdrop-blur-md");
   });
 });

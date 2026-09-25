@@ -413,7 +413,7 @@ function VideoStatusFilters({ page }: { page: VideoQueuePage }) {
           >
             <Icon aria-hidden="true" size={15} />
             <span className="grow">{label}</span>
-            <span className="text-[10px] font-bold">{count}</span>
+            <span className="text-micro font-bold">{count}</span>
           </Link>
         );
       })}

@@ -35,9 +35,16 @@ function SignalArt({ className }: Pick<Props, "className">) {
         strokeLinecap="round"
         strokeWidth="2"
       />
-      <circle cx="166" cy="25" r="9" fill="#7962CD" stroke="#251820" strokeWidth="2" />
-      <circle cx="119" cy="35" r="4.5" fill="#EDBF88" />
-      <path d="m92 26 2 5 5 2-5 2-2 5-2-5-5-2 5-2 2-5Z" fill="#FFF8ED" />
+      <circle
+        cx="166"
+        cy="25"
+        r="9"
+        fill="var(--color-orbit-violet)"
+        stroke="var(--color-espresso-void)"
+        strokeWidth="2"
+      />
+      <circle cx="119" cy="35" r="4.5" fill="var(--color-roasted-gold)" />
+      <path d="m92 26 2 5 5 2-5 2-2 5-2-5-5-2 5-2 2-5Z" fill="var(--color-milky-paper)" />
     </svg>
   );
 }
@@ -57,17 +64,38 @@ function OrbitArt({ className }: Pick<Props, "className">) {
         strokeLinecap="round"
         strokeWidth="2"
       />
-      <circle cx="28" cy="91" r="11" fill="#54CFA5" stroke="#251820" strokeWidth="3" />
-      <circle cx="120" cy="48" r="15" fill="#FF647C" stroke="#251820" strokeWidth="3" />
-      <circle cx="218" cy="58" r="9" fill="#FFBD3E" stroke="#251820" strokeWidth="3" />
+      <circle
+        cx="28"
+        cy="91"
+        r="11"
+        fill="var(--color-mint-signal)"
+        stroke="var(--color-espresso-void)"
+        strokeWidth="3"
+      />
+      <circle
+        cx="120"
+        cy="48"
+        r="15"
+        fill="var(--color-comet-coral)"
+        stroke="var(--color-espresso-void)"
+        strokeWidth="3"
+      />
+      <circle
+        cx="218"
+        cy="58"
+        r="9"
+        fill="var(--color-solar-mango)"
+        stroke="var(--color-espresso-void)"
+        strokeWidth="3"
+      />
       <path
         d="M46 116c47 20 121 22 173-10"
         stroke="currentColor"
         strokeLinecap="round"
         strokeWidth="3"
       />
-      <path d="m84 56 3 7 7 3-7 3-3 7-3-7-7-3 7-3 3-7Z" fill="#4056E8" />
-      <path d="m238 91 2 5 5 2-5 2-2 5-2-5-5-2 5-2 2-5Z" fill="#FF647C" />
+      <path d="m84 56 3 7 7 3-7 3-3 7-3-7-7-3 7-3 3-7Z" fill="var(--color-cosmic-blue)" />
+      <path d="m238 91 2 5 5 2-5 2-2 5-2-5-5-2 5-2 2-5Z" fill="var(--color-comet-coral)" />
     </svg>
   );
 }
@@ -89,19 +117,24 @@ function BeanComets({ className }: Pick<Props, "className">) {
       />
       <path
         d="M107 72c-9-13-6-30 7-39 13 9 18 25 10 38-4 7-11 10-17 1Z"
-        fill="#FFBD3E"
-        stroke="#251820"
+        fill="var(--color-solar-mango)"
+        stroke="var(--color-espresso-void)"
         strokeWidth="3"
       />
-      <path d="M114 34c2 14-1 27-8 38" stroke="#251820" strokeLinecap="round" strokeWidth="2" />
+      <path
+        d="M114 34c2 14-1 27-8 38"
+        stroke="var(--color-espresso-void)"
+        strokeLinecap="round"
+        strokeWidth="2"
+      />
       <path
         d="M126 28c13-12 26-14 39-13M132 38c16-5 28-2 37 5"
-        stroke="#FF647C"
+        stroke="var(--color-comet-coral)"
         strokeLinecap="round"
         strokeWidth="4"
       />
-      <circle cx="32" cy="28" r="6" fill="#54CFA5" />
-      <path d="m62 57 3 7 7 3-7 3-3 7-3-7-7-3 7-3 3-7Z" fill="#4056E8" />
+      <circle cx="32" cy="28" r="6" fill="var(--color-mint-signal)" />
+      <path d="m62 57 3 7 7 3-7 3-3 7-3-7-7-3 7-3 3-7Z" fill="var(--color-cosmic-blue)" />
     </svg>
   );
 }
@@ -144,11 +177,16 @@ export function CosmicArt({ className, variant = "portal" }: Props) {
             pathLength="588"
             rx="126"
             ry="57"
-            stroke="#FFF8ED"
+            stroke="var(--color-milky-paper)"
             strokeDasharray="5 9"
           />
           <g className={orbitBodyClassName}>
-            <circle r="8" fill="#FF647C" stroke="#251820" strokeWidth="3" />
+            <circle
+              r="8"
+              fill="var(--color-comet-coral)"
+              stroke="var(--color-espresso-void)"
+              strokeWidth="3"
+            />
           </g>
           <g
             className={cn(
@@ -156,7 +194,7 @@ export function CosmicArt({ className, variant = "portal" }: Props) {
               "[animation-delay:-9s] motion-reduce:[offset-distance:50%]",
             )}
           >
-            <path d="M-5-5 0-17 5-5 17 0 5 5 0 17-5 5-17 0-5-5Z" fill="#FFBD3E" />
+            <path d="M-5-5 0-17 5-5 17 0 5 5 0 17-5 5-17 0-5-5Z" fill="var(--color-solar-mango)" />
           </g>
         </g>
       </svg>

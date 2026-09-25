@@ -87,7 +87,7 @@ function ConnectionNotice() {
   const sourceName = donationSourceDetails(search.source).name;
   return (
     <div
-      className={`flex items-center gap-2 rounded-xl border px-3.5 py-3 text-[13px] ${search.success ? "border-emerald-300/50 bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300" : "border-red-300/50 bg-red-50 text-red-700 dark:bg-red-400/10 dark:text-red-300"}`}
+      className={`flex items-center gap-2 rounded-xl border px-3.5 py-3 text-compact ${search.success ? "border-status-success-border/50 bg-status-success-surface text-status-success-text dark:bg-status-success-dark-surface/10 dark:text-status-success-dark-text" : "border-status-error-border/50 bg-status-error-surface text-status-error-text dark:bg-status-error-dark-surface/10 dark:text-status-error-dark-text"}`}
       role="status"
     >
       <DonationSourceIcon className="size-3.5" size="xs" source={search.source} />
@@ -284,7 +284,7 @@ function DisconnectError({ disconnectM }: { disconnectM: DisconnectMutation }) {
 
   return (
     <div
-      className="flex items-center gap-2 rounded-xl border border-red-300/50 bg-red-50 px-3.5 py-3 text-[13px] text-red-700 dark:bg-red-400/10 dark:text-red-300"
+      className="flex items-center gap-2 rounded-xl border border-status-error-border/50 bg-status-error-surface px-3.5 py-3 text-compact text-status-error-text dark:bg-status-error-dark-surface/10 dark:text-status-error-dark-text"
       role="alert"
     >
       <DonationSourceIcon className="size-3.5" size="xs" source={source} />

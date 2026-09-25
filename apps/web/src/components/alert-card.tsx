@@ -31,7 +31,7 @@ export function AlertCard({
     <article
       aria-hidden={stage === "hidden"}
       className={cn(
-        "relative flex items-center gap-5 overflow-hidden rounded-[1.5rem] border border-white/15 bg-[#251820]/95 p-5 text-[#fff8ed] shadow-[0_20px_60px_rgba(20,9,17,0.4)]",
+        "relative flex items-center gap-5 overflow-hidden rounded-alert border border-white/15 bg-espresso-void/95 p-5 text-milky-paper shadow-alert-card",
         stage === "entering" && "alert-card-entering",
         stage === "exiting" && "alert-card-exiting",
         stage === "hidden" && "pointer-events-none opacity-0",
@@ -39,10 +39,7 @@ export function AlertCard({
       )}
       style={{ "--alert-accent": playback.accentColor } as React.CSSProperties}
     >
-      <span
-        aria-hidden="true"
-        className="absolute inset-y-0 left-0 w-1.5 bg-[var(--alert-accent)]"
-      />
+      <span aria-hidden="true" className="absolute inset-y-0 left-0 w-1.5 bg-(--alert-accent)" />
       <div className="relative grid size-28 shrink-0 place-items-center overflow-hidden rounded-2xl border border-white/10 bg-white/7 sm:size-36">
         {imageSrc ? (
           <img alt="" className="size-full object-contain" src={imageSrc} />
@@ -51,22 +48,22 @@ export function AlertCard({
             aria-hidden="true"
             className="alert-signal grid size-16 place-items-center rounded-full"
           >
-            <span className="size-5 rotate-45 rounded-sm bg-[var(--alert-accent)]" />
+            <span className="size-5 rotate-45 rounded-sm bg-(--alert-accent)" />
           </span>
         )}
       </div>
       <div className="flex min-w-0 flex-1 flex-col gap-2">
-        <p className="text-sm text-[#d9cbd4]">{t("supported")}</p>
+        <p className="text-sm text-alert-muted">{t("supported")}</p>
         <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
           <strong className="font-heading line-clamp-2 min-w-0 max-w-full text-2xl leading-none font-semibold text-white [overflow-wrap:anywhere] sm:text-3xl">
             {author}
           </strong>
-          <span className="font-heading text-xl font-semibold text-[var(--alert-accent)] sm:text-2xl">
+          <span className="font-heading text-xl font-semibold text-(--alert-accent) sm:text-2xl">
             {fmtAmount(playback.amount, playback.currency, locale)}
           </span>
         </div>
         {message && (
-          <p className="line-clamp-3 text-base leading-relaxed text-[#fff8ed]/90 [overflow-wrap:anywhere] sm:text-lg">
+          <p className="line-clamp-3 text-base leading-relaxed text-milky-paper/90 [overflow-wrap:anywhere] sm:text-lg">
             {message}
           </p>
         )}

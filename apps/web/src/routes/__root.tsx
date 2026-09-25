@@ -276,7 +276,7 @@ function AuthenticatedApplicationContent() {
           <div className="relative z-10 flex items-center gap-3">
             <Link
               to="/"
-              className="flex items-center gap-2.5 px-1 font-heading text-[1.45rem] font-semibold tracking-tight text-sidebar-foreground focus-visible:rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sidebar-ring"
+              className="flex items-center gap-2.5 px-1 font-heading text-2xl font-semibold tracking-tight text-sidebar-foreground focus-visible:rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sidebar-ring"
             >
               <img alt="" src={favicon} className="size-10 object-contain" />
               StreamBrew
@@ -448,7 +448,7 @@ function AuthenticatedApplicationContent() {
                 <strong className="block truncate text-xs text-sidebar-foreground">
                   {user.name}
                 </strong>
-                <small className="mt-0.5 block truncate text-[10px] text-sidebar-foreground/65">
+                <small className="mt-0.5 block truncate text-micro text-sidebar-foreground/65">
                   @{userInfo.slug}
                 </small>
               </div>
@@ -485,12 +485,12 @@ function AuthenticatedApplicationContent() {
         </header>
         {isDevelopmentWarningVisible && (
           <div
-            className="flex shrink-0 items-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 dark:border-amber-400/25 dark:bg-amber-400/10 dark:text-amber-100"
+            className="flex shrink-0 items-center gap-2 border-b border-status-warning-border bg-status-warning-surface px-4 py-3 text-sm text-status-warning-deep dark:border-status-warning-dark-surface/25 dark:bg-status-warning-dark-surface/10 dark:text-status-warning-on-deep"
             role="alert"
           >
             <Icons.warn
               aria-hidden="true"
-              className="size-5 shrink-0 text-amber-600 dark:text-amber-300"
+              className="size-5 shrink-0 text-status-warning-text dark:text-status-warning-dark-text"
             />
             <p className="min-w-0 grow">{t("activeDevelopment")}</p>
             <Button
@@ -549,7 +549,7 @@ function AccountAvatar({
     <span
       aria-hidden="true"
       className={cn(
-        "grid shrink-0 place-items-center rounded-lg bg-sidebar-accent text-[11px] font-semibold text-sidebar-primary",
+        "grid shrink-0 place-items-center rounded-lg bg-sidebar-accent text-caption font-semibold text-sidebar-primary",
         className,
       )}
     >

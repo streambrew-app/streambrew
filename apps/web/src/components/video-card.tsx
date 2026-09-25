@@ -224,7 +224,7 @@ function VideoThumbnail({
           className="absolute inset-0 bg-black/10 transition-colors group-hover:bg-black/20"
         />
       </a>
-      <span className="pointer-events-none absolute right-2 bottom-2 rounded bg-black/75 px-1.5 py-0.5 text-[11px] font-medium text-white tabular-nums">
+      <span className="pointer-events-none absolute right-2 bottom-2 rounded bg-black/75 px-1.5 py-0.5 text-caption font-medium text-white tabular-nums">
         {timingLabel}
       </span>
     </div>
@@ -252,7 +252,7 @@ function VideoStatusControls({
         className={clsx(
           "h-8",
           isWatched &&
-            "bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-950 dark:text-green-300 dark:hover:bg-green-900",
+            "bg-status-success-surface text-status-success-text hover:bg-status-success-border dark:bg-status-success-deep dark:text-status-success-dark-text dark:hover:bg-status-success-deep-hover",
         )}
         disabled={isUpdating}
         onClick={() => onStatusChange({ watchedAt: isWatched ? null : new Date() })}
@@ -436,7 +436,7 @@ function VideoSummary({
       )}
       <div className="flex min-w-0 flex-nowrap items-center gap-1.5">
         {showPriorityLabel && (
-          <span className="rounded-md bg-secondary px-1.5 py-0.5 text-[11px] font-medium whitespace-nowrap text-secondary-foreground">
+          <span className="rounded-md bg-secondary px-1.5 py-0.5 text-caption font-medium whitespace-nowrap text-secondary-foreground">
             {video.priorityLabel ?? t("videoUnassigned")}
           </span>
         )}

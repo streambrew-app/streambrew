@@ -20,11 +20,11 @@ function Metric({ title, value, note, subnote, icon: MetricIcon, iconClass }: Me
           <MetricIcon aria-hidden="true" />
         </span>
       </div>
-      <strong className="block font-heading text-[32px] leading-none font-medium tracking-tight text-card-foreground tabular-nums">
+      <strong className="block font-heading text-3xl leading-none font-medium tracking-tight text-card-foreground tabular-nums">
         {value}
       </strong>
       <p
-        className={`text-[11px] font-semibold ${subnote ? "text-emerald-700 dark:text-emerald-400" : "text-muted-foreground"}`}
+        className={`text-caption font-semibold ${subnote ? "text-status-success-text dark:text-status-success-dark-surface" : "text-muted-foreground"}`}
       >
         {note}
         {subnote && <span className="font-normal text-muted-foreground"> {subnote}</span>}

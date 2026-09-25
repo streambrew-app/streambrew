@@ -107,7 +107,7 @@ export function DonationSourceIcon({
       className={cn(
         "grid shrink-0 place-items-center overflow-hidden",
         details.iconClassName,
-        size === "xs" ? "rounded-[3px]" : size === "sm" ? "rounded-lg" : "rounded-xl shadow-sm",
+        size === "xs" ? "rounded-xs" : size === "sm" ? "rounded-lg" : "rounded-xl shadow-sm",
         className,
       )}
     >
@@ -167,10 +167,10 @@ export function DonationSourceConnectionStatus({ connected }: { connected: boole
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold",
+        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-micro font-bold",
         connected
-          ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300"
-          : "bg-orange-50 text-orange-600 dark:bg-orange-400/10 dark:text-orange-300",
+          ? "bg-status-success-surface text-status-success-text dark:bg-status-success-dark-surface/10 dark:text-status-success-dark-text"
+          : "bg-status-warning-surface text-status-warning-text dark:bg-status-warning-dark-surface/10 dark:text-status-warning-dark-text",
       )}
     >
       <i aria-hidden="true" className="size-1.5 rounded-full bg-current" />
@@ -191,7 +191,7 @@ export function DonationSourceBadge({
   return (
     <DonationSourceLink
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border border-border bg-background/70 px-2 py-0.5 text-[10px] font-semibold text-muted-foreground transition-colors outline-none hover:border-primary/30 hover:bg-secondary hover:text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+        "inline-flex items-center gap-1 rounded-full border border-border bg-background/70 px-2 py-0.5 text-micro font-semibold text-muted-foreground transition-colors outline-none hover:border-primary/30 hover:bg-secondary hover:text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
         className,
       )}
       source={source}

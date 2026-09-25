@@ -21,9 +21,26 @@ export default defineConfig({
     },
   },
   rules: {
-    "shadcn/no-restyle": "error",
+    "shadcn/no-restyle": ["error", { allow: ["layout"] }],
     "shadcn/no-raw-colors": "error",
-    "shadcn/no-arbitrary-values": "error",
+    "shadcn/no-arbitrary-values": [
+      "error",
+      {
+        // Structural values tied to the OBS stage, safe area, responsive chat, and sidebar motion.
+        allow: [
+          "layout",
+          "p-[4%]",
+          "p-[clamp(1rem,2.5vw,2rem)]",
+          "pt-[env(safe-area-inset-top)]",
+          "[animation-delay:-9s]",
+          "text-[0.9em]",
+          "transition-[width]",
+          "transition-[left,right,width]",
+          "transition-[margin,opacity]",
+          "transition-[width,height,padding]",
+        ],
+      },
+    ],
     "shadcn/no-inline-styles": "error",
     "shadcn/no-unknown-classes": [
       "error",
