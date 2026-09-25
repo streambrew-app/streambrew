@@ -31,7 +31,7 @@ export function AlertCard({
     <article
       aria-hidden={stage === "hidden"}
       className={cn(
-        "alert-card relative flex items-center gap-5 overflow-hidden rounded-[1.5rem] border border-white/15 bg-[#251820]/95 p-5 text-[#fff8ed] shadow-[0_20px_60px_rgba(20,9,17,0.4)]",
+        "relative flex items-center gap-5 overflow-hidden rounded-[1.5rem] border border-white/15 bg-[#251820]/95 p-5 text-[#fff8ed] shadow-[0_20px_60px_rgba(20,9,17,0.4)]",
         stage === "entering" && "alert-card-entering",
         stage === "exiting" && "alert-card-exiting",
         stage === "hidden" && "pointer-events-none opacity-0",
