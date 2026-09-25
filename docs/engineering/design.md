@@ -203,6 +203,11 @@ geometric stars connect artwork across surfaces.
 
 ## Components
 
+At call sites, `className` may set external layout such as placement and width.
+Component appearance, including padding, color, type, shape, and effects, belongs
+in a named component variant. Components may style the primitives they compose
+inside their own implementation.
+
 - **Buttons:** reuse the existing shadcn/Base UI primitive. Primary is violet,
   secondary is pale violet, and outline/ghost provide quiet actions. The default
   height is 32 px; the landing CTA explicitly grows to 48 px with 24 px horizontal

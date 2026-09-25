@@ -89,6 +89,13 @@ export default defineConfig({
   },
   overrides: [
     {
+      files: ["apps/web/src/components/ui/**/*.{ts,tsx}"],
+      rules: {
+        // Primitives may style the other primitives they compose internally.
+        "shadcn/no-restyle": "off",
+      },
+    },
+    {
       files: ["**/*.ts"],
       rules: {
         "no-use-before-define": "error",
