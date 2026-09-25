@@ -186,60 +186,6 @@ function PrioritySummary({ editor, props }: { editor: VideoPriorityEditorModel; 
   );
 }
 
-function PriorityFields({
-  editor,
-  priority,
-}: {
-  editor: VideoPriorityEditorModel;
-  priority: VideoPriority;
-}) {
-  const { formState, register, t } = editor;
-  const errorId = `video-priority-error-${priority.videoPriorityId}`;
-
-  return (
-    <>
-      <Field className="min-w-0 grow" data-invalid={Boolean(formState.errors.label)}>
-        <FieldLabel className="sr-only" htmlFor={`priority-label-${priority.videoPriorityId}`}>
-          {t("name")}
-        </FieldLabel>
-        <Input
-          autoComplete="off"
-          aria-describedby={formState.errors.label ? errorId : undefined}
-          aria-invalid={Boolean(formState.errors.label)}
-          className="w-full h-6"
-          density="compact"
-          id={`priority-label-${priority.videoPriorityId}`}
-          maxLength={64}
-          {...register("label", { required: t("enterQueueName") })}
-        />
-      </Field>
-      {/* The amount control has one fixed width within this editor row. */}
-      {/* oxlint-disable-next-line tw-no-self-positioning/no-dimensions */}
-      <Field className="w-20 shrink-0" data-invalid={Boolean(formState.errors.minPricePerMinute)}>
-        <FieldLabel className="sr-only" htmlFor={`priority-amount-${priority.videoPriorityId}`}>
-          {t("minimumAmountPerMinute")}
-        </FieldLabel>
-        <Input
-          autoComplete="off"
-          aria-describedby={formState.errors.minPricePerMinute ? errorId : undefined}
-          aria-invalid={Boolean(formState.errors.minPricePerMinute)}
-          className="w-full h-6"
-          density="compact"
-          id={`priority-amount-${priority.videoPriorityId}`}
-          min="0"
-          step="any"
-          type="number"
-          {...register("minPricePerMinute", {
-            required: t("enterMinimumAmount"),
-            validate: (value) =>
-              MoneyAmountSchema.safeParse(value).success || t("enterAmountZeroOrMore"),
-          })}
-        />
-      </Field>
-    </>
-  );
-}
-
 function PriorityForm({
   editor,
   priority,
@@ -247,7 +193,15 @@ function PriorityForm({
   editor: VideoPriorityEditorModel;
   priority: VideoPriority;
 }) {
-  const { cancelEditing, formState, handleSubmit, savePriority, t, updateVideoPriorityM } = editor;
+  const {
+    cancelEditing,
+    formState,
+    handleSubmit,
+    register,
+    savePriority,
+    t,
+    updateVideoPriorityM,
+  } = editor;
   const errorId = `video-priority-error-${priority.videoPriorityId}`;
 
   return (
@@ -266,7 +220,42 @@ function PriorityForm({
         >
           <Icons.cancel aria-hidden="true" />
         </Button>
-        <PriorityFields editor={editor} priority={priority} />
+        <Field className="min-w-0 grow" data-invalid={Boolean(formState.errors.label)}>
+          <FieldLabel className="sr-only" htmlFor={`priority-label-${priority.videoPriorityId}`}>
+            {t("name")}
+          </FieldLabel>
+          <Input
+            autoComplete="off"
+            aria-describedby={formState.errors.label ? errorId : undefined}
+            aria-invalid={Boolean(formState.errors.label)}
+            className="w-full h-6"
+            density="compact"
+            id={`priority-label-${priority.videoPriorityId}`}
+            maxLength={64}
+            {...register("label", { required: t("enterQueueName") })}
+          />
+        </Field>
+        <Field className="w-20 shrink-0" data-invalid={Boolean(formState.errors.minPricePerMinute)}>
+          <FieldLabel className="sr-only" htmlFor={`priority-amount-${priority.videoPriorityId}`}>
+            {t("minimumAmountPerMinute")}
+          </FieldLabel>
+          <Input
+            autoComplete="off"
+            aria-describedby={formState.errors.minPricePerMinute ? errorId : undefined}
+            aria-invalid={Boolean(formState.errors.minPricePerMinute)}
+            className="w-full h-6"
+            density="compact"
+            id={`priority-amount-${priority.videoPriorityId}`}
+            min="0"
+            step="any"
+            type="number"
+            {...register("minPricePerMinute", {
+              required: t("enterMinimumAmount"),
+              validate: (value) =>
+                MoneyAmountSchema.safeParse(value).success || t("enterAmountZeroOrMore"),
+            })}
+          />
+        </Field>
         <Button
           aria-label={t(updateVideoPriorityM.isPending ? "savingQueue" : "saveQueue")}
           disabled={!formState.isValid || !formState.isDirty || updateVideoPriorityM.isPending}
