@@ -125,13 +125,13 @@ export function PublicQueueSettingsEditor() {
             </h2>
           </div>
         </div>
-        <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-[11px] font-semibold text-secondary-foreground">
+        <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-caption font-semibold text-secondary-foreground">
           <span
             aria-hidden="true"
             className={
               savedEnabled
-                ? "size-1.5 rounded-full bg-green-500"
-                : "size-1.5 rounded-full bg-amber-500"
+                ? "size-1.5 rounded-full bg-status-success-solid"
+                : "size-1.5 rounded-full bg-status-warning-solid"
             }
           />
           {t(savedEnabled ? "publicQueueEnabled" : "publicQueueDisabled")}

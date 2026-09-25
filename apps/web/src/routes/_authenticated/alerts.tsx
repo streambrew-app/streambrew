@@ -507,14 +507,16 @@ function playerStatus(dashboard: AlertDashboardData, t: Translator) {
 function PlayerStatus({ dashboard, t }: { dashboard: AlertDashboardData; t: Translator }) {
   const status = playerStatus(dashboard, t);
   const statusClass = {
-    connected: "border-emerald-300/35 bg-emerald-400/12 text-emerald-100",
+    connected:
+      "border-status-success-border/35 bg-status-success-dark-surface/12 text-status-success-on-deep",
     offline: "border-white/15 bg-white/8 text-white/75",
-    standby: "border-amber-300/35 bg-amber-400/12 text-amber-100",
+    standby:
+      "border-status-warning-dark-text/35 bg-status-warning-dark-surface/12 text-status-warning-on-deep",
   }[status.state];
   const dotClass = {
-    connected: "bg-emerald-400",
+    connected: "bg-status-success-dark-surface",
     offline: "bg-white/35",
-    standby: "bg-amber-400",
+    standby: "bg-status-warning-dark-surface",
   }[status.state];
   return (
     <span
@@ -603,7 +605,7 @@ function NoticeBanner({
         "rounded-xl border px-3.5 py-3 text-sm",
         failed
           ? "border-destructive/30 bg-destructive/8 text-destructive"
-          : "border-emerald-300/40 bg-emerald-400/10 text-emerald-700 dark:text-emerald-300",
+          : "border-status-success-border/40 bg-status-success-dark-surface/10 text-status-success-text dark:text-status-success-dark-text",
       )}
       role="status"
     >
@@ -666,11 +668,11 @@ function PreviewPanel({
             {t("previewDescription")}
           </p>
         </div>
-        <span className="rounded-lg bg-secondary px-2 py-1 text-[10px] font-bold text-secondary-foreground">
+        <span className="rounded-lg bg-secondary px-2 py-1 text-micro font-bold text-secondary-foreground">
           4:3
         </span>
       </div>
-      <div className="cosmic-grid relative aspect-4/3 min-h-0 overflow-hidden rounded-xl border border-white/10 bg-[#171019]">
+      <div className="cosmic-grid relative aspect-4/3 min-h-0 overflow-hidden rounded-xl border border-white/10 bg-alert-preview">
         <AlertPlayer className="h-full" onFinished={() => setPreview(null)} playback={preview} />
         {!preview && (
           <Button
@@ -712,7 +714,9 @@ function OverlayPanel({
       {overlay.overlayUrl ? (
         <>
           <Input className="w-full" aria-label={t("obsLink")} readOnly value={overlay.overlayUrl} />
-          <p className="text-xs text-amber-700 dark:text-amber-300">{t("linkCreated")}</p>
+          <p className="text-xs text-status-warning-text dark:text-status-warning-dark-text">
+            {t("linkCreated")}
+          </p>
         </>
       ) : (
         <div className="rounded-xl border border-dashed border-border bg-muted/35 p-3 text-xs leading-relaxed text-muted-foreground">
@@ -952,7 +956,7 @@ function DiagnosticRow({
     diagnostic.level === "error"
       ? "border-destructive/30 bg-destructive/8"
       : diagnostic.level === "warning"
-        ? "border-amber-300/40 bg-amber-400/8"
+        ? "border-status-warning-dark-text/40 bg-status-warning-dark-surface/8"
         : "border-border bg-muted/25";
   return (
     <div className={cn("rounded-xl border px-3 py-2.5 text-sm", levelClass)}>

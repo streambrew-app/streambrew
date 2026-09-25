@@ -222,50 +222,50 @@ function SignalRail({ destinationCount, status }: { destinationCount: number; st
   const isLive = status === "live";
   const isConnecting = status === "connecting";
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-[#2d2229] px-4 py-4 text-[#fff8ed] shadow-[0_12px_32px_-24px_rgba(37,24,32,0.85)] sm:px-5">
+    <div className="relative overflow-hidden rounded-2xl bg-restream-rail px-4 py-4 text-milky-paper shadow-restream-rail sm:px-5">
       <div className="relative z-10 grid grid-cols-[auto_1fr_auto_1fr_auto] items-center gap-2 sm:gap-4">
         <div className="flex min-w-0 items-center gap-2">
-          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#fff8ed]/10 text-[#edbf88]">
+          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-milky-paper/10 text-roasted-gold">
             <Icons.monitor aria-hidden="true" className="size-4" />
           </span>
           <span className="hidden text-xs font-medium sm:inline">{t("source")}</span>
         </div>
-        <div className="relative h-px bg-[#fff8ed]/20">
+        <div className="relative h-px bg-milky-paper/20">
           {(isLive || isConnecting) && (
-            <span className="absolute top-1/2 size-2 -translate-y-1/2 animate-[pulse_1.4s_ease-out_infinite] rounded-full bg-[#54cfa5] shadow-[0_0_14px_rgba(84,207,165,0.7)] motion-reduce:animate-none" />
+            <span className="absolute top-1/2 size-2 -translate-y-1/2 animate-live-pulse rounded-full bg-mint-signal shadow-live-signal motion-reduce:animate-none" />
           )}
         </div>
         <div className="flex min-w-0 items-center gap-2 text-center">
-          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#edbf88] text-[#2d2229]">
+          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-roasted-gold text-restream-rail">
             <Icons.multistream aria-hidden="true" className="size-[18px]" />
           </span>
           <span className="hidden text-xs font-semibold lg:inline">{t("relay")}</span>
         </div>
-        <div className="relative h-px bg-[#fff8ed]/20">
+        <div className="relative h-px bg-milky-paper/20">
           {isLive && (
-            <span className="absolute top-1/2 right-0 size-2 -translate-y-1/2 animate-[pulse_1.4s_ease-out_infinite] rounded-full bg-[#54cfa5] shadow-[0_0_14px_rgba(84,207,165,0.7)] motion-reduce:animate-none" />
+            <span className="absolute top-1/2 right-0 size-2 -translate-y-1/2 animate-live-pulse rounded-full bg-mint-signal shadow-live-signal motion-reduce:animate-none" />
           )}
         </div>
         <div className="flex min-w-0 items-center gap-2">
-          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-[#fff8ed]/10 text-[#edbf88]">
+          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-milky-paper/10 text-roasted-gold">
             <span className="text-xs font-bold tabular-nums">{destinationCount}</span>
           </span>
           <span className="hidden text-xs font-medium sm:inline">{t("destinations")}</span>
         </div>
       </div>
-      <div className="relative z-10 flex gap-2 pt-3 text-xs text-[#fff8ed]/75" aria-live="polite">
+      <div className="relative z-10 flex gap-2 pt-3 text-xs text-milky-paper/75" aria-live="polite">
         <span
-          className={`mt-1 size-2 shrink-0 rounded-full ${isLive ? "bg-[#54cfa5]" : isConnecting ? "bg-[#ffbd3e]" : "bg-[#fff8ed]/35"}`}
+          className={`mt-1 size-2 shrink-0 rounded-full ${isLive ? "bg-mint-signal" : isConnecting ? "bg-solar-mango" : "bg-milky-paper/35"}`}
         />
         <span>
-          <strong className="font-semibold text-[#fff8ed]">
+          <strong className="font-semibold text-milky-paper">
             {t(isLive ? "live" : isConnecting ? "connecting" : "ready")}
           </strong>
           {!isLive && !isConnecting && ` · ${t("readyDescription")}`}
         </span>
       </div>
-      <span className="pointer-events-none absolute -right-8 -bottom-16 size-44 rounded-full border border-[#edbf88]/10" />
-      <span className="pointer-events-none absolute -right-2 -bottom-10 size-28 rounded-full border border-[#edbf88]/10" />
+      <span className="pointer-events-none absolute -right-8 -bottom-16 size-44 rounded-full border border-roasted-gold/10" />
+      <span className="pointer-events-none absolute -right-2 -bottom-10 size-28 rounded-full border border-roasted-gold/10" />
     </div>
   );
 }
@@ -449,8 +449,8 @@ type DestinationDisplayState = RestreamSession["destinations"][number]["state"] 
 const destinationStateColor: Record<DestinationDisplayState, string> = {
   disabled: "bg-muted-foreground/35",
   error: "bg-destructive",
-  forwarding: "bg-emerald-500",
-  idle: "bg-amber-400",
+  forwarding: "bg-status-success-solid",
+  idle: "bg-status-warning-dark-surface",
 };
 
 function getDestinationState(
@@ -567,11 +567,11 @@ function DestinationRow({
               {t(state)}
             </span>
           </div>
-          <p className="min-w-0 truncate font-mono text-[11px] text-muted-foreground sm:text-xs">
+          <p className="min-w-0 truncate font-mono text-caption text-muted-foreground sm:text-xs">
             {destination.serverUrl} · ••••{destination.streamKeyHint}
           </p>
           {liveState && liveState.outboundBytes > 0 && (
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-caption text-muted-foreground">
               {t("sent", { amount: formatBytes(liveState.outboundBytes, locale) })}
             </p>
           )}

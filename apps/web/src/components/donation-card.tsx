@@ -70,13 +70,13 @@ export default function DonationCard({
         props.className,
       )}
     >
-      <div className="relative grid size-9 shrink-0 place-items-center rounded-full border border-primary/15 bg-secondary text-[10px] font-bold text-secondary-foreground">
+      <div className="relative grid size-9 shrink-0 place-items-center rounded-full border border-primary/15 bg-secondary text-micro font-bold text-secondary-foreground">
         {getInitials(author)}
       </div>
       <div className="flex min-w-0 flex-col gap-1.5">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <strong className="text-[13px] text-card-foreground">{author}</strong>
-          <DonationSourceBadge className="text-[9px]" source={donation.source} />
+          <strong className="text-compact text-card-foreground">{author}</strong>
+          <DonationSourceBadge className="text-micro" source={donation.source} />
         </div>
         <p
           className={clsx(
@@ -135,7 +135,7 @@ export default function DonationCard({
           {fmtAmount(donation.amount, donation.currency, locale)}
         </strong>
         <time
-          className="mt-1 block text-[10px] text-muted-foreground"
+          className="mt-1 block text-micro text-muted-foreground"
           dateTime={donation.occurredAt.toISOString()}
           title={fmtDate(donation.occurredAt, locale)}
         >

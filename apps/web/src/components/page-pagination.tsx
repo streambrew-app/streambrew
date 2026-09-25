@@ -86,11 +86,11 @@ export function PagePagination({
       className="flex shrink-0 flex-col gap-3 border-t border-border px-4 py-3 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center sm:px-5"
     >
       <div className="flex min-w-0 items-center justify-between gap-3 sm:contents">
-        <span className="truncate text-[11px] text-muted-foreground sm:col-start-1">
+        <span className="truncate text-caption text-muted-foreground sm:col-start-1">
           {t("showingResults", { first: firstItem, last: lastItem, total })}
         </span>
         {isLoading && (
-          <output className="flex shrink-0 items-center gap-1.5 text-[11px] font-medium text-muted-foreground sm:col-start-3 sm:justify-self-end">
+          <output className="flex shrink-0 items-center gap-1.5 text-caption font-medium text-muted-foreground sm:col-start-3 sm:justify-self-end">
             <Icons.loader aria-hidden="true" className="animate-spin" size={14} />
             <span>{loadingLabel}</span>
           </output>

@@ -223,7 +223,7 @@ function Overview() {
         <div className="flex flex-col gap-4 p-4 sm:p-5">
           {success !== undefined && (
             <div
-              className={`rounded-xl border px-3.5 py-3 text-[13px] ${success ? "border-emerald-300/50 bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300" : "border-red-300/50 bg-red-50 text-red-700 dark:bg-red-400/10 dark:text-red-300"}`}
+              className={`rounded-xl border px-3.5 py-3 text-compact ${success ? "border-status-success-border/50 bg-status-success-surface text-status-success-text dark:bg-status-success-dark-surface/10 dark:text-status-success-dark-text" : "border-status-error-border/50 bg-status-error-surface text-status-error-text dark:bg-status-error-dark-surface/10 dark:text-status-error-dark-text"}`}
             >
               {success ? t("connected") : t("notConnected")}
             </div>
@@ -248,14 +248,14 @@ function Overview() {
                   value={fmtRubles(total, locale)}
                   note={t("allTime")}
                   icon={Icons.wallet}
-                  iconClass="bg-[#ffbd3e]/20 text-[#a65b00] dark:text-[#ffcf69]"
+                  iconClass="bg-solar-mango/20 text-status-warning-text dark:text-status-warning-dark-text"
                 />
                 <Metric
                   title={t("donations")}
                   value={String(donationsLength)}
                   note={t("allTime")}
                   icon={Icons.donations}
-                  iconClass="bg-[#ff647c]/15 text-[#d83d63] dark:text-[#ff8da0]"
+                  iconClass="bg-comet-coral/15 text-destructive"
                 />
                 <Metric
                   title={t("averageDonation")}
@@ -265,7 +265,7 @@ function Overview() {
                   )}
                   note={t("acrossPlatforms")}
                   icon={Icons.platform}
-                  iconClass="bg-[#54cfa5]/18 text-[#188965] dark:text-[#67dfb8]"
+                  iconClass="bg-mint-signal/18 text-status-success-text dark:text-status-success-dark-text"
                 />
               </section>
               <section className="grid gap-4 xl:grid-cols-[1.03fr_.97fr]">
@@ -303,19 +303,19 @@ function Overview() {
                         {t("sampleChartDescription")}
                       </p>
                     </div>
-                    <span className="shrink-0 rounded-md bg-muted px-2 py-1.5 text-[11px] font-medium text-muted-foreground">
+                    <span className="shrink-0 rounded-md bg-muted px-2 py-1.5 text-caption font-medium text-muted-foreground">
                       {t("sampleChart")}
                     </span>
                   </div>
                   <div className="relative h-52 px-4 pt-3 pb-2 pl-10">
-                    <div className="absolute bottom-9 left-2 flex h-[164px] flex-col justify-between text-[10px] text-muted-foreground">
+                    <div className="absolute bottom-9 left-2 flex h-[164px] flex-col justify-between text-micro text-muted-foreground">
                       <span>6k</span>
                       <span>4k</span>
                       <span>2k</span>
                       <span>0</span>
                     </div>
                     <MockChart className="h-[164px] w-full" />
-                    <div className="flex justify-between text-[10px] text-muted-foreground">
+                    <div className="flex justify-between text-micro text-muted-foreground">
                       {chartDates.map((date) => (
                         <span key={date}>{date}</span>
                       ))}
@@ -338,7 +338,7 @@ function Overview() {
                       </p>
                     </div>
                     <Link
-                      className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-2 text-[11px] font-bold text-foreground transition hover:bg-muted"
+                      className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-2 text-caption font-bold text-foreground transition hover:bg-muted"
                       to="/integrations"
                     >
                       {t("manage")} <Icons.chevronRight aria-hidden="true" size={16} />
@@ -359,7 +359,7 @@ function Overview() {
                     ))}
                   </div>
                 </article>
-                <article className="relative flex min-h-[120px] flex-wrap items-center gap-3 overflow-hidden rounded-2xl bg-[#51405e] p-5 text-[#fff8ed]">
+                <article className="relative flex min-h-[120px] flex-wrap items-center gap-3 overflow-hidden rounded-2xl bg-overlay-invite p-5 text-milky-paper">
                   <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/15">
                     <Icons.copy aria-hidden="true" />
                   </div>
@@ -369,7 +369,7 @@ function Overview() {
                   <Link
                     className={cn(
                       buttonVariants(),
-                      "z-10 ml-auto h-auto bg-white px-2.5 py-2 text-[11px] font-bold text-[#51405e] hover:bg-white/90",
+                      "z-10 ml-auto h-auto bg-white px-2.5 py-2 text-caption font-bold text-overlay-invite hover:bg-white/90",
                     )}
                     to="/chat"
                   >

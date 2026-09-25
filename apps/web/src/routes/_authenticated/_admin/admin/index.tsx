@@ -226,8 +226,8 @@ function AdminOverviewPage() {
                 className={cn(
                   "hidden items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold sm:flex",
                   attentionCount === 0
-                    ? "border-emerald-200/30 bg-emerald-950/50 text-emerald-100"
-                    : "border-amber-200/40 bg-amber-950/60 text-amber-100",
+                    ? "border-status-success-border/30 bg-status-success-deep/50 text-status-success-on-deep"
+                    : "border-status-warning-border/40 bg-status-warning-deep/60 text-status-warning-on-deep",
                 )}
               >
                 {attentionCount === 0 ? (
@@ -370,7 +370,7 @@ function SystemSection({ dashboard }: { dashboard: Dashboard }) {
               <ServiceRow key={service.id} service={service} />
             ))}
           </div>
-          <div className="flex flex-col gap-1.5 border-t border-border bg-muted/30 px-4 py-3 text-[11px] leading-5 text-muted-foreground tabular-nums">
+          <div className="flex flex-col gap-1.5 border-t border-border bg-muted/30 px-4 py-3 text-caption leading-5 text-muted-foreground tabular-nums">
             <span>
               {t("databaseSummary", {
                 size: formatBytes(dashboard.database.sizeBytes, locale),
@@ -416,18 +416,18 @@ function ResourceRow({
       : ratio >= 0.9
         ? "bg-destructive"
         : ratio >= 0.7
-          ? "bg-amber-500"
+          ? "bg-status-warning-solid"
           : "bg-primary";
 
   return (
     <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-2 px-4 py-3.5">
       <div className="flex min-w-0 flex-col gap-0.5">
         <span className="text-xs font-medium text-foreground">{label}</span>
-        <span className="truncate text-[11px] text-muted-foreground tabular-nums">{detail}</span>
+        <span className="truncate text-caption text-muted-foreground tabular-nums">{detail}</span>
       </div>
       <div className="flex items-baseline gap-2 text-right tabular-nums">
         <span className="text-base font-semibold text-foreground">{value}</span>
-        <span className="text-[11px] text-muted-foreground">{summary}</span>
+        <span className="text-caption text-muted-foreground">{summary}</span>
       </div>
       {ratio !== null && (
         <div
@@ -463,9 +463,12 @@ function ServiceRow({ service }: { service: Service }) {
         </span>
         <span
           aria-hidden="true"
-          className={cn("size-1.5 rounded-full", healthy ? "bg-emerald-500" : "bg-destructive")}
+          className={cn(
+            "size-1.5 rounded-full",
+            healthy ? "bg-status-success-solid" : "bg-destructive",
+          )}
         />
-        <span className="w-12 text-right text-[11px] text-muted-foreground">
+        <span className="w-12 text-right text-caption text-muted-foreground">
           {t("latency", { value: formatDecimal(service.latencyMs, locale, 0) })}
         </span>
       </span>
@@ -489,7 +492,7 @@ function ActivitySection({ dashboard }: { dashboard: Dashboard }) {
       <div className="overflow-hidden rounded-xl border border-border">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-sm tabular-nums">
-            <thead className="bg-muted/40 text-[11px] font-medium text-muted-foreground">
+            <thead className="bg-muted/40 text-caption font-medium text-muted-foreground">
               <tr>
                 <th className="min-w-28 px-3 py-2.5 text-left font-medium sm:px-4" scope="col">
                   {t("uniqueStreamers")}
@@ -522,7 +525,7 @@ function ActivitySection({ dashboard }: { dashboard: Dashboard }) {
         </div>
         <div
           className={cn(
-            "border-t border-border px-4 py-2.5 text-[11px] leading-5",
+            "border-t border-border px-4 py-2.5 text-caption leading-5",
             activity ? "text-muted-foreground" : "bg-destructive/5 text-destructive",
           )}
         >
@@ -587,19 +590,19 @@ function ProductSection({ dashboard }: { dashboard: Dashboard }) {
         <div className="grid divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
           {adoption.map((item) => (
             <div className="flex min-w-0 flex-col gap-1 px-4 py-3.5" key={item.label}>
-              <span className="text-[11px] font-medium text-muted-foreground">{item.label}</span>
+              <span className="text-caption font-medium text-muted-foreground">{item.label}</span>
               <span className="text-xl font-semibold text-foreground tabular-nums">
                 {formatNumber(item.value, locale)}
               </span>
               {item.share !== null && (
-                <span className="text-[11px] text-muted-foreground">
+                <span className="text-caption text-muted-foreground">
                   {t("adoptionShare", { percent: formatPercent(item.share, locale) })}
                 </span>
               )}
             </div>
           ))}
         </div>
-        <div className="border-t border-border px-4 py-2.5 text-[11px] text-muted-foreground tabular-nums">
+        <div className="border-t border-border px-4 py-2.5 text-caption text-muted-foreground tabular-nums">
           {t("chatConfigurationSummary", {
             connections: formatNumber(dashboard.multichat.connectionCount, locale),
             sources: formatNumber(dashboard.multichat.enabledSourceCount, locale),
@@ -646,7 +649,7 @@ function PeriodTable({
   const { locale, t } = useI18n(translations);
   return (
     <table className={cn("border-collapse text-xs tabular-nums", className)}>
-      <thead className="text-[11px] font-medium text-muted-foreground">
+      <thead className="text-caption font-medium text-muted-foreground">
         <tr>
           <th className="px-4 py-2 text-left font-medium" scope="col" />
           {(["day", "week", "month"] as const).map((key) => (
@@ -682,7 +685,7 @@ function ProviderRow({ provider }: { provider: Dashboard["multichat"]["providers
       <img alt="" aria-hidden="true" className="size-5 shrink-0" src={meta.logo} />
       <div className="flex min-w-0 grow flex-col">
         <span className="truncate text-xs font-semibold">{meta.label}</span>
-        <span className="truncate text-[11px] text-muted-foreground tabular-nums">
+        <span className="truncate text-caption text-muted-foreground tabular-nums">
           {t("providerUsers", { count: formatNumber(provider.users, locale) })}
           {provider.connections !== provider.users &&
             ` · ${t("providerConnections", { count: formatNumber(provider.connections, locale) })}`}
@@ -736,7 +739,7 @@ function ProcessingSection({ dashboard }: { dashboard: Dashboard }) {
             <span className="text-xs font-medium text-foreground">{t("deadLetters")}</span>
             <span
               className={cn(
-                "text-[11px]",
+                "text-caption",
                 dashboard.queues.deadLetters && dashboard.queues.deadLetters > 0
                   ? "text-destructive"
                   : "text-muted-foreground",
@@ -788,8 +791,10 @@ function QueueRow({
         <span className="text-xs font-medium text-foreground">{label}</span>
         <span
           className={cn(
-            "text-[11px]",
-            attention ? "text-amber-700 dark:text-amber-300" : "text-muted-foreground",
+            "text-caption",
+            attention
+              ? "text-status-warning-text dark:text-status-warning-dark-text"
+              : "text-muted-foreground",
           )}
         >
           {detail}
@@ -798,7 +803,9 @@ function QueueRow({
       <span
         className={cn(
           "shrink-0 text-lg font-semibold tabular-nums",
-          attention ? "text-amber-700 dark:text-amber-300" : "text-foreground",
+          attention
+            ? "text-status-warning-text dark:text-status-warning-dark-text"
+            : "text-foreground",
         )}
       >
         {formatNumber(value, locale)}

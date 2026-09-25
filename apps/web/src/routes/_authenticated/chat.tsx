@@ -119,11 +119,11 @@ export const Route = createFileRoute("/_authenticated/chat")({
 });
 
 const providerMeta = {
-  youtube: { label: "YouTube", color: "#ff4057", logo: PlatformIcons.youtube },
-  twitch: { label: "Twitch", color: "#9146ff", logo: PlatformIcons.twitch },
-  kick: { label: "Kick", color: "#53fc18", logo: PlatformIcons.kick },
-  boosty: { label: "Boosty", color: "#f15f2c", logo: PlatformIcons.boosty },
-  vk_video: { label: "VK Video", color: "#2688eb", logo: PlatformIcons.vk_video },
+  youtube: { label: "YouTube", logo: PlatformIcons.youtube },
+  twitch: { label: "Twitch", logo: PlatformIcons.twitch },
+  kick: { label: "Kick", logo: PlatformIcons.kick },
+  boosty: { label: "Boosty", logo: PlatformIcons.boosty },
+  vk_video: { label: "VK Video", logo: PlatformIcons.vk_video },
 } as const;
 
 const chatTranslations = createTranslations({
@@ -273,11 +273,11 @@ function SourceState({
             className={cn(
               "size-1.5 rounded-full",
               normalized === "live"
-                ? "bg-emerald-500"
+                ? "bg-status-success-solid"
                 : normalized === "error"
                   ? "bg-destructive"
                   : normalized === "connecting"
-                    ? "animate-pulse bg-amber-500"
+                    ? "animate-pulse bg-status-warning-solid"
                     : "bg-muted-foreground/40",
             )}
           />
@@ -415,10 +415,10 @@ function ChatOauthNotice({ page }: { page: ChatPageModel }) {
   return (
     <div
       className={cn(
-        "flex items-center gap-2 rounded-xl border px-3.5 py-2 text-[13px]",
+        "flex items-center gap-2 rounded-xl border px-3.5 py-2 text-compact",
         chatOauth === "success"
-          ? "border-emerald-300/50 bg-emerald-50 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300"
-          : "border-red-300/50 bg-red-50 text-red-700 dark:bg-red-400/10 dark:text-red-300",
+          ? "border-status-success-border/50 bg-status-success-surface text-status-success-text dark:bg-status-success-dark-surface/10 dark:text-status-success-dark-text"
+          : "border-status-error-border/50 bg-status-error-surface text-status-error-text dark:bg-status-error-dark-surface/10 dark:text-status-error-dark-text",
       )}
       role={chatOauth === "error" ? "alert" : "status"}
     >
@@ -460,9 +460,9 @@ function BroadcastResults({ page }: { page: ChatPageModel }) {
         return (
           <span
             className={cn(
-              "rounded-full px-2 py-0.5 text-[10px]",
+              "rounded-full px-2 py-0.5 text-micro",
               item.status === "succeeded"
-                ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                ? "bg-status-success-solid/10 text-status-success-text dark:text-status-success-dark-text"
                 : item.status === "unsupported"
                   ? "bg-muted text-muted-foreground"
                   : "bg-destructive/10 text-destructive",
@@ -534,7 +534,7 @@ function ChatFeedPanel({ className, page }: { className?: string; page: ChatPage
       <CosmicPageHeader
         actions={
           <a
-            className="rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-semibold text-[#fff8ed] transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#fff8ed] xl:hidden"
+            className="rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-semibold text-milky-paper transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-milky-paper xl:hidden"
             href="#chat-connections"
           >
             {t("connections")}
@@ -675,7 +675,7 @@ function ConnectionActions({
         <Switch
           aria-label={`${source.enabled ? t("disableSource") : t("enableSource")}: ${connection.displayName}`}
           checked={source.enabled}
-          className="data-checked:bg-emerald-500 dark:data-checked:bg-emerald-500"
+          className="data-checked:bg-status-success-solid dark:data-checked:bg-status-success-solid"
           disabled={setSourceEnabled.isPending}
           onCheckedChange={(enabled) =>
             setSourceEnabled.mutate({ enabled, sourceId: source.sourceId })
@@ -693,10 +693,10 @@ function ConnectionErrors({ page, source }: { page: ChatPageModel; source?: Chat
   return (
     <>
       {refreshSource.isError && refreshSource.variables?.sourceId === source.sourceId && (
-        <p className="text-[11px] text-destructive">{refreshSource.error.message}</p>
+        <p className="text-caption text-destructive">{refreshSource.error.message}</p>
       )}
       {setSourceEnabled.isError && setSourceEnabled.variables?.sourceId === source.sourceId && (
-        <p role="alert" className="text-[11px] text-destructive">
+        <p role="alert" className="text-caption text-destructive">
           {setSourceEnabled.error.message}
         </p>
       )}
@@ -778,7 +778,7 @@ function AvailableProviderButton({
       <span className="flex min-w-0 grow flex-col items-start">
         <span>{meta.label}</span>
         {provider.access !== "full" && (
-          <span className="max-w-full truncate text-[10px] font-normal text-muted-foreground">
+          <span className="max-w-full truncate text-micro font-normal text-muted-foreground">
             {t(provider.access === "read_only" ? "readOnly" : "unavailable")}
           </span>
         )}

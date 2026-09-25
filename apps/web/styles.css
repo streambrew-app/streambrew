@@ -11,8 +11,25 @@
 @theme inline {
   --font-heading: "Bitter Variable", serif;
   --font-sans: "Geist Variable", sans-serif;
+  --text-caption: 0.6875rem;
+  --text-micro: 0.625rem;
+  --text-compact: 0.8125rem;
+  --text-display: clamp(2.75rem, 5.4vw, 4.75rem);
+  --text-error-display: clamp(2rem, 7vw, 4rem);
+  --text-reading-title: clamp(1.625rem, 4vw, 2.75rem);
+  --text-overlay-message: clamp(0.9375rem, 1.15vw, 1.125rem);
+  --leading-display: 1.06;
+  --tracking-display: -0.035em;
   --animate-cosmic-orbit-dashes: cosmic-orbit-dashes 18s linear infinite;
   --animate-cosmic-orbit-travel: cosmic-orbit-travel 18s linear infinite;
+  --animate-live-pulse: pulse 1.4s ease-out infinite;
+  --shadow-restream-rail: 0 12px 32px -24px rgba(37, 24, 32, 0.85);
+  --shadow-live-signal: 0 0 14px rgba(84, 207, 165, 0.7);
+  --shadow-alert-card: 0 20px 60px rgba(20, 9, 17, 0.4);
+  --shadow-chat-overlay: 0 8px 24px rgba(15, 8, 14, 0.28);
+  --shadow-sidebar-border: 0 0 0 1px var(--sidebar-border);
+  --shadow-sidebar-accent: 0 0 0 1px var(--sidebar-accent);
+  --text-shadow-overlay: 0 1px 2px rgb(0 0 0 / 0.45);
 
   @keyframes cosmic-orbit-travel {
     to {
@@ -43,6 +60,47 @@
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  --color-cosmic-blue: var(--cosmic-blue);
+  --color-comet-coral: var(--comet-coral);
+  --color-solar-mango: var(--solar-mango);
+  --color-mint-signal: var(--mint-signal);
+  --color-espresso-void: var(--espresso-void);
+  --color-milky-paper: var(--milky-paper);
+  --color-roasted-gold: #edbf88;
+  --color-orbit-violet: #7962cd;
+  --color-status-success-surface: oklch(97.9% 0.021 166.113);
+  --color-status-success-border: oklch(84.5% 0.143 164.978);
+  --color-status-success-text: oklch(50.8% 0.118 165.612);
+  --color-status-success-dark-surface: oklch(76.5% 0.177 163.223);
+  --color-status-success-dark-text: oklch(84.5% 0.143 164.978);
+  --color-status-success-solid: oklch(69.6% 0.17 162.48);
+  --color-status-success-deep: oklch(26.2% 0.051 172.552);
+  --color-status-success-deep-hover: oklch(37.8% 0.077 168.94);
+  --color-status-success-on-deep: oklch(95% 0.052 163.051);
+  --color-status-error-surface: oklch(97.1% 0.013 17.38);
+  --color-status-error-border: oklch(80.8% 0.114 19.571);
+  --color-status-error-text: oklch(50.5% 0.213 27.518);
+  --color-status-error-dark-surface: oklch(70.4% 0.191 22.216);
+  --color-status-error-dark-text: oklch(80.8% 0.114 19.571);
+  --color-status-warning-text: oklch(55.5% 0.163 48.998);
+  --color-status-warning-dark-text: oklch(87.9% 0.169 91.605);
+  --color-status-warning-solid: oklch(76.9% 0.188 70.08);
+  --color-status-warning-surface: oklch(98.7% 0.022 95.277);
+  --color-status-warning-border: oklch(92.4% 0.12 95.746);
+  --color-status-warning-dark-surface: oklch(82.8% 0.189 84.429);
+  --color-status-warning-deep: oklch(27.9% 0.077 45.635);
+  --color-status-warning-on-deep: oklch(96.2% 0.059 95.617);
+  --color-restream-rail: #2d2229;
+  --color-alert-preview: #171019;
+  --color-chat-overlay: #171018;
+  --color-overlay-invite: #51405e;
+  --color-alert-muted: #d9cbd4;
+  --color-header-art: #e4b88b;
+  --color-provider-youtube: #ff4057;
+  --color-provider-twitch: #9146ff;
+  --color-provider-kick: #53fc18;
+  --color-provider-boosty: #f15f2c;
+  --color-provider-vk-video: #2688eb;
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -68,6 +126,7 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-alert: 1.5rem;
 }
 
 :root {
@@ -209,6 +268,15 @@
 }
 
 @layer components {
+  [data-slot="sidebar-wrapper"] {
+    --sidebar-width: 244px;
+    --sidebar-width-icon: 3rem;
+  }
+
+  [data-sidebar="sidebar"][data-mobile="true"] {
+    --sidebar-width: 18rem;
+  }
+
   .overlay-preview-checkerboard {
     background-color: var(--input);
     background-image:

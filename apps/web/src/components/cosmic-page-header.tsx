@@ -25,7 +25,7 @@ export function CosmicPageHeader({
   return (
     <header
       className={cn(
-        "cosmic-page-scene relative flex shrink-0 flex-wrap items-center justify-between gap-3 overflow-hidden px-4 py-2.5 text-[#fff8ed] sm:px-5",
+        "cosmic-page-scene relative flex shrink-0 flex-wrap items-center justify-between gap-3 overflow-hidden px-4 py-2.5 text-milky-paper sm:px-5",
         className,
       )}
     >
@@ -39,7 +39,7 @@ export function CosmicPageHeader({
           className={
             navigation
               ? "sr-only"
-              : "font-heading text-xl leading-tight font-semibold tracking-tight text-[#fff8ed]"
+              : "font-heading text-xl leading-tight font-semibold tracking-tight text-milky-paper"
           }
         >
           {title}
@@ -49,7 +49,7 @@ export function CosmicPageHeader({
       {actions && <div className="relative z-10 flex shrink-0 items-center gap-2">{actions}</div>}
       <CosmicArt
         className={cn(
-          "pointer-events-none absolute text-[#e4b88b]/40",
+          "pointer-events-none absolute text-header-art/40",
           variant === "signal"
             ? "top-1/2 -right-5 w-44 -translate-y-1/2 opacity-70 sm:right-2"
             : "-right-4 -bottom-12 w-36 opacity-25 sm:right-2 sm:opacity-40",

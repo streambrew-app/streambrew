@@ -11,12 +11,12 @@ import { CosmicArt } from "./cosmic-art";
 import { Icons, PlatformIcons } from "./icons";
 import { Button } from "./ui/button";
 
-const providerColor = {
-  youtube: "#ff4057",
-  twitch: "#9146ff",
-  kick: "#53fc18",
-  boosty: "#f15f2c",
-  vk_video: "#2688eb",
+const providerBorderClass = {
+  youtube: "border-l-provider-youtube",
+  twitch: "border-l-provider-twitch",
+  kick: "border-l-provider-kick",
+  boosty: "border-l-provider-boosty",
+  vk_video: "border-l-provider-vk-video",
 } as const;
 
 function Message({
@@ -39,14 +39,14 @@ function Message({
     <article
       className={cn(
         "group/message flex gap-3 border-l-2 py-2 pl-3",
+        !overlay && providerBorderClass[message.provider],
         overlay &&
           "max-w-[min(46rem,calc(100vw-2rem))] border-l-0 rounded-xl px-3.5 py-2.5 text-white motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300",
         overlay &&
           overlayMessageSurface === "card" &&
-          "bg-[#171018]/88 shadow-[0_8px_24px_rgba(15,8,14,0.28)] backdrop-blur-md",
+          "bg-chat-overlay/88 shadow-chat-overlay backdrop-blur-md",
         className,
       )}
-      style={overlay ? undefined : { borderColor: providerColor[message.provider] }}
     >
       <img
         alt=""
@@ -56,9 +56,7 @@ function Message({
       <p
         className={cn(
           "min-w-0 leading-relaxed",
-          overlay
-            ? "text-[clamp(0.9375rem,1.15vw,1.125rem)] [text-shadow:0_1px_2px_rgb(0_0_0/0.45)]"
-            : "text-sm",
+          overlay ? "text-overlay-message text-shadow-overlay" : "text-sm",
         )}
       >
         <strong className={cn("pr-2 font-semibold", overlay && "text-white")}>

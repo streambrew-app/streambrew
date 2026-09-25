@@ -60,7 +60,7 @@ export default function VideoPriorities({
     <section className={cn("flex flex-col gap-2 border-t border-border pt-3", className)}>
       <div className="flex flex-col gap-0.5 px-1">
         <h2 className="text-xs font-semibold text-card-foreground">{t("queues")}</h2>
-        <p className="text-[10px] text-muted-foreground">{t("minimumDonation")}</p>
+        <p className="text-micro text-muted-foreground">{t("minimumDonation")}</p>
       </div>
       <Link
         aria-current={selectedVideoPriorityId === null ? "page" : undefined}
@@ -79,7 +79,7 @@ export default function VideoPriorities({
         to="/videos"
       >
         <span className="grow">{t("all")}</span>
-        <span className="text-[10px] font-bold">{videoCount}</span>
+        <span className="text-micro font-bold">{videoCount}</span>
       </Link>
 
       <Link

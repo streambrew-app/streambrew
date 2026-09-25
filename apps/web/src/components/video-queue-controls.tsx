@@ -291,7 +291,7 @@ function SelectedQueueLink({
   return (
     // The selected queue tab matches the fixed height of its sibling controls.
     // oxlint-disable-next-line tw-no-self-positioning/no-dimensions
-    <div className="grid h-7 min-w-0 max-w-full grid-cols-[minmax(0,1fr)_auto] items-center overflow-hidden rounded-[min(var(--radius-md),12px)]">
+    <div className="grid h-7 min-w-0 max-w-full grid-cols-[minmax(0,1fr)_auto] items-center overflow-hidden rounded-md">
       <Link
         to="/videos"
         onClick={onNavigate}
@@ -476,7 +476,7 @@ export function VideoQueueSelect({
   if (variant === "action") {
     return (
       <Tooltip>
-        <label className="relative inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-[min(var(--radius-md),12px)] border border-transparent text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 has-[select:disabled]:pointer-events-none has-[select:disabled]:cursor-default has-[select:disabled]:opacity-50">
+        <label className="relative inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md border border-transparent text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 has-[select:disabled]:pointer-events-none has-[select:disabled]:cursor-default has-[select:disabled]:opacity-50">
           <span className="sr-only">{label}</span>
           <Icons.moveToQueue aria-hidden="true" className="size-3.5" />
           <TooltipTrigger

@@ -113,7 +113,7 @@ export function SharedVideoCard({ showPriorityLabel = true, video }: Props) {
               />
             </a>
             {timingLabel !== null && (
-              <span className="pointer-events-none absolute right-2 bottom-2 rounded bg-black/75 px-1.5 py-0.5 text-[11px] font-medium text-white">
+              <span className="pointer-events-none absolute right-2 bottom-2 rounded bg-black/75 px-1.5 py-0.5 text-caption font-medium text-white">
                 {timingLabel}
               </span>
             )}
@@ -129,7 +129,7 @@ export function SharedVideoCard({ showPriorityLabel = true, video }: Props) {
                 </h3>
               )}
               {showPriorityLabel && video.priorityLabel !== null && (
-                <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold text-secondary-foreground">
+                <span className="rounded-full bg-secondary px-2 py-0.5 text-micro font-semibold text-secondary-foreground">
                   {video.priorityLabel}
                 </span>
               )}

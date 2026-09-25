@@ -97,8 +97,9 @@ The palette pairs cream and espresso with observatory violet. Use semantic CSS
 variables from `apps/web/styles.css` for application surfaces and controls.
 Prefer semantic utilities such as `bg-background`, `bg-card`, `text-foreground`,
 `text-muted-foreground`, `border-border`, `bg-secondary`, `text-primary`, and
-`ring-ring`. Hardcoded brand colors are reserved for deliberate illustrations
-and brand scenes. Charts use the `--chart-*` tokens.
+`ring-ring`. Fixed brand, provider, alert, and status colors have named
+`--color-*` tokens in `apps/web/styles.css`; use those tokens in illustrations
+and brand scenes too. Charts use the `--chart-*` tokens.
 
 - **Primary:** violet identifies actions and links; dark mode uses pale violet.
 - **Navigation:** the dark coffee sidebar uses roasted gold for its primary state.
@@ -126,6 +127,8 @@ copy is generally 14–18 px with generous leading, while compact controls use
 14 px. Keep tight tracking and leading with display text. Inputs and times use
 tabular numerals. Headings balance their wrapping. Capitalize both words in
 `StreamBrew` in the wordmark, prose, and document titles.
+Compact metadata uses the named `text-compact`, `text-caption`, and `text-micro`
+tokens. Display titles use the named fluid size, leading, and tracking tokens.
 
 ## Layout
 

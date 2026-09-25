@@ -193,7 +193,7 @@ function SettingsLink({ editor }: { editor: SlugEditorModel }) {
               aria-hidden="true"
               className={cn(
                 "absolute top-1 right-1 size-1.5 rounded-full ring-2 ring-background",
-                enabled ? "bg-green-500" : "bg-amber-500",
+                enabled ? "bg-status-success-solid" : "bg-status-warning-solid",
               )}
             />
           </Link>

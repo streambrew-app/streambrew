@@ -100,7 +100,7 @@ function SharedPriorityHeader({ priority }: { priority: SharedPriority }) {
       <h2 className="min-w-0 truncate font-heading text-sm font-semibold text-card-foreground">
         {priority.label}
       </h2>
-      <span className="shrink-0 text-[11px] font-semibold text-primary">
+      <span className="shrink-0 text-caption font-semibold text-primary">
         {t("durationRemaining", getRoundedWatchDurationParts(priority.remainingSeconds))}
       </span>
     </header>

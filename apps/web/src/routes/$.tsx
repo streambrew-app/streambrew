@@ -49,7 +49,7 @@ function NotFoundPage() {
           StreamBrew
         </Link>
         <div className="relative z-10 flex max-w-xl flex-col items-start gap-5">
-          <h1 className="font-heading text-[clamp(2rem,7vw,4rem)] leading-none font-medium tracking-[-0.035em] text-balance">
+          <h1 className="font-heading text-error-display leading-none font-medium tracking-display text-balance">
             {t("pageTitle")}
           </h1>
           <p className="max-w-[60ch] text-base leading-7 text-muted-foreground">
