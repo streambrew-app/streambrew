@@ -919,8 +919,8 @@ function AdminDashboardSkeleton() {
         </div>
       ))}
       <div className="grid gap-5 xl:grid-cols-2">
-        <Skeleton className="h-80 rounded-xl" />
-        <Skeleton className="h-64 rounded-xl" />
+        <Skeleton className="h-80" shape="card" />
+        <Skeleton className="h-64" shape="card" />
       </div>
     </div>
   );
