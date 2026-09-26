@@ -1,14 +1,14 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { AddVideoForm } from "@web/components/add-video-form";
-import { CosmicPageHeader } from "@web/components/cosmic-page-header";
-import { EmptyState } from "@web/components/empty-state";
 import { Icons } from "@web/components/icons";
 import { VideoListSkeleton } from "@web/components/loading-skeletons";
-import { PagePagination } from "@web/components/page-pagination";
 import QueryErrorState from "@web/components/query-error-state";
 import { SlugEditor } from "@web/components/slug-editor";
 import { Button, buttonVariants } from "@web/components/ui/button";
+import { CosmicPageHeader } from "@web/components/ui/cosmic-page-header";
+import { EmptyState } from "@web/components/ui/empty-state";
 import { FieldError } from "@web/components/ui/field";
+import { PagePagination } from "@web/components/ui/page-pagination";
 import VideoCard from "@web/components/video-card";
 import VideoPriorities from "@web/components/video-priorities";
 import { VideoQueueControls, VideoQueueSelect } from "@web/components/video-queue-controls";

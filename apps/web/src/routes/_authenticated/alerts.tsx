@@ -10,7 +10,6 @@ import {
 import { DonationSourceSchema, type DonationSource } from "@streambrew/packages/schemas.js";
 import { createFileRoute, useHydrated } from "@tanstack/react-router";
 import { AlertPlayer } from "@web/components/alert-player";
-import { CosmicPageHeader } from "@web/components/cosmic-page-header";
 import {
   donationSourceDetails,
   DonationSourceConnectionStatus,
@@ -19,6 +18,7 @@ import {
 import { Icons } from "@web/components/icons";
 import QueryErrorState from "@web/components/query-error-state";
 import { Button } from "@web/components/ui/button";
+import { CosmicPageHeader } from "@web/components/ui/cosmic-page-header";
 import { Field, FieldDescription, FieldLabel } from "@web/components/ui/field";
 import { Input } from "@web/components/ui/input";
 import { Skeleton } from "@web/components/ui/skeleton";

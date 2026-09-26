@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { CosmicArt } from "@web/components/cosmic-art";
-import { CosmicPageHeader } from "@web/components/cosmic-page-header";
 import { Metric } from "@web/components/dashboard/metric";
 import {
   DonationAlertsConnectionStatus,
@@ -28,6 +27,7 @@ import {
   StreamlabsNameLink,
 } from "@web/components/streamlabs";
 import { buttonVariants } from "@web/components/ui/button";
+import { CosmicPageHeader } from "@web/components/ui/cosmic-page-header";
 import { fmtRubles } from "@web/lib/fmt";
 import { createTranslations, createTranslator, useI18n } from "@web/lib/i18n";
 import { preloadRouteQuery } from "@web/lib/trpc";

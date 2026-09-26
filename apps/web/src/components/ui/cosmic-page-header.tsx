@@ -1,7 +1,7 @@
 import { cn } from "@web/lib/utils";
 import type { ReactNode } from "react";
 
-import { CosmicArt } from "./cosmic-art";
+import { CosmicArt } from "../cosmic-art";
 
 type Props = {
   actions?: ReactNode;

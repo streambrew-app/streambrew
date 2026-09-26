@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { CosmicPageHeader } from "@web/components/cosmic-page-header";
 import { PublicQueueSettingsEditor } from "@web/components/public-queue-settings-editor";
 import { QueueCurrencyEditor } from "@web/components/queue-currency-editor";
+import { CosmicPageHeader } from "@web/components/ui/cosmic-page-header";
 
 import { createTranslations, createTranslator, useI18n } from "../../lib/i18n";
 

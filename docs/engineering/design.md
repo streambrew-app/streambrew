@@ -207,6 +207,8 @@ At call sites, `className` may set external layout such as placement and width.
 Component appearance, including padding, color, type, shape, and effects, belongs
 in a named component variant. Components may style the primitives they compose
 inside their own implementation.
+`apps/web/src/components/ui` holds reusable visual controls and patterns, including
+project-owned components. Feature-specific components remain in `apps/web/src/components`.
 
 - **Buttons:** reuse the existing shadcn/Base UI primitive. Primary is violet,
   secondary is pale violet, and outline/ghost provide quiet actions. The default
