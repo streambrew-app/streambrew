@@ -3,7 +3,6 @@ import {
   DonationSourceSchema,
 } from "@streambrew/packages/schemas.js";
 import { createFileRoute } from "@tanstack/react-router";
-import { CosmicPageHeader } from "@web/components/cosmic-page-header";
 import { DonateStreamConnectionForm } from "@web/components/donate-stream-connection-form";
 import {
   donationSourceDetails,
@@ -14,6 +13,7 @@ import {
 import { Icons } from "@web/components/icons";
 import { TourniquetConnectionForm } from "@web/components/tourniquet-connection-form";
 import { Button } from "@web/components/ui/button";
+import { CosmicPageHeader } from "@web/components/ui/cosmic-page-header";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@web/components/ui/tooltip";
 import { preloadRouteQuery } from "@web/lib/trpc";
 import { useState } from "react";

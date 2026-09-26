@@ -1,13 +1,13 @@
 import { getRoundedWatchDurationParts } from "@streambrew/packages/video-timing.js";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { CosmicPageHeader } from "@web/components/cosmic-page-header";
-import { EmptyState } from "@web/components/empty-state";
 import { Icons } from "@web/components/icons";
 import { VideoListSkeleton } from "@web/components/loading-skeletons";
-import { PagePagination } from "@web/components/page-pagination";
 import QueryErrorState from "@web/components/query-error-state";
 import { SharedVideoCard } from "@web/components/shared-video-card";
 import { buttonVariants } from "@web/components/ui/button";
+import { CosmicPageHeader } from "@web/components/ui/cosmic-page-header";
+import { EmptyState } from "@web/components/ui/empty-state";
+import { PagePagination } from "@web/components/ui/page-pagination";
 import { useSharedVideoPageQ } from "@web/hooks/api";
 import { groupVideosByPriority } from "@web/lib/group-videos-by-priority";
 import { createTranslations, createTranslator, useI18n } from "@web/lib/i18n";

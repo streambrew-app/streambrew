@@ -1,7 +1,7 @@
 import { createTranslations, useI18n } from "@web/lib/i18n";
 
-import { Icons } from "./icons";
-import { Button } from "./ui/button";
+import { Icons } from "../icons";
+import { Button } from "./button";
 
 const translations = createTranslations({
   pagination: {

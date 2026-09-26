@@ -1,8 +1,8 @@
 import { cn } from "@web/lib/utils";
 import type { ComponentProps, ReactNode } from "react";
 
-import { CosmicArt } from "./cosmic-art";
-import type { IconComponent } from "./icons";
+import { CosmicArt } from "../cosmic-art";
+import type { IconComponent } from "../icons";
 
 type Props = ComponentProps<"div"> & {
   art?: "orbit" | "beans" | false;

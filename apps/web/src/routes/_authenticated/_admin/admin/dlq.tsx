@@ -1,11 +1,11 @@
 import type { ChatDeadLetter } from "@streambrew/packages/chat.js";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { AdminTabs } from "@web/components/admin-tabs";
-import { CosmicPageHeader } from "@web/components/cosmic-page-header";
-import { EmptyState } from "@web/components/empty-state";
 import { Icons } from "@web/components/icons";
 import QueryErrorState from "@web/components/query-error-state";
 import { Button } from "@web/components/ui/button";
+import { CosmicPageHeader } from "@web/components/ui/cosmic-page-header";
+import { EmptyState } from "@web/components/ui/empty-state";
 import { Skeleton } from "@web/components/ui/skeleton";
 import { useChatDeadLettersQ } from "@web/hooks/api";
 import { fmtListDate } from "@web/lib/fmt";

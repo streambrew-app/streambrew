@@ -6,10 +6,10 @@ import type {
   RestreamSession,
 } from "@streambrew/packages/restream.js";
 import { createFileRoute } from "@tanstack/react-router";
-import { CosmicPageHeader } from "@web/components/cosmic-page-header";
 import { Icons, PlatformIcons } from "@web/components/icons";
 import QueryErrorState from "@web/components/query-error-state";
 import { Button } from "@web/components/ui/button";
+import { CosmicPageHeader } from "@web/components/ui/cosmic-page-header";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@web/components/ui/field";
 import { Input } from "@web/components/ui/input";
 import { Switch } from "@web/components/ui/switch";
