@@ -9,13 +9,13 @@ code. Documentation may be updated alongside the behavior it describes.
 1. Base code changes on an open issue in this repository. Reuse a suitable open
    issue, or create one explaining the reason and motivation before editing code.
    Create a new issue for follow-up work instead of reopening a closed issue.
-2. Start a new implementation from the current `master` with successful required
-   checks, on a task branch. Never change code directly on `master`.
+2. Start a new implementation from the current `main` with successful required
+   checks, on a task branch. Never change code directly on `main`.
    When continuing an existing task branch or PR, retain its work and issue;
-   update it from `master` when integration or conflicts require it.
-3. If `master` is broken or required checks fail, identify the failing check and
+   update it from `main` when integration or conflicts require it.
+3. If `main` is broken or required checks fail, identify the failing check and
    report the blocker before starting a new implementation. Continue independent
-   read-only investigation or documentation work. Repair `master` through a
+   read-only investigation or documentation work. Repair `main` through a
    dedicated issue and PR when the user requests that repair, or when restoring
    those checks is already the task. Otherwise, do not switch to an unrelated
    repair. For an ongoing PR, distinguish failures introduced by the branch from
@@ -25,7 +25,7 @@ code. Documentation may be updated alongside the behavior it describes.
 
 1. Work in small, coherent increments. Commit each step with a clear message and
    its relevant documentation; keep the uncommitted diff small.
-2. Create a PR targeting `master` and include `Closes #<issue-number>` in its
+2. Create a PR targeting `main` and include `Closes #<issue-number>` in its
    description. Use the PR as the unit a human can inspect and redirect.
 3. Run relevant builds, tests, and required CI checks. Resolve conflicts and
    failures introduced by the change, then verify again. Report pre-existing

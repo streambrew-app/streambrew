@@ -10,7 +10,7 @@
     },
     {
       "name": "Prepare PR",
-      "command": "git fetch origin && git rebase origin/master && just check && git push --force-with-lease",
+      "command": "git fetch origin && git rebase origin/main && just check && git push --force-with-lease",
       "icon": "configure"
     }
   ]

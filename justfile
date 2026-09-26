@@ -123,7 +123,7 @@ lint-go:
 
 lint-fallow:
   bunx fallow --only dead-code --only dupes --fail-on-issues
-  bunx fallow audit --base origin/master --gate new-only --production-health --max-crap 0
+  bunx fallow audit --base origin/main --gate new-only --production-health --max-crap 0
 
 lint: fmt-check lint-ts lint-go lint-fallow
 

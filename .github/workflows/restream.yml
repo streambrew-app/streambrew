@@ -9,7 +9,7 @@ on:
       revision:
         description: Commit, branch, or tag to deploy
         required: true
-        default: master
+        default: main
         type: string
 
 permissions: {}
@@ -52,9 +52,9 @@ jobs:
             fi
 
             git fetch --no-tags origin \
-              +refs/heads/master:refs/remotes/origin/master
-            if ! git merge-base --is-ancestor "$sha" origin/master; then
-              echo "Release tag $RELEASE_TAG does not point to a commit on master." >&2
+              +refs/heads/main:refs/remotes/origin/main
+            if ! git merge-base --is-ancestor "$sha" origin/main; then
+              echo "Release tag $RELEASE_TAG does not point to a commit on main." >&2
               exit 1
             fi
 
