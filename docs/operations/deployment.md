@@ -116,8 +116,8 @@ Set the outputs on the `Production` GitHub environment:
 - `TF_STATE_REGION` and `AWS_REGION` to the selected region.
 
 Configure the environment with custom deployment branch and tag rules: allow the
-`master` branch for manual infrastructure, migration, rollback, and recovery runs,
-and allow `v*` tags for automatic releases. A push to `master` does not start an
+`main` branch for manual infrastructure, migration, rollback, and recovery runs,
+and allow `v*` tags for automatic releases. A push to `main` does not start an
 application deployment. See GitHub's
 [AWS OIDC guide](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws)
 for the repository/environment subject format.
@@ -241,10 +241,10 @@ persistent volumes are no-op.
 
 ## Releases and migrations
 
-Merging to `master` makes a revision releasable but does not deploy it. To release
+Merging to `main` makes a revision releasable but does not deploy it. To release
 production, publish a non-prerelease GitHub Release with a `vX.Y.Z` tag pointing to
-a commit on `master`. Drafts do not trigger the workflows; prereleases, malformed
-tags, and tags outside `master` fail validation before images are published. Treat
+a commit on `main`. Drafts do not trigger the workflows; prereleases, malformed
+tags, and tags outside `main` fail validation before images are published. Treat
 release publication as deployment intent: the GitHub Release remains published if
 deployment fails, so confirm the `Production` environment deployment before
 announcing completion.
