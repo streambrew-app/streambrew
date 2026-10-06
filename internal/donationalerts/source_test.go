@@ -548,7 +548,7 @@ func TestSourceReportsUnknownAndInvalidBatchedPushesAndKeepsListening(t *testing
 func TestSourceReportsMalformedFrameWithRawMessage(t *testing.T) {
 	var logs bytes.Buffer
 	previousLogger := slog.Default()
-	slog.SetDefault(slog.New(slog.NewJSONHandler(&logs, nil)))
+	slog.SetDefault(slog.New(slog.NewJSONHandler(&logs, &slog.HandlerOptions{Level: slog.LevelDebug})))
 	defer slog.SetDefault(previousLogger)
 	server := newDonationAlertsServer(t, func(writer http.ResponseWriter, request *http.Request) {
 		switch request.URL.Path {
@@ -590,7 +590,7 @@ func TestSourceReportsMalformedFrameWithRawMessage(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !strings.Contains(logs.String(), `raw message: {\"result\":`) {
-		t.Fatalf("warning does not contain malformed raw frame: %s", logs.String())
+		t.Fatalf("diagnostic does not contain malformed raw frame: %s", logs.String())
 	}
 }
 
@@ -717,8 +717,14 @@ func TestSourcePropagatesUnauthorizedProfile(t *testing.T) {
 }
 
 func TestSourceUsesExponentialBackoffBeforeSubscription(t *testing.T) {
+	var logs bytes.Buffer
+	previousLogger := slog.Default()
+	slog.SetDefault(slog.New(slog.NewJSONHandler(&logs, nil)))
+	defer slog.SetDefault(previousLogger)
+	var profileRequests atomic.Int32
 	client, closeClient := testClient(t, func(writer http.ResponseWriter, _ *http.Request) {
-		_, _ = writer.Write([]byte(`{"data":{"id":42}}`))
+		profileRequests.Add(1)
+		writer.WriteHeader(http.StatusGatewayTimeout)
 	})
 	defer closeClient()
 	source := NewSource(client)
@@ -738,6 +744,12 @@ func TestSourceUsesExponentialBackoffBeforeSubscription(t *testing.T) {
 	want := []time.Duration{5 * time.Second, 10 * time.Second, 20 * time.Second, 40 * time.Second}
 	if !reflect.DeepEqual(waits, want) {
 		t.Fatalf("backoff = %v; want %v", waits, want)
+	}
+	if int(profileRequests.Load()) != len(want) {
+		t.Fatalf("profile requests = %d; want %d retries", profileRequests.Load(), len(want))
+	}
+	if logs.Len() != 0 {
+		t.Fatalf("automatic reconnect produced an operational notification: %s", logs.String())
 	}
 }
 

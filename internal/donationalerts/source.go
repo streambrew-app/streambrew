@@ -57,7 +57,7 @@ func (source *Source) Run(ctx context.Context, accessToken string, emit func(Don
 			if result.subscribed && isTransportError(err) {
 				slog.DebugContext(ctx, "DonationAlerts websocket reconnecting", "error", err, "retry", retryDelay)
 			} else {
-				slog.WarnContext(ctx, "DonationAlerts listener will reconnect", "error", err, "retry", retryDelay)
+				slog.DebugContext(ctx, "DonationAlerts listener will reconnect", "error", err, "retry", retryDelay)
 			}
 		}
 		waitErr := source.wait(ctx, retryDelay)

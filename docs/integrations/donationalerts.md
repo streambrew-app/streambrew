@@ -87,8 +87,11 @@ is logged; REST reconciliation provides an additional recovery path. Duplicate
 empty command acknowledgements are debug-level diagnostics; unexpected reply IDs
 and replies with content remain warnings.
 
-Transport failures reconnect with bounded backoff. An unauthorized provider
-response returns control to the shared application, which refreshes OAuth tokens
+Transport failures reconnect with bounded backoff. Automatic listener retries,
+including provider HTTP failures such as 504, are debug-level diagnostics and do
+not produce operational Telegram notifications with the default logger.
+An unauthorized provider response returns control to the shared application,
+which refreshes OAuth tokens
 and stores them only if the token version still matches. Reconciliation cancels
 listeners when their connection disappears or its version changes. For
 DonationAlerts, an unauthorized refresh removes only the matching connection
