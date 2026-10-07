@@ -5,6 +5,16 @@ render must produce the same DOM as the HTML sent by the server. Treat a
 hydration warning as a rendering bug until a specific unavoidable difference
 has been identified.
 
+## Public URLs
+
+The authenticated layout is pathless: `/_authenticated` is its internal route
+identifier, while its home page is served at `/`. Google has discovered
+`/_authenticated` and `/_authenticated/`; request middleware permanently redirects
+GET and HEAD requests for those exact paths to `/` with HTTP 308, preserving the
+query string. This runs before router handling so the trailing-slash variant
+reaches the public home URL in one hop. Other unknown paths still return 404.
+Use public paths in navigation and the sitemap.
+
 ## Choosing where state is resolved
 
 - Use an awaited route loader for data that is needed to render the initial
