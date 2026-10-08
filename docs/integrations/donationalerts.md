@@ -87,6 +87,13 @@ is logged; REST reconciliation provides an additional recovery path. Duplicate
 empty command acknowledgements are debug-level diagnostics; unexpected reply IDs
 and replies with content remain warnings.
 
+Publications with a nonempty channel other than the subscribed donation channel
+(including widget events such as roulette `request-goal-state`) are ignored as
+debug-level diagnostics. They do not emit donations, advance donation recovery
+positions, or produce operational Telegram notifications with the default logger.
+Publications without a channel, malformed donations on the subscribed channel,
+and unknown push types remain warnings.
+
 Transport failures reconnect with bounded backoff. Automatic listener retries,
 including provider HTTP failures such as 504, are debug-level diagnostics and do
 not produce operational Telegram notifications with the default logger.

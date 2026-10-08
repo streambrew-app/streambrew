@@ -557,8 +557,13 @@ func (session socketSession) handlePush(ctx context.Context, body json.RawMessag
 	}
 	switch pushType {
 	case pushPublication:
+		if push.Channel == "" {
+			logUnhandledSocketMessage(ctx, raw, 0, &pushType, push.Channel, "publication is missing channel")
+			return nil
+		}
 		if push.Channel != session.channel {
-			logUnhandledSocketMessage(ctx, raw, 0, &pushType, push.Channel, "publication belongs to another channel")
+			slog.DebugContext(ctx, "DonationAlerts websocket publication ignored",
+				"reason", "publication belongs to another channel", "channel", push.Channel, "rawMessage", string(raw))
 			return nil
 		}
 		var publication socketPublication
