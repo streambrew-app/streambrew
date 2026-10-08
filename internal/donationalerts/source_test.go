@@ -506,6 +506,9 @@ func TestSourceReportsUnknownAndInvalidBatchedPushesAndKeepsListening(t *testing
 				}
 				invalidDonation["id"] = "not-a-number"
 				writeSocketBatch(t, ctx, connection,
+					json.RawMessage(`{"result":{"channel":"$widgets:roulette_widgets_15505804","data":{"seq":1106403,"data":{"event":"request-goal-state","eventData":null},"reason":"default"}}}`),
+					map[string]any{"result": map[string]any{"channel": "$alerts:donation_99", "data": publicationValue(t, 99, 99, 1)}},
+					map[string]any{"result": map[string]any{"data": publicationValue(t, 100, 100, 1)}},
 					map[string]any{"result": map[string]any{"type": 99, "channel": testChannel, "data": map[string]any{"future": true}}},
 					map[string]any{"result": map[string]any{"channel": testChannel, "data": map[string]any{"seq": 1, "gen": 1, "data": invalidDonation}}},
 					map[string]any{"result": map[string]any{"type": pushLeave, "channel": testChannel, "data": map[string]any{"info": map[string]any{"user": "42", "client": testSocketClientID}}}},
@@ -535,12 +538,17 @@ func TestSourceReportsUnknownAndInvalidBatchedPushesAndKeepsListening(t *testing
 	if received.SourceDonationID != "2" {
 		t.Fatalf("unexpected donation: %#v", received)
 	}
-	if count := strings.Count(logs.String(), "DonationAlerts websocket message ignored"); count != 2 {
+	if count := strings.Count(logs.String(), "DonationAlerts websocket message ignored"); count != 3 {
 		t.Fatalf("ignored message warnings = %d; logs=%s", count, logs.String())
 	}
-	for _, detail := range []string{`"type":99`, `future`, `not-a-number`, `rawMessage`} {
+	for _, detail := range []string{`"type":99`, `future`, `not-a-number`, `rawMessage`, `publication is missing channel`} {
 		if !strings.Contains(logs.String(), detail) {
 			t.Fatalf("warning is missing %q: %s", detail, logs.String())
+		}
+	}
+	for _, channel := range []string{"$widgets:roulette_widgets_15505804", "$alerts:donation_99"} {
+		if strings.Contains(logs.String(), channel) {
+			t.Fatalf("unrelated channel %q produced an operational log: %s", channel, logs.String())
 		}
 	}
 }
