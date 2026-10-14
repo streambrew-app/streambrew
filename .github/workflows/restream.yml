@@ -151,9 +151,9 @@ jobs:
     name: Deploy restream media plane
     if: >-
       always() &&
-      vars.HETZNER_RESTREAM_ENABLED == 'true' &&
       needs.resolve.result == 'success' &&
-      needs.publish.result == 'success'
+      needs.publish.result == 'success' &&
+      vars.HETZNER_RESTREAM_ENABLED == 'true'
     needs:
       - resolve
       - publish
