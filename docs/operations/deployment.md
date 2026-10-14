@@ -15,9 +15,12 @@ production releases do not copy the repository to the server and do not run
 Compose there. GitHub Actions builds immutable images, pulls them over SSH, and
 Terraform reconciles the Docker runtime.
 
-The bandwidth-heavy multistream media plane is the one exception: it runs as a
-stateless container on Hetzner Cloud and is deployed by
-`.github/workflows/restream.yml`. The AWS application remains its control plane.
+The bandwidth-heavy multistream media plane is the one exception: when enabled,
+it runs as a stateless container on Hetzner Cloud and is deployed by
+`.github/workflows/restream.yml`. Hetzner hosting is currently paused with no
+media node; releases and manual dispatches skip the media jobs unless the
+repository variable `HETZNER_RESTREAM_ENABLED` is explicitly set to `true`.
+The AWS application remains its control plane.
 See [Multistream architecture and operations](../features/restream.md) for provisioning,
 security boundaries, secrets, and recovery.
 

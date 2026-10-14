@@ -5,6 +5,12 @@ The application, authentication, PostgreSQL, configuration, and session history
 remain on AWS. A stateless Hetzner Cloud server accepts one RTMP publish from
 OBS and forwards the unchanged stream to as many as three enabled destinations.
 
+Hetzner hosting is currently paused: the media server and its Primary IPs have
+been deleted, and multistream is unavailable. The GitHub workflow is disabled
+and the repository variable `HETZNER_RESTREAM_ENABLED` is `false`. Keep both
+disabled until hosting is explicitly requested again. Application data and
+encrypted destination credentials remain on AWS.
+
 ## Request flow
 
 1. A streamer creates an ingest key and saves destination RTMP credentials in
@@ -34,6 +40,9 @@ avoids quality loss, but it means StreamBrew cannot produce platform-specific
 resolutions or bitrates.
 
 ## Provision the Hetzner node
+
+Provision only after an explicit decision to resume paid hosting. Keep the
+workflow disabled and `HETZNER_RESTREAM_ENABLED=false` until the node is ready.
 
 Install `hcloud` 1.68.0 or later. Create a read/write API token in the Hetzner
 project, then store it in a local context without putting it in shell history:
@@ -132,14 +141,28 @@ during a maintenance window.
 
 ## Releases and verification
 
+The workflow's media jobs run only when the **repository** variable
+`HETZNER_RESTREAM_ENABLED` is exactly `true`; a missing variable also skips them.
+This gate applies to releases and manual dispatches. Keep it at repository scope
+so revision resolution can check it before entering the `Production` environment.
+
 `.github/workflows/restream.yml` builds an immutable `linux/amd64` image, uses
 `hcloud` to resolve the configured server, copies only the Compose definition
 and generated runtime environment, then waits for the container health check
 and the public RTMP listener. It runs when the media-plane files change and can
 also deploy an explicit revision manually.
 
-For a first deployment, run the workflow after the node is ready and before
-publishing `RESTREAM_INGEST_URL` to the application. Verify:
+To resume hosting, provision the node, update `HETZNER_RESTREAM_SERVER` and the
+pinned SSH host key, then explicitly enable deployments:
+
+```sh
+gh variable set HETZNER_RESTREAM_ENABLED --body true
+gh workflow enable restream.yml
+```
+
+Run the workflow after the node is ready and before publishing the new
+`RESTREAM_INGEST_URL` to the application through an AWS application deployment.
+Verify:
 
 ```sh
 hcloud server describe streambrew-restream-nbg1-1
@@ -155,6 +178,48 @@ session ends after OBS disconnects. Remove the temporary destination afterward.
 
 ## Recovery and removal
 
+### Pause without ongoing Hetzner charges
+
+Disable deployments before removing resources. Check the workflow's
+[Actions page](https://github.com/streambrew-app/streambrew/actions/workflows/restream.yml)
+and cancel any queued or running media deployments:
+
+```sh
+gh variable set HETZNER_RESTREAM_ENABLED --body false
+gh workflow disable restream.yml
+```
+
+Verify that there are no active RTMP publishers on the node. Replace the
+`Production` variable `RESTREAM_INGEST_URL` with `rtmp://127.0.0.1:1935` so future
+AWS releases cannot advertise an address that Hetzner may reassign. The running
+AWS application loads this value at startup; apply it through the normal AWS
+deployment before reusing multistream.
+
+Delete the stateless server using the commands below, then verify that its
+Primary IPs were automatically deleted. Delete any retained IPs explicitly.
+[Hetzner bills stopped servers and retained Primary IPv4 addresses](https://docs.hetzner.com/cloud/billing/faq/),
+so powering down the node does not stop charges. Do not create a paid snapshot
+to preserve this disposable node.
+
+Inspect the StreamBrew project for other billable resources:
+
+```sh
+hcloud server list
+hcloud primary-ip list
+hcloud floating-ip list
+hcloud volume list
+hcloud load-balancer list
+hcloud image list --type snapshot
+hcloud image list --type backup
+hcloud storage-box list
+```
+
+Remove any remaining StreamBrew billable resources after checking their data;
+do not delete resources belonging to other services. Charges already accrued
+before deletion may still appear on a final invoice.
+
+### Replace or delete the node
+
 The node is disposable. If it is lost, create a replacement with the same
 cloud-init file, update the GitHub server variable and known-host secret, deploy
 the media workflow, then update `RESTREAM_INGEST_URL`. No database restore is
@@ -168,6 +233,5 @@ hcloud server disable-protection streambrew-restream-nbg1-1 delete rebuild
 hcloud server delete streambrew-restream-nbg1-1
 ```
 
-Before removal, take `RESTREAM_INGEST_URL` out of service and verify that there
-are no active sessions. Destination credentials remain encrypted on AWS and do
-not need to be recovered from the media node.
+Before removal, follow the pause procedure above. Destination credentials remain
+encrypted on AWS and do not need to be recovered from the media node.

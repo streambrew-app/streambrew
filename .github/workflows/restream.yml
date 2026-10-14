@@ -17,6 +17,8 @@ permissions: {}
 jobs:
   resolve:
     name: Resolve revision
+    # Hosting is paused. Missing or false repository variables skip all media jobs.
+    if: vars.HETZNER_RESTREAM_ENABLED == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -149,6 +151,7 @@ jobs:
     name: Deploy restream media plane
     if: >-
       always() &&
+      vars.HETZNER_RESTREAM_ENABLED == 'true' &&
       needs.resolve.result == 'success' &&
       needs.publish.result == 'success'
     needs:
