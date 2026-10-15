@@ -83,9 +83,10 @@ The [socket session](../../internal/donationalerts/socket_session.go) handles
 heartbeats, expiring connection and subscription tokens, and recovery positions.
 Recovery state is held in memory across reconnects within a listener run. Failed
 persistence does not advance the accepted position. Incomplete socket recovery
-is logged; REST reconciliation provides an additional recovery path. Duplicate
-empty command acknowledgements are debug-level diagnostics; unexpected reply IDs
-and replies with content remain warnings.
+is logged; REST reconciliation provides an additional recovery path. Uncorrelated
+ID-only command acknowledgements are debug-level diagnostics, including IDs not
+sent by the current session. They do not acknowledge pending commands. Replies
+with content or errors and an unexpected ID remain warnings.
 
 Publications with a nonempty channel other than the subscribed donation channel
 (including widget events such as roulette `request-goal-state`) are ignored as

@@ -261,8 +261,8 @@ func (session socketSession) run(ctx context.Context) (sessionResult, error) {
 			}
 			command, ok := pending[reply.ID]
 			if !ok {
-				if reply.ID <= nextID && len(envelope) == 1 {
-					slog.DebugContext(ctx, "DonationAlerts duplicate empty websocket reply", "id", reply.ID)
+				if len(envelope) == 1 {
+					slog.DebugContext(ctx, "DonationAlerts uncorrelated empty websocket reply", "id", reply.ID)
 					continue
 				}
 				logUnhandledSocketMessage(ctx, read.body, reply.ID, nil, "", "reply id is not pending")
