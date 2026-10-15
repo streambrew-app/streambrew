@@ -346,7 +346,7 @@ func TestSourceSendsProtocolHeartbeatAndAnswersNativePing(t *testing.T) {
 	}
 }
 
-func TestSourceDoesNotWarnForDuplicateEmptyReply(t *testing.T) {
+func TestSourceDoesNotWarnForUncorrelatedEmptyReplies(t *testing.T) {
 	var logs bytes.Buffer
 	previousLogger := slog.Default()
 	slog.SetDefault(slog.New(slog.NewJSONHandler(&logs, nil)))
@@ -377,6 +377,12 @@ func TestSourceDoesNotWarnForDuplicateEmptyReply(t *testing.T) {
 					map[string]any{"id": command.ID},
 					map[string]any{"id": command.ID, "error": map[string]any{"code": 100, "message": "unexpected"}},
 					map[string]any{"id": command.ID + 1000},
+					json.RawMessage(`{"id":1282}`),
+					json.RawMessage(`{"id":10605}`),
+					json.RawMessage(`{"id":2811}`),
+					map[string]any{"id": command.ID + 1000, "result": map[string]any{}},
+					map[string]any{"id": command.ID + 1001, "error": map[string]any{"code": 100, "message": "unknown command"}},
+					map[string]any{"id": command.ID + 1002, "future": true},
 					map[string]any{"result": map[string]any{"channel": testChannel, "data": publicationValue(t, 1, 1, 1)}},
 				)
 				return
@@ -404,12 +410,17 @@ func TestSourceDoesNotWarnForDuplicateEmptyReply(t *testing.T) {
 	if received.SourceDonationID != "1" {
 		t.Fatalf("unexpected donation: %#v", received)
 	}
-	if count := strings.Count(logs.String(), "DonationAlerts websocket message ignored"); count != 2 {
+	if count := strings.Count(logs.String(), "DonationAlerts websocket message ignored"); count != 4 {
 		t.Fatalf("ignored message warnings = %d; logs=%s", count, logs.String())
 	}
-	for _, detail := range []string{"unexpected", `"id":1003`} {
+	for _, detail := range []string{"unexpected", `"id":1003`, "unknown command", `"id":1004`, `"id":1005`} {
 		if !strings.Contains(logs.String(), detail) {
 			t.Fatalf("warning is missing %q: %s", detail, logs.String())
+		}
+	}
+	for _, id := range []string{`"id":1282`, `"id":10605`, `"id":2811`} {
+		if strings.Contains(logs.String(), id) {
+			t.Fatalf("empty reply %s produced an operational log: %s", id, logs.String())
 		}
 	}
 }
@@ -445,6 +456,8 @@ func TestSourceReconnectsWhenHeartbeatIsNotAcknowledged(t *testing.T) {
 			case methodPing:
 				if connectionNumber > 1 {
 					writeSocketReply(t, ctx, connection, command.ID, struct{}{})
+				} else {
+					writeSocketValue(t, ctx, connection, map[string]any{"id": 10605})
 				}
 			}
 		}
