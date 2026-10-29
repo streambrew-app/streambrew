@@ -9,8 +9,8 @@ Before editing TypeScript or TSX, follow the shared
 
 Read the applicable guides before making changes:
 
-- UI layout, styling, components, or icons: [design guide](../../docs/engineering/design.md), including
-  its [interface icon rules](../../docs/engineering/design.md#interface-icons).
+- UI layout, styling, components, or icons: [design guide](../../docs/design.md), including
+  its [interface icon rules](../../docs/design.md#interface-icons).
 - React hooks or their consumers: [React guide](../../docs/engineering/react.md).
 - New pages: [page conventions](../../docs/engineering/react.md#pages), including document titles.
 - Route loaders, `useQuery`, or `useSuspenseQuery`: [data loading](../../docs/engineering/data-loading.md).

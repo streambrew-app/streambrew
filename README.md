@@ -11,7 +11,7 @@ list them.
 Related documentation:
 
 - [product context](docs/product.md);
-- [design guide](docs/engineering/design.md);
+- [design guide](docs/design.md);
 - [contribution guide](docs/contributing.md);
 - [currency and video-queue rules](docs/features/currencies.md);
 - [donation alerts and OBS widget behavior](docs/features/donation-alerts.md);
