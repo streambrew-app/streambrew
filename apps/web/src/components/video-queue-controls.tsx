@@ -293,9 +293,7 @@ function SelectedQueueLink({
   const { t } = useI18n(translations);
 
   return (
-    // The selected queue tab matches the fixed height of its sibling controls.
-    // oxlint-disable-next-line tw-no-self-positioning/no-dimensions
-    <div className="grid h-7 min-w-0 max-w-full grid-cols-[minmax(0,1fr)_auto] items-center overflow-hidden rounded-md">
+    <div className="grid min-h-7 min-w-0 max-w-full grid-cols-[minmax(0,1fr)_auto] items-center overflow-hidden rounded-md">
       <Link
         to="/videos"
         onClick={onNavigate}
@@ -321,10 +319,9 @@ function SelectedQueueLink({
             render={
               <Button
                 aria-label={t("editVideoQueue")}
-                className="h-full w-5"
                 shape="square"
                 onClick={onEdit}
-                size="icon-sm"
+                size="icon-touch"
                 variant="secondary"
               >
                 <Icons.edit aria-hidden="true" className="size-3" />

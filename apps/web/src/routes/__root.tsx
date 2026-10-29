@@ -24,7 +24,8 @@ import { cn } from "@web/lib/utils";
 import { parseCookie } from "cookie-es";
 import { Suspense, useEffect, useState } from "react";
 
-import favicon from "../../assets/logo.png";
+import favicon from "../../assets/favicon.png";
+import productMark from "../../assets/logo.webp";
 import { Skeleton } from "../components/ui/skeleton";
 import { signOut } from "../lib/auth-client";
 import type { Locale } from "../lib/i18n";
@@ -260,7 +261,7 @@ function AuthenticatedApplicationContent() {
               to="/"
               className="flex items-center gap-2.5 px-1 font-heading text-2xl font-semibold tracking-tight text-sidebar-foreground focus-visible:rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sidebar-ring"
             >
-              <img alt="" src={favicon} className="size-10 object-contain" />
+              <img alt="" src={productMark} className="size-10 object-contain" />
               StreamBrew
             </Link>
           </div>
@@ -431,7 +432,7 @@ function AuthenticatedApplicationContent() {
             to="/"
             className="flex items-center gap-2 font-heading text-xl font-semibold tracking-tight text-sidebar-foreground"
           >
-            <img alt="" src={favicon} className="size-9 object-contain" />
+            <img alt="" src={productMark} className="size-9 object-contain" />
             StreamBrew
           </Link>
         </header>

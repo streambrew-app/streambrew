@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-29T18:42:08.831525+00:00",
+  "generatedAt": "2026-10-29T19:11:42.062847+00:00",
   "title": "Design System: StreamBrew",
   "extensions": {
     "colorMeta": {
@@ -218,14 +218,14 @@
         "role": "neutral",
         "displayName": "Input",
         "tonalRamp": [
-          "oklch(15.0% 0.0069 33.07)",
-          "oklch(26.43% 0.0112 33.07)",
-          "oklch(37.86% 0.0141 33.07)",
-          "oklch(49.29% 0.0152 33.07)",
-          "oklch(60.71% 0.0143 33.07)",
-          "oklch(72.14% 0.0116 33.07)",
-          "oklch(83.57% 0.0075 33.07)",
-          "oklch(95.0% 0.0024 33.07)"
+          "oklch(15.0% 0.0115 353.61)",
+          "oklch(26.43% 0.0186 353.61)",
+          "oklch(37.86% 0.0234 353.61)",
+          "oklch(49.29% 0.0252 353.61)",
+          "oklch(60.71% 0.0238 353.61)",
+          "oklch(72.14% 0.0194 353.61)",
+          "oklch(83.57% 0.0124 353.61)",
+          "oklch(95.0% 0.0039 353.61)"
         ]
       },
       "ring": {
@@ -246,14 +246,14 @@
         "role": "neutral",
         "displayName": "Destructive",
         "tonalRamp": [
-          "oklch(15.0% 0.0829 17.63)",
-          "oklch(26.43% 0.1347 17.63)",
-          "oklch(37.86% 0.1694 17.63)",
-          "oklch(49.29% 0.1825 17.63)",
-          "oklch(60.71% 0.1723 17.63)",
-          "oklch(72.14% 0.1401 17.63)",
-          "oklch(83.57% 0.0901 17.63)",
-          "oklch(95.0% 0.0286 17.63)"
+          "oklch(15.0% 0.0724 17.08)",
+          "oklch(26.43% 0.1177 17.08)",
+          "oklch(37.86% 0.148 17.08)",
+          "oklch(49.29% 0.1594 17.08)",
+          "oklch(60.71% 0.1505 17.08)",
+          "oklch(72.14% 0.1224 17.08)",
+          "oklch(83.57% 0.0787 17.08)",
+          "oklch(95.0% 0.0249 17.08)"
         ]
       },
       "sidebar": {
@@ -750,14 +750,14 @@
         "role": "neutral",
         "displayName": "Dark input",
         "tonalRamp": [
-          "oklch(15.0% 0.0177 332.93)",
-          "oklch(26.43% 0.0287 332.93)",
-          "oklch(37.86% 0.0361 332.93)",
-          "oklch(49.29% 0.0389 332.93)",
-          "oklch(60.71% 0.0367 332.93)",
-          "oklch(72.14% 0.0299 332.93)",
-          "oklch(83.57% 0.0192 332.93)",
-          "oklch(95.0% 0.0061 332.93)"
+          "oklch(15.0% 0.0195 335.31)",
+          "oklch(26.43% 0.0317 335.31)",
+          "oklch(37.86% 0.0399 335.31)",
+          "oklch(49.29% 0.0429 335.31)",
+          "oklch(60.71% 0.0405 335.31)",
+          "oklch(72.14% 0.033 335.31)",
+          "oklch(83.57% 0.0212 335.31)",
+          "oklch(95.0% 0.0067 335.31)"
         ]
       },
       "dark-ring": {
@@ -1120,7 +1120,7 @@
       "refersTo": "button-primary",
       "description": "Default-size primary variant of the shared Button primitive.",
       "html": "<button type=\"button\" class=\"ds-button-primary\">Action</button>",
-      "css": ".ds-button-primary{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.625rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);background:var(--primary, #5844b8);color:var(--primary-foreground, #ffffff);} .ds-button-primary:hover{background:color-mix(in srgb, var(--primary, #5844b8) 80%, transparent);} .ds-button-primary:focus-visible{border-color:var(--ring, #7962cd);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring, #7962cd) 50%, transparent);} .ds-button-primary:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-primary:disabled{opacity:0.5;pointer-events:none;} .ds-button-primary[aria-invalid=\"true\"]{border-color:var(--destructive, #d84557);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #d84557) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-primary{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-primary[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
+      "css": ".ds-button-primary{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.625rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);background:var(--primary, #5844b8);color:var(--primary-foreground, #ffffff);} .ds-button-primary:hover{background:color-mix(in srgb, var(--primary, #5844b8) 80%, transparent);} .ds-button-primary:focus-visible{border-color:var(--ring, #7962cd);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring, #7962cd) 50%, transparent);} .ds-button-primary:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-primary:disabled{opacity:0.5;pointer-events:none;} .ds-button-primary[aria-invalid=\"true\"]{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-primary{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-primary[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
     },
     {
       "name": "Outline Button",
@@ -1128,7 +1128,7 @@
       "refersTo": "button-outline",
       "description": "Default-size outline variant of the shared Button primitive.",
       "html": "<button type=\"button\" class=\"ds-button-outline\">Action</button>",
-      "css": ".ds-button-outline{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.625rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);border-color:var(--border, #e7dcd8);background:var(--background, #f6efe4);color:var(--foreground, #251820);} .ds-button-outline:hover{background:var(--muted, #f4eee9);color:var(--foreground, #251820);} .ds-button-outline:focus-visible{border-color:var(--ring, #7962cd);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring, #7962cd) 50%, transparent);} .ds-button-outline:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-outline:disabled{opacity:0.5;pointer-events:none;} .ds-button-outline[aria-invalid=\"true\"]{border-color:var(--destructive, #d84557);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #d84557) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-outline{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-outline{background:color-mix(in srgb,var(--input, #5b4657) 30%,transparent);border-color:var(--input, #5b4657);} :host-context(.dark) .ds-button-outline:hover{background:color-mix(in srgb,var(--input, #5b4657) 50%,transparent);} :host-context(.dark) .ds-button-outline[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
+      "css": ".ds-button-outline{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.625rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);border-color:var(--border, #e7dcd8);background:var(--background, #f6efe4);color:var(--foreground, #251820);} .ds-button-outline:hover{background:var(--muted, #f4eee9);color:var(--foreground, #251820);} .ds-button-outline:focus-visible{border-color:var(--ring, #7962cd);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring, #7962cd) 50%, transparent);} .ds-button-outline:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-outline:disabled{opacity:0.5;pointer-events:none;} .ds-button-outline[aria-invalid=\"true\"]{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-outline{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-outline{background:color-mix(in srgb,var(--input, #a58a9e) 30%,transparent);border-color:var(--input, #a58a9e);} :host-context(.dark) .ds-button-outline:hover{background:color-mix(in srgb,var(--input, #a58a9e) 50%,transparent);} :host-context(.dark) .ds-button-outline[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
     },
     {
       "name": "Secondary Button",
@@ -1136,7 +1136,7 @@
       "refersTo": "button-secondary",
       "description": "Default-size secondary variant of the shared Button primitive.",
       "html": "<button type=\"button\" class=\"ds-button-secondary\">Action</button>",
-      "css": ".ds-button-secondary{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.625rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);background:var(--secondary, #eee5f3);color:var(--secondary-foreground, #57418a);} .ds-button-secondary:hover{background:var(--accent, #ffe0e5);} .ds-button-secondary:focus-visible{border-color:var(--ring, #7962cd);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring, #7962cd) 50%, transparent);} .ds-button-secondary:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-secondary:disabled{opacity:0.5;pointer-events:none;} .ds-button-secondary[aria-invalid=\"true\"]{border-color:var(--destructive, #d84557);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #d84557) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-secondary{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-secondary[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
+      "css": ".ds-button-secondary{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.625rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);background:var(--secondary, #eee5f3);color:var(--secondary-foreground, #57418a);} .ds-button-secondary:hover{background:var(--accent, #ffe0e5);} .ds-button-secondary:focus-visible{border-color:var(--ring, #7962cd);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring, #7962cd) 50%, transparent);} .ds-button-secondary:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-secondary:disabled{opacity:0.5;pointer-events:none;} .ds-button-secondary[aria-invalid=\"true\"]{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-secondary{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-secondary[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
     },
     {
       "name": "Ghost Button",
@@ -1144,7 +1144,7 @@
       "refersTo": "button-ghost",
       "description": "Default-size ghost variant of the shared Button primitive.",
       "html": "<button type=\"button\" class=\"ds-button-ghost\">Action</button>",
-      "css": ".ds-button-ghost{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.625rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);background:transparent;color:var(--muted-foreground, #70616a);} .ds-button-ghost:hover{background:var(--muted, #f4eee9);color:var(--foreground, #251820);} .ds-button-ghost:focus-visible{border-color:var(--ring, #7962cd);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring, #7962cd) 50%, transparent);} .ds-button-ghost:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-ghost:disabled{opacity:0.5;pointer-events:none;} .ds-button-ghost[aria-invalid=\"true\"]{border-color:var(--destructive, #d84557);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #d84557) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-ghost{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-ghost[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
+      "css": ".ds-button-ghost{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.625rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);background:transparent;color:var(--muted-foreground, #70616a);} .ds-button-ghost:hover{background:var(--muted, #f4eee9);color:var(--foreground, #251820);} .ds-button-ghost:focus-visible{border-color:var(--ring, #7962cd);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring, #7962cd) 50%, transparent);} .ds-button-ghost:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-ghost:disabled{opacity:0.5;pointer-events:none;} .ds-button-ghost[aria-invalid=\"true\"]{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-ghost{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-ghost[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
     },
     {
       "name": "Sidebar Button",
@@ -1152,7 +1152,7 @@
       "refersTo": "button-sidebar",
       "description": "Default-size sidebar variant of the shared Button primitive.",
       "html": "<button type=\"button\" class=\"ds-button-sidebar\">Action</button>",
-      "css": ".ds-button-sidebar{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.625rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);background:transparent;color:color-mix(in srgb, var(--sidebar-foreground, #fff8ed) 75%, transparent);} .ds-button-sidebar:hover{background:var(--sidebar-accent, #3d2938);color:var(--sidebar-accent-foreground, #ffffff);} .ds-button-sidebar:focus-visible{border-color:var(--sidebar-ring, #ffbd3e);box-shadow:0 0 0 3px color-mix(in srgb, var(--sidebar-ring, #ffbd3e) 50%, transparent);} .ds-button-sidebar:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-sidebar:disabled{opacity:0.5;pointer-events:none;} .ds-button-sidebar[aria-invalid=\"true\"]{border-color:var(--destructive, #d84557);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #d84557) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-sidebar{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-sidebar[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
+      "css": ".ds-button-sidebar{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.625rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);background:transparent;color:color-mix(in srgb, var(--sidebar-foreground, #fff8ed) 75%, transparent);} .ds-button-sidebar:hover{background:var(--sidebar-accent, #3d2938);color:var(--sidebar-accent-foreground, #ffffff);} .ds-button-sidebar:focus-visible{border-color:var(--sidebar-ring, #ffbd3e);box-shadow:0 0 0 3px color-mix(in srgb, var(--sidebar-ring, #ffbd3e) 50%, transparent);} .ds-button-sidebar:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-sidebar:disabled{opacity:0.5;pointer-events:none;} .ds-button-sidebar[aria-invalid=\"true\"]{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-sidebar{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-sidebar[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
     },
     {
       "name": "Destructive Button",
@@ -1160,7 +1160,7 @@
       "refersTo": "button-destructive",
       "description": "Default-size destructive variant of the shared Button primitive.",
       "html": "<button type=\"button\" class=\"ds-button-destructive\">Remove</button>",
-      "css": ".ds-button-destructive{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.625rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);background:color-mix(in srgb, var(--destructive, #d84557) 10%, transparent);color:var(--destructive, #d84557);} .ds-button-destructive:hover{background:color-mix(in srgb, var(--destructive, #d84557) 20%, transparent);} .ds-button-destructive:focus-visible{border-color:var(--destructive, #d84557);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #d84557) 20%, transparent);} .ds-button-destructive:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-destructive:disabled{opacity:0.5;pointer-events:none;} .ds-button-destructive[aria-invalid=\"true\"]{border-color:var(--destructive, #d84557);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #d84557) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-destructive{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-destructive{background:color-mix(in srgb, var(--destructive, #d84557) 20%, transparent);} :host-context(.dark) .ds-button-destructive:hover{background:color-mix(in srgb, var(--destructive, #d84557) 30%, transparent);} :host-context(.dark) .ds-button-destructive[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);} .ds-button-destructive:focus-visible{border-color:color-mix(in srgb,var(--destructive, #d84557) 40%,transparent);} :host-context(.dark) .ds-button-destructive:focus-visible{box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
+      "css": ".ds-button-destructive{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.625rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);background:color-mix(in srgb, var(--destructive, #9d2036) 10%, transparent);color:var(--destructive, #9d2036);} .ds-button-destructive:hover{background:color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} .ds-button-destructive:focus-visible{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} .ds-button-destructive:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-destructive:disabled{opacity:0.5;pointer-events:none;} .ds-button-destructive[aria-invalid=\"true\"]{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-destructive{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-destructive[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);} .ds-button-destructive:focus-visible{border-color:color-mix(in srgb,var(--destructive, #9d2036) 40%,transparent);} :host-context(.dark) .ds-button-destructive:focus-visible{box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
     },
     {
       "name": "Link Button",
@@ -1168,7 +1168,7 @@
       "refersTo": "button-link",
       "description": "Default-size link variant of the shared Button primitive.",
       "html": "<button type=\"button\" class=\"ds-button-link\">Action</button>",
-      "css": ".ds-button-link{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.625rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);background:transparent;color:var(--primary, #5844b8);text-underline-offset:4px;} .ds-button-link:hover{text-decoration:underline;} .ds-button-link:focus-visible{border-color:var(--ring, #7962cd);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring, #7962cd) 50%, transparent);} .ds-button-link:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-link:disabled{opacity:0.5;pointer-events:none;} .ds-button-link[aria-invalid=\"true\"]{border-color:var(--destructive, #d84557);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #d84557) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-link{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-link[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
+      "css": ".ds-button-link{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.625rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);background:transparent;color:var(--primary, #5844b8);text-underline-offset:4px;} .ds-button-link:hover{text-decoration:underline;} .ds-button-link:focus-visible{border-color:var(--ring, #7962cd);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring, #7962cd) 50%, transparent);} .ds-button-link:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-link:disabled{opacity:0.5;pointer-events:none;} .ds-button-link[aria-invalid=\"true\"]{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-link{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-link[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
     },
     {
       "name": "Text Field",
@@ -1176,7 +1176,7 @@
       "refersTo": "input",
       "description": "Standard input; desktop type becomes compact at 768 px.",
       "html": "<input class=\"ds-input\" aria-label=\"Video URL\" placeholder=\"Video URL\">",
-      "css": ".ds-input{height:2rem;min-width:0;padding:0.25rem 0.625rem;border:1px solid var(--input, #d8cbc8);border-radius:1rem;background:transparent;color:var(--foreground, #251820);font:400 1rem/1.5rem \"Geist Variable\", sans-serif;font-variant-numeric:tabular-nums;outline:none;transition:border-color 150ms,box-shadow 150ms;} .ds-input::placeholder{color:var(--muted-foreground, #70616a);} .ds-input:focus-visible{border-color:var(--ring, #7962cd);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring, #7962cd) 50%, transparent);} .ds-input:disabled{opacity:0.5;pointer-events:none;background:color-mix(in srgb, var(--input, #d8cbc8) 50%, transparent);} .ds-input[aria-invalid=\"true\"]{border-color:var(--destructive, #d84557);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #d84557) 20%, transparent);} :host-context(.dark) .ds-input{background:color-mix(in srgb,var(--input, #5b4657) 30%,transparent);} @media(min-width:768px){.ds-input{font-size:0.875rem;line-height:1.25rem;}} @media(prefers-reduced-motion:reduce){.ds-input{transition-duration:0.01ms;}} :host-context(.dark) .ds-input:disabled{background:color-mix(in srgb,var(--input, #5b4657) 80%,transparent);} :host-context(.dark) .ds-input[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
+      "css": ".ds-input{height:2rem;min-width:0;padding:0.25rem 0.625rem;border:1px solid var(--input, #938087);border-radius:1rem;background:transparent;color:var(--foreground, #251820);font:400 1rem/1.5rem \"Geist Variable\", sans-serif;font-variant-numeric:tabular-nums;outline:none;transition:border-color 150ms,box-shadow 150ms;} .ds-input::placeholder{color:var(--muted-foreground, #70616a);} .ds-input:focus-visible{border-color:var(--ring, #7962cd);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring, #7962cd) 50%, transparent);} .ds-input:disabled{opacity:0.5;pointer-events:none;background:color-mix(in srgb, var(--input, #938087) 50%, transparent);} .ds-input[aria-invalid=\"true\"]{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} :host-context(.dark) .ds-input{background:color-mix(in srgb,var(--input, #a58a9e) 30%,transparent);} @media(min-width:768px){.ds-input{font-size:0.875rem;line-height:1.25rem;}} @media(prefers-reduced-motion:reduce){.ds-input{transition-duration:0.01ms;}} :host-context(.dark) .ds-input:disabled{background:color-mix(in srgb,var(--input, #a58a9e) 80%,transparent);} :host-context(.dark) .ds-input[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
     },
     {
       "name": "Working Panel",
