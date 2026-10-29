@@ -1,33 +1,78 @@
 ---
-name: StreamBrew
-description: A warm coffee observatory for bright moments on stream.
+name: "StreamBrew"
+description: "A warm coffee observatory for bright moments on stream."
 colors:
   background: "#f6efe4"
   foreground: "#251820"
   card: "#fffdf8"
+  card-foreground: "#251820"
+  popover: "#fffdf8"
+  popover-foreground: "#251820"
   primary: "#5844b8"
   primary-foreground: "#ffffff"
   secondary: "#eee5f3"
   secondary-foreground: "#57418a"
   muted: "#f4eee9"
   muted-foreground: "#70616a"
+  accent: "#ffe0e5"
+  accent-foreground: "#a82f53"
   border: "#e7dcd8"
   input: "#d8cbc8"
   ring: "#7962cd"
   destructive: "#d84557"
   sidebar: "#251c20"
+  sidebar-foreground: "#fff8ed"
   sidebar-primary: "#edbf88"
+  sidebar-primary-foreground: "#251820"
+  sidebar-accent: "#3d2938"
+  sidebar-accent-foreground: "#ffffff"
+  sidebar-border: "#4a3442"
+  sidebar-ring: "#ffbd3e"
+  coffee-tab: "#3b2923"
+  coffee-tab-hover: "#4a3429"
+  coffee-tab-foreground: "#f2d3a8"
+  coffee-tab-border: "#78563f"
   milky-paper: "#fff8ed"
-  page-header-left: "#4b3742"
-  page-header-right: "#483139"
-  page-header-glow: "#78608e"
   cosmic-blue: "#4056e8"
   comet-coral: "#ff647c"
   solar-mango: "#ffbd3e"
   mint-signal: "#54cfa5"
+  page-header-left: "#4b3742"
+  page-header-right: "#483139"
+  page-header-glow: "#78608e"
   dark-background: "#191418"
+  dark-foreground: "#fff8ed"
   dark-card: "#241d23"
+  dark-card-foreground: "#fff8ed"
+  dark-popover: "#2a1d29"
+  dark-popover-foreground: "#fff8ed"
   dark-primary: "#bcabf2"
+  dark-primary-foreground: "#171018"
+  dark-secondary: "#393044"
+  dark-secondary-foreground: "#dfe3ff"
+  dark-muted: "#30232d"
+  dark-muted-foreground: "#bcaeb8"
+  dark-accent: "#512b3d"
+  dark-accent-foreground: "#ffc8d3"
+  dark-border: "#493d46"
+  dark-input: "#5b4657"
+  dark-ring: "#8c98ff"
+  dark-destructive: "#ff7a88"
+  dark-sidebar: "#120c14"
+  dark-sidebar-primary: "#ffbd3e"
+  dark-sidebar-accent: "#33223a"
+  dark-sidebar-border: "#3d2b3d"
+  dark-coffee-tab: "#493228"
+  dark-coffee-tab-hover: "#573c2e"
+  dark-coffee-tab-border: "#94704d"
+  status-success-surface: "oklch(97.9% 0.021 166.113)"
+  status-success-text: "oklch(50.8% 0.118 165.612)"
+  status-success-dark-surface: "oklch(76.5% 0.177 163.223)"
+  status-success-dark-text: "oklch(84.5% 0.143 164.978)"
+  status-warning-surface: "oklch(98.7% 0.022 95.277)"
+  status-warning-text: "oklch(55.5% 0.163 48.998)"
+  status-warning-dark-surface: "oklch(82.8% 0.189 84.429)"
+  status-warning-dark-text: "oklch(87.9% 0.169 91.605)"
 typography:
   display:
     fontFamily: '"Bitter Variable", serif'
@@ -37,25 +82,108 @@ typography:
     letterSpacing: "-0.035em"
   headline:
     fontFamily: '"Bitter Variable", serif'
-    fontSize: "clamp(28px, 4vw, 42px)"
+    fontSize: "1.25rem"
     fontWeight: 600
-    lineHeight: 1
+    lineHeight: 1.25
+    letterSpacing: "-0.025em"
   body:
     fontFamily: '"Geist Variable", sans-serif'
+  label:
+    fontFamily: '"Geist Variable", sans-serif'
+    fontSize: "0.875rem"
+    fontWeight: 500
+    lineHeight: "1.25rem"
+  compact:
+    fontFamily: '"Geist Variable", sans-serif'
+    fontSize: "0.8125rem"
+  caption:
+    fontFamily: '"Geist Variable", sans-serif'
+    fontSize: "0.75rem"
+  micro:
+    fontFamily: '"Geist Variable", sans-serif'
+    fontSize: "0.6875rem"
 rounded:
+  sm: "0.6rem"
+  md: "0.8rem"
   lg: "1rem"
   xl: "1.4rem"
-  2xl: "1.8rem"
+  "2xl": "1.8rem"
+  full: "9999px"
+spacing:
+  "1": "0.25rem"
+  "1.5": "0.375rem"
+  "2": "0.5rem"
+  "2.5": "0.625rem"
+  "3": "0.75rem"
+  "4": "1rem"
+  "5": "1.25rem"
+  "6": "1.5rem"
+  "8": "2rem"
 components:
   button-primary:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.primary-foreground}"
+    typography: "{typography.label}"
     rounded: "{rounded.lg}"
+    padding: "0 0.625rem"
+    height: "2rem"
+  button-outline:
+    backgroundColor: "{colors.background}"
+    textColor: "{colors.foreground}"
+    typography: "{typography.label}"
+    rounded: "{rounded.lg}"
+    padding: "0 0.625rem"
+    height: "2rem"
+  button-secondary:
+    backgroundColor: "{colors.secondary}"
+    textColor: "{colors.secondary-foreground}"
+    typography: "{typography.label}"
+    rounded: "{rounded.lg}"
+    padding: "0 0.625rem"
+    height: "2rem"
+  button-ghost:
+    textColor: "{colors.muted-foreground}"
+    typography: "{typography.label}"
+    rounded: "{rounded.lg}"
+    padding: "0 0.625rem"
+    height: "2rem"
+  button-sidebar:
+    textColor: "{colors.sidebar-foreground}"
+    typography: "{typography.label}"
+    rounded: "{rounded.lg}"
+    padding: "0 0.625rem"
+    height: "2rem"
+  button-destructive:
+    textColor: "{colors.destructive}"
+    typography: "{typography.label}"
+    rounded: "{rounded.lg}"
+    padding: "0 0.625rem"
+    height: "2rem"
+  button-link:
+    textColor: "{colors.primary}"
+    typography: "{typography.label}"
+    rounded: "{rounded.lg}"
+    padding: "0 0.625rem"
+    height: "2rem"
+  input:
+    textColor: "{colors.foreground}"
+    rounded: "{rounded.lg}"
+    padding: "0.25rem 0.625rem"
     height: "2rem"
   panel:
     backgroundColor: "{colors.card}"
     textColor: "{colors.foreground}"
     rounded: "{rounded.2xl}"
+  navigation-link:
+    textColor: "{colors.sidebar-foreground}"
+    rounded: "{rounded.xl}"
+    padding: "0 0.75rem"
+  connection-status:
+    backgroundColor: "{colors.status-success-surface}"
+    textColor: "{colors.status-success-text}"
+    rounded: "{rounded.full}"
+    padding: "0.125rem 0.5rem"
+    typography: "{typography.micro}"
 ---
 
 # Design System: StreamBrew
@@ -75,9 +203,20 @@ This is the canonical guide for StreamBrew's visual direction and UI conventions
 Product context lives in [product context](product.md); terminology lives in the [domain glossary](glossary.md), and
 [AGENTS.md](../AGENTS.md#task-guides) routes to domain behavior guides. Exact tokens and component behavior
 are defined in [styles.css](../apps/web/styles.css) and the existing UI components.
+The frontmatter records reusable implementation tokens; `dark-*` entries document
+CSS theme overrides, not separate utilities. Keep runtime styles authoritative
+when refreshing this extraction. The web app's [Impeccable sidecar](../apps/web/.impeccable/design.json)
+contains component samples, shadow and motion values, and breakpoints. Its generated
+tonal ramps are palette exploration aids, not additional application tokens.
 Keep review evidence in the relevant review artifacts rather than in the design rules.
 
-## Original associations
+**Key Characteristics:**
+
+- Warm cream and espresso surfaces with violet actions and gold navigation.
+- Expressive Bitter headings paired with compact Geist controls.
+- Atmospheric entry scenes and restrained working panels.
+
+### Original associations
 
 The design follows a coffee-and-cosmos aesthetic: coffee, galaxies, and childlike illustrations with simple lines.
 
@@ -101,7 +240,7 @@ Prefer semantic utilities such as `bg-background`, `bg-card`, `text-foreground`,
 `--color-*` tokens in `apps/web/styles.css`; use those tokens in illustrations
 and brand scenes too. Charts use the `--chart-*` tokens.
 
-- **Primary:** violet identifies actions and links; dark mode uses pale violet.
+- **Primary — observatory violet:** identifies actions and links; dark mode uses pale violet.
 - **Navigation:** the dark coffee sidebar uses roasted gold for its primary state.
 - **Neutrals:** creamy background, nearly white cards, espresso text, and warm
   borders keep data readable. Muted text uses its dedicated semantic token.
@@ -143,8 +282,9 @@ Feature rows form two columns from `sm` (640 px), separated by fine horizontal
 rules. Broad section gaps give the entry page a slower rhythm than working pages.
 
 Working surfaces use flex/grid, gap, and padding rather than margins wherever practical.
-Keep flex children `min-w-0` and allow long names, messages, and URLs to wrap. Shared page headers have 20 px
-padding, increasing to 28 px at `sm`, and reserve room for faint right-side art.
+Keep flex children `min-w-0` and allow long names, messages, and URLs to wrap. Shared page headers have 16 px
+horizontal padding, increasing to 20 px at `sm`, with 10 px vertical padding.
+They reserve room for faint right-side art.
 Reusable components receive external sizing and positioning of their root element
 through `className` instead of hardcoding margins, width, or grow behavior internally.
 Their roots may use `relative` to anchor their own absolutely positioned children;
@@ -186,8 +326,12 @@ cross-links, and visible keyboard focus outlines complete the reading surface.
 ## Elevation & Depth
 
 Tonal layering and borders provide most depth. `cosmic-panel` has no shadow.
-The landing observatory alone uses a diffuse `0 28px 60px #39212c1a` shadow;
-its main sign-in action adds a restrained violet shadow. Plum radial gradients,
+The landing observatory uses a diffuse atmospheric shadow. Dialogs use the
+framework's large shadow over a 40% black backdrop; alert cards and chat overlays
+have dedicated shadows to separate them from video. Restream rails and live signals
+use their named shadow tokens. Buttons are flat by default; the explicit `subtle`
+elevation variant adds a small shadow. The landing sign-in action uses the default
+flat treatment. Exact shadow values live in the sidecar. Plum radial gradients,
 sparse starlight, and thin orbital lines establish atmospheric depth without
 decorating list interiors.
 
@@ -195,7 +339,8 @@ decorating list interiors.
 
 The CSS base radius is `1rem`; `rounded-lg` uses that base, `rounded-xl` is
 `1.4rem`, and `rounded-2xl` is `1.8rem`. Panels and page scenes use `rounded-2xl`;
-ordinary buttons and inputs use `rounded-lg`. These are the actual custom
+ordinary buttons and inputs use `rounded-lg`. Compact controls also use the
+smaller `sm` and `md` radii; badges and switch tracks use fully rounded ends. These are the actual custom
 Tailwind mappings, not the framework's default radius values.
 
 The signature observatory has an arched top:
@@ -215,13 +360,31 @@ project-owned components. Feature-specific components remain in `apps/web/src/co
 - **Buttons:** reuse the existing shadcn/Base UI primitive. Primary is violet,
   secondary is pale violet, and outline/ghost provide quiet actions. The default
   height is 32 px; the landing CTA explicitly grows to 48 px with 24 px horizontal
-  padding. Preserve focus rings, hover, disabled, invalid, and pressed states.
+  padding. Sidebar, destructive, and link variants also exist. Primary hover
+  reduces the fill to 80% opacity; secondary hover uses the accent surface.
+  Keyboard focus uses a 3 px ring at 50% opacity and a ring-colored border.
+  Ordinary actions translate down 1 px when pressed; popup triggers do not.
+  Disabled buttons retain 50% opacity. Preserve invalid states and use the
+  existing size, shape, and elevation variants.
 - **Inputs:** 32 px high, semantic border, transparent light surface, and a tinted
   dark surface. Inputs and native selects use 16 px text below `md` to avoid
   mobile browser zoom; compact desktop controls retain their smaller type.
-  Focus uses the ring token; invalid fields use destructive styling.
+  Focus uses the ring token; invalid fields use destructive styling. The `bare`
+  appearance removes borders, rounding, and the focus ring for composed controls;
+  the `compact` density reduces padding and desktop text size.
 - **Panels:** `cosmic-panel` combines a card surface, semantic border, and the
   custom `rounded-2xl` radius. Keep content clean and legible.
+- **Connection badges:** small pill labels use 11 px bold text, 8 px horizontal
+  and 2 px vertical padding, and a 6 px dot. Connected and disconnected states
+  pair their respective success and warning colors with readable text. Provider
+  link badges instead use a neutral border, a service icon, and a focus ring.
+- **Dialogs:** rounded popover surfaces stay within the viewport with 16 px
+  clearance on each side and a maximum width of 512 px. Their inner content
+  scrolls, with 20 px padding increasing to 24 px at `sm`. Preserve the Base UI
+  focus management and accessible title/description association.
+- **Switches:** the default track is 44 × 24 px with a 20 px thumb; the small
+  track is 36 × 20 px with a 16 px thumb. Checked tracks use primary fill,
+  unchecked tracks use input fill, and the white thumb moves over 200 ms.
 - **Navigation:** sidebar links have a 48 px minimum height and warm translucent
   selection fill with a gold border and label. On short screens, the navigation
   scrolls while account and preference controls stay reachable. Sidebar controls
@@ -251,43 +414,44 @@ project-owned components. Feature-specific components remain in `apps/web/src/co
 - **States:** skeletons follow the structure of the content they replace. Empty
   and error states may use one faint contextual drawing. Keep hover, active,
   disabled, error, and `focus-visible` states visible, including on brand scenes.
-- **Motion:** use one slow orbital animation (18 seconds per cycle). Short hover
+- **Motion:** orbital paths use an 18-second linear cycle; the live signal pulses
+  over 1.4 seconds with ease-out timing. Short hover
   movement should reinforce an arriving signal or a video moving through the queue.
   All nonessential animations and transitions collapse under
   `prefers-reduced-motion: reduce`.
 
-## Interface icons
+### Interface icons
 
 Application icons use `lucide-react`; do not add another icon library, inline SVG UI icons, or emoji. The StreamBrew mark and documented decorative artwork are exceptions, not replacements for UI icons.
 
-### Catalog and meaning
+#### Catalog and meaning
 
 - Product code and routes import semantic icons from `apps/web/src/components/icons.tsx`, such as `Icons.wallet` or `Icons.retry`. Add an entry there instead of importing from `lucide-react` directly.
 - Keep the catalog namespace import, `import * as icons from "lucide-react"`, and refer to glyphs through `icons`.
 - Name entries for product meaning (`retry`, `donations`, `notWatched`), not their current glyph. Keep separate semantic aliases even when they currently point to the same glyph.
 - Reuse an established semantic icon before adding a new glyph. Direct Lucide imports are only appropriate within the reusable shadcn/Base UI primitive that owns a generic control.
 
-### Layout and appearance
+#### Layout and appearance
 
 - Let the current `Button` size control inline icon size unless intentionally different. Use 15 px in compact fields and tabs, 16 px in ordinary inline controls and navigation, 18 px for small standalone actions, and 20 px for empty-state or feature icons.
 - Make icon-only actions existing `Button` `icon-*` controls or equivalent focusable controls; the SVG itself is never the click target.
 - Icons inherit `currentColor`; set a semantic text colour on the parent. Retain default Lucide strokes and use state or brand colour only where it communicates meaning.
 - Use a parent `gap` for icon-label spacing. Avoid icon margins or absolute positioning except deliberate field decorations.
 
-### Accessibility
+#### Accessibility
 
 - Set `aria-hidden="true"` when visible text, the control name, or an accessible label already communicates the icon's meaning.
 - Every icon-only interactive control needs an accessible name, normally `aria-label`; add a tooltip when the action may be unfamiliar, but it never replaces that name.
 - Do not communicate status or selection with icon shape or colour alone. Loading icons are decorative and accompany an accessible loading or busy state.
 - Preserve the parent control's hover, disabled, active, and `focus-visible` states.
 
-## Brand assets
+### Brand assets
 
 - Use `apps/web/assets/logo.png` for both the product mark and browser favicon.
 - Keep the coffee-bean mark visually centred within its circular background. Use 36–40 px in compact navigation lockups and 48 px in the sign-in hero.
 - The static logo, `CosmicArt` drawings, and Lucide interface icons have different jobs and should not be substituted for one another.
 
-## Responsive and accessibility checks
+### Responsive and accessibility checks
 
 - Verify every authenticated page, sign-in, and `/@slug/videos` at desktop and 390×844.
 - Test light and dark themes, navigation, forms, loading, empty, error, success, overlays, and long content.

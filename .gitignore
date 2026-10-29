@@ -22,9 +22,3 @@ dist
 *.tfvars
 crash.log
 crash.*.log
-
-# Only durable Impeccable surface briefs belong in the repository.
-.impeccable/*
-!.impeccable/surface-briefs/
-.impeccable/surface-briefs/*
-!.impeccable/surface-briefs/*.md
