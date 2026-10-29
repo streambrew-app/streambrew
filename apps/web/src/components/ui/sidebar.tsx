@@ -15,6 +15,7 @@ import {
 import { Skeleton } from "@web/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@web/components/ui/tooltip";
 import { useIsMobile } from "@web/hooks/use-mobile";
+import { createTranslations, useI18n } from "@web/lib/i18n";
 import { cn } from "@web/lib/utils";
 import { cva, type VariantProps } from "class-variance-authority";
 import { PanelLeftIcon } from "lucide-react";
@@ -23,6 +24,15 @@ import * as React from "react";
 const SIDEBAR_COOKIE_NAME = "sidebar_state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
+
+const translations = createTranslations({
+  navigation: { en: "Navigation", ru: "Навигация" },
+  navigationDescription: {
+    en: "Choose a page in StreamBrew.",
+    ru: "Выберите страницу StreamBrew.",
+  },
+  toggleNavigation: { en: "Toggle navigation", ru: "Открыть или закрыть меню" },
+});
 
 type SidebarContextProps = {
   state: "expanded" | "collapsed";
@@ -141,6 +151,7 @@ function Sidebar({
   collapsible?: "offcanvas" | "icon" | "none";
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+  const { t } = useI18n(translations);
 
   if (collapsible === "none") {
     return (
@@ -166,8 +177,8 @@ function Sidebar({
           side={side}
         >
           <SheetHeader className="sr-only">
-            <SheetTitle>Sidebar</SheetTitle>
-            <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+            <SheetTitle>{t("navigation")}</SheetTitle>
+            <SheetDescription>{t("navigationDescription")}</SheetDescription>
           </SheetHeader>
           <div className="flex h-full w-full flex-col">{children}</div>
         </SheetContent>
@@ -221,12 +232,13 @@ function Sidebar({
 
 function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<typeof Button>) {
   const { toggleSidebar } = useSidebar();
+  const { t } = useI18n(translations);
 
   return (
     <Button
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
-      variant="ghost"
+      variant="sidebar"
       size="icon-sm"
       className={cn(className)}
       onClick={(event) => {
@@ -236,7 +248,7 @@ function SidebarTrigger({ className, onClick, ...props }: React.ComponentProps<t
       {...props}
     >
       <PanelLeftIcon aria-hidden="true" />
-      <span className="sr-only">Toggle Sidebar</span>
+      <span className="sr-only">{t("toggleNavigation")}</span>
     </Button>
   );
 }

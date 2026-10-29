@@ -647,7 +647,7 @@ function DestinationForm({ draft, onClose }: { draft: DestinationDraft; onClose:
         <Field>
           <FieldLabel htmlFor="restream-platform">{t("platform")}</FieldLabel>
           <select
-            className="h-8 w-full rounded-lg border border-input bg-card px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="h-8 w-full rounded-lg border border-input bg-card px-2.5 text-base md:text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             id="restream-platform"
             onChange={(event) =>
               setValue((current) => ({

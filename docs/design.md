@@ -128,7 +128,9 @@ copy is generally 14–18 px with generous leading, while compact controls use
 tabular numerals. Headings balance their wrapping. Capitalize both words in
 `StreamBrew` in the wordmark, prose, and document titles.
 Compact metadata uses the named `text-compact`, `text-caption`, and `text-micro`
-tokens. Display titles use the named fluid size, leading, and tracking tokens.
+tokens at 13, 12, and 11 px respectively. Register custom text sizes in
+`apps/web/src/lib/utils.ts` so class merging keeps typography and text colors
+independent. Display titles use the named fluid size, leading, and tracking tokens.
 
 ## Layout
 
@@ -215,11 +217,15 @@ project-owned components. Feature-specific components remain in `apps/web/src/co
   height is 32 px; the landing CTA explicitly grows to 48 px with 24 px horizontal
   padding. Preserve focus rings, hover, disabled, invalid, and pressed states.
 - **Inputs:** 32 px high, semantic border, transparent light surface, and a tinted
-  dark surface. Focus uses the ring token; invalid fields use destructive styling.
+  dark surface. Inputs and native selects use 16 px text below `md` to avoid
+  mobile browser zoom; compact desktop controls retain their smaller type.
+  Focus uses the ring token; invalid fields use destructive styling.
 - **Panels:** `cosmic-panel` combines a card surface, semantic border, and the
   custom `rounded-2xl` radius. Keep content clean and legible.
 - **Navigation:** sidebar links have a 48 px minimum height and warm translucent
-  selection fill with a gold border and label. Secondary status filters use the
+  selection fill with a gold border and label. On short screens, the navigation
+  scrolls while account and preference controls stay reachable. Sidebar controls
+  use the sidebar foreground and focus tokens. Secondary status filters use the
   existing secondary/ghost button variants with counts and accessible selection.
 - **Admin tabs:** use compact 36 px horizontal links with 12 px side padding,
   16 px icons, placed inside the panel header in place of the visible title,

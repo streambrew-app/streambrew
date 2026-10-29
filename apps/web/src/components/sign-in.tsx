@@ -90,6 +90,10 @@ const translations = createTranslations({
     en: "Continue with Google",
     ru: "Войти через Google",
   },
+  signInFailed: {
+    en: "Couldn't sign in. Please try again.",
+    ru: "Не удалось войти. Попробуйте ещё раз.",
+  },
   privacyPolicy: {
     en: "Privacy policy",
     ru: "Политика конфиденциальности",
@@ -102,12 +106,23 @@ const translations = createTranslations({
 
 export default function SignIn() {
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [hasSignInError, setHasSignInError] = useState(false);
   const { t } = useI18n(translations);
 
   const handleSignIn = async () => {
+    setHasSignInError(false);
     setIsSigningIn(true);
     const callbackURL = rurl("/integrations", window.location.origin).href;
-    await signIn.social({ provider: "google", callbackURL });
+    try {
+      const result = await signIn.social({ provider: "google", callbackURL });
+      if (result.error) {
+        setHasSignInError(true);
+        setIsSigningIn(false);
+      }
+    } catch {
+      setHasSignInError(true);
+      setIsSigningIn(false);
+    }
   };
 
   const features = [
@@ -139,7 +154,13 @@ export default function SignIn() {
 
       <header className="relative z-10 flex w-full max-w-6xl items-center justify-between gap-4 border-b border-border/60 py-5 sm:py-7">
         <div className="flex items-center gap-2.5 font-heading text-xl font-semibold tracking-tight sm:text-2xl">
-          <img alt="" className="size-10 object-contain sm:size-12" src={productMark} />
+          <img
+            alt=""
+            className="size-10 object-contain sm:size-12"
+            height={48}
+            src={productMark}
+            width={48}
+          />
           StreamBrew
         </div>
         <Button
@@ -167,18 +188,23 @@ export default function SignIn() {
             <div className="flex flex-col items-start gap-3">
               <Button
                 aria-busy={isSigningIn}
-                className="h-12"
+                aria-describedby={hasSignInError ? "sign-in-error" : undefined}
                 disabled={isSigningIn}
                 onClick={() => void handleSignIn()}
-                size="lg"
+                size="hero"
               >
                 {t(isSigningIn ? "redirecting" : "continueWithGoogle")}
               </Button>
+              {hasSignInError && (
+                <p className="text-sm text-destructive" id="sign-in-error" role="alert">
+                  {t("signInFailed")}
+                </p>
+              )}
             </div>
           </div>
           <div
             aria-hidden="true"
-            className="coffee-observatory relative min-h-[560px] overflow-hidden sm:min-h-[620px]"
+            className="coffee-observatory relative min-h-[440px] overflow-hidden sm:min-h-[620px]"
           >
             <CosmicArt className="pointer-events-none absolute -right-12 bottom-10 w-[360px] sm:-right-14 sm:bottom-9 sm:w-[450px]" />
           </div>
@@ -244,10 +270,16 @@ export default function SignIn() {
         <footer className="flex flex-col justify-between gap-4 border-t border-border py-6 text-sm text-muted-foreground sm:flex-row sm:items-center">
           <span>{t("landingFooter")}</span>
           <nav aria-label={t("legalLinks")} className="flex flex-wrap gap-5">
-            <Link className="hover:text-foreground hover:underline" to="/docs/privacy">
+            <Link
+              className="rounded-sm hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+              to="/docs/privacy"
+            >
               {t("privacyPolicy")}
             </Link>
-            <Link className="hover:text-foreground hover:underline" to="/docs/tos">
+            <Link
+              className="rounded-sm hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
+              to="/docs/tos"
+            >
               {t("termsOfService")}
             </Link>
           </nav>

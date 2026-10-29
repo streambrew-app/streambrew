@@ -9,8 +9,9 @@ import {
 import { createIsomorphicFn } from "@tanstack/react-start";
 import { CosmicArt } from "@web/components/cosmic-art";
 import { Icons } from "@web/components/icons";
+import { LanguageMenu } from "@web/components/language-menu";
 import SignIn from "@web/components/sign-in";
-import { Button } from "@web/components/ui/button";
+import { Button, buttonVariants } from "@web/components/ui/button";
 import { Sidebar, SidebarProvider, SidebarTrigger, useSidebar } from "@web/components/ui/sidebar";
 import {
   Tooltip,
@@ -21,7 +22,7 @@ import {
 import { useUserInfoSafe } from "@web/hooks/api";
 import { cn } from "@web/lib/utils";
 import { parseCookie } from "cookie-es";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 import favicon from "../../assets/logo.png";
 import { Skeleton } from "../components/ui/skeleton";
@@ -80,21 +81,13 @@ const translations = createTranslations({
     en: "Switch to dark mode",
     ru: "Включить тёмную тему",
   },
-  language: {
-    en: "Language",
-    ru: "Язык",
-  },
   openNavigation: {
     en: "Open navigation",
     ru: "Открыть меню",
   },
-  english: {
-    en: "English",
-    ru: "Английский",
-  },
-  russian: {
-    en: "Russian",
-    ru: "Русский",
+  skipToContent: {
+    en: "Skip to content",
+    ru: "Перейти к содержимому",
   },
   activeDevelopment: {
     en: "StreamBrew is under active development. Breaking changes and data loss are possible.",
@@ -119,10 +112,9 @@ const translations = createTranslations({
 });
 
 const navItem =
-  "group flex min-h-12 items-center gap-3 rounded-xl border border-transparent px-3 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground [&_svg]:size-[18px]";
+  "group flex min-h-12 shrink-0 items-center gap-3 rounded-xl border border-transparent px-3 text-sm font-medium text-sidebar-foreground/75 transition-colors outline-none hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring focus-visible:ring-inset [&_svg]:size-[18px]";
 const activeNavItem =
   "border-sidebar-primary/25 bg-sidebar-primary/10 font-semibold text-sidebar-primary [&_svg]:text-sidebar-primary";
-const localeFlags: Record<Locale, string> = { en: "🇬🇧", ru: "🇷🇺" };
 const themeCookieMaxAge = 60 * 60 * 24 * 365;
 
 const getRoutePreferences = createIsomorphicFn()
@@ -232,11 +224,9 @@ function AuthenticatedApplication() {
 function AuthenticatedApplicationContent() {
   const { theme, viewer } = Route.useRouteContext();
   const { isDark, toggleDark } = useDark(theme);
-  const { locale, setLocale, t } = useI18n(translations);
+  const { t } = useI18n(translations);
   const { setOpenMobile } = useSidebar();
-  const [isLanguageMenuOpen, setIsLanguageMenuOpen] = useState(false);
   const [isDevelopmentWarningVisible, setIsDevelopmentWarningVisible] = useState(true);
-  const languageMenuRef = useRef<HTMLDivElement>(null);
   const userInfo = useUserInfoSafe();
 
   useEffect(() => {
@@ -247,20 +237,6 @@ function AuthenticatedApplicationContent() {
     }
   }, [isDark]);
 
-  useEffect(() => {
-    const closeLanguageMenu = (event: MouseEvent) => {
-      if (
-        !(event.target instanceof Node) ||
-        languageMenuRef.current?.contains(event.target) !== true
-      ) {
-        setIsLanguageMenuOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", closeLanguageMenu);
-    return () => document.removeEventListener("mousedown", closeLanguageMenu);
-  }, []);
-
   if (!viewer || !userInfo) {
     return <SignIn />;
   }
@@ -268,12 +244,18 @@ function AuthenticatedApplicationContent() {
   const user = viewer.user;
 
   return (
-    // This route owns the viewport height of the authenticated shell.
+    // This route owns the viewport dimensions of the authenticated shell.
     // oxlint-disable-next-line tw-no-self-positioning/no-dimensions
-    <main className="flex h-dvh min-w-0 bg-background font-sans text-foreground transition-colors duration-300">
+    <main className="flex h-dvh w-full min-w-0 bg-background font-sans text-foreground transition-colors duration-300">
+      <a
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:outline-2 focus:outline-offset-2 focus:outline-ring"
+        href="#app-content"
+      >
+        {t("skipToContent")}
+      </a>
       <Sidebar>
         <aside className="coffee-sidebar relative flex size-full flex-col overflow-hidden border-r border-sidebar-border bg-sidebar px-4 pt-7 pb-5 transition-colors duration-300">
-          <div className="relative z-10 flex items-center gap-3">
+          <div className="relative z-10 flex shrink-0 items-center gap-3">
             <Link
               to="/"
               className="flex items-center gap-2.5 px-1 font-heading text-2xl font-semibold tracking-tight text-sidebar-foreground focus-visible:rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sidebar-ring"
@@ -282,7 +264,10 @@ function AuthenticatedApplicationContent() {
               StreamBrew
             </Link>
           </div>
-          <nav className="relative z-10 grid gap-1.5 pt-8" aria-label={t("overview")}>
+          <nav
+            className="relative z-10 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto overscroll-contain pt-8 pb-4"
+            aria-label={t("overview")}
+          >
             <Link
               activeOptions={{ exact: true }}
               activeProps={{ className: activeNavItem }}
@@ -364,12 +349,12 @@ function AuthenticatedApplicationContent() {
             className="pointer-events-none absolute right-[-42px] bottom-28 w-52 rotate-[-8deg] text-sidebar-foreground/20 opacity-35"
             variant="orbit"
           />
-          <div className="relative z-10 mt-auto flex flex-col gap-5">
+          <div className="relative z-10 mt-auto flex shrink-0 flex-col gap-5">
             <div className="flex items-center justify-between px-3">
               <Link
                 aria-label={t("settings")}
                 activeProps={{ className: activeNavItem }}
-                className="grid size-8 place-items-center rounded-lg text-sidebar-foreground/60 transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                className={buttonVariants({ variant: "sidebar", size: "icon" })}
                 onClick={() => setOpenMobile(false)}
                 to="/settings"
               >
@@ -385,7 +370,7 @@ function AuthenticatedApplicationContent() {
                         onClick={() => toggleDark()}
                         size="icon"
                         type="button"
-                        variant="outline"
+                        variant="sidebar"
                       />
                     }
                   >
@@ -399,45 +384,7 @@ function AuthenticatedApplicationContent() {
                     {t(isDark ? "switchToLightMode" : "switchToDarkMode")}
                   </TooltipContent>
                 </Tooltip>
-                <div className="relative" ref={languageMenuRef}>
-                  <Button
-                    aria-expanded={isLanguageMenuOpen}
-                    aria-haspopup="menu"
-                    aria-label={t("language")}
-                    onClick={() => setIsLanguageMenuOpen((isOpen) => !isOpen)}
-                    size="icon"
-                    type="button"
-                    variant="outline"
-                  >
-                    <span aria-hidden="true">{localeFlags[locale]}</span>
-                  </Button>
-                  {isLanguageMenuOpen && (
-                    <div
-                      aria-label={t("language")}
-                      className="absolute bottom-full left-1/2 z-10 mb-1 -translate-x-1/2 rounded-lg border border-border bg-popover p-1 shadow-lg shadow-primary/10"
-                      role="menu"
-                    >
-                      {(["ru", "en"] as const)
-                        .filter((item) => item !== locale)
-                        .map((item) => (
-                          <Button
-                            aria-label={t(item === "ru" ? "russian" : "english")}
-                            key={item}
-                            onClick={() => {
-                              setLocale(item);
-                              setIsLanguageMenuOpen(false);
-                            }}
-                            role="menuitem"
-                            size="icon"
-                            type="button"
-                            variant="ghost"
-                          >
-                            <span aria-hidden="true">{localeFlags[item]}</span>
-                          </Button>
-                        ))}
-                    </div>
-                  )}
-                </div>
+                <LanguageMenu />
               </div>
             </div>
             <div className="flex items-center gap-2.5 border-t border-sidebar-border px-2 pt-5">
@@ -465,7 +412,7 @@ function AuthenticatedApplicationContent() {
                       }}
                       size="icon-sm"
                       type="button"
-                      variant="ghost"
+                      variant="sidebar"
                     />
                   }
                 >
@@ -509,7 +456,11 @@ function AuthenticatedApplicationContent() {
             </Button>
           </div>
         )}
-        <div id="app-content" className="min-h-0 min-w-0 grow overflow-hidden">
+        <div
+          id="app-content"
+          className="min-h-0 min-w-0 grow overflow-hidden outline-none"
+          tabIndex={-1}
+        >
           <div className="mx-auto flex h-full min-h-0 w-full max-w-[1500px] flex-col p-0 sm:p-3 [&>*]:h-full">
             <Suspense
               fallback={

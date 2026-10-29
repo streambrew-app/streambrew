@@ -177,7 +177,7 @@ function DonationsIndex() {
           )}
           <select
             className={cn(
-              "h-9 w-full appearance-none rounded-lg border border-input bg-background/70 py-0 pr-8 text-xs font-semibold text-foreground outline-none focus:border-ring sm:w-40",
+              "h-9 w-full appearance-none rounded-lg border border-input bg-background/70 py-0 pr-8 text-base md:text-xs font-semibold text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-40",
               search.source ? "pl-8" : "pl-3",
             )}
             onChange={(event) =>
@@ -208,7 +208,7 @@ function DonationsIndex() {
         <label className="relative w-full sm:w-auto">
           <span className="sr-only">{t("dateRange")}</span>
           <select
-            className="h-9 w-full appearance-none rounded-lg border border-input bg-background/70 py-0 pr-8 pl-3 text-xs font-semibold text-foreground outline-none focus:border-ring sm:w-36"
+            className="h-9 w-full appearance-none rounded-lg border border-input bg-background/70 py-0 pr-8 pl-3 text-base md:text-xs font-semibold text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-36"
             onChange={(event) =>
               void navigate({
                 search: (previous) => ({

@@ -66,7 +66,7 @@ export default function DonationCard({
   return (
     <div
       className={clsx(
-        "relative grid min-w-0 grid-cols-[36px_minmax(0,1fr)_auto] items-start gap-3 overflow-hidden px-4 py-4 sm:px-5",
+        "relative grid min-w-0 grid-cols-[36px_minmax(0,1fr)] items-start gap-3 overflow-hidden px-4 py-4 sm:px-5",
         props.className,
       )}
     >
@@ -74,9 +74,25 @@ export default function DonationCard({
         {getInitials(author)}
       </div>
       <div className="flex min-w-0 flex-col gap-1.5">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <strong className="text-compact text-card-foreground">{author}</strong>
-          <DonationSourceBadge className="text-micro" source={donation.source} />
+        <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-3 gap-y-2">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
+            <strong className="min-w-0 text-compact wrap-anywhere text-card-foreground">
+              {author}
+            </strong>
+            <DonationSourceBadge className="text-micro" source={donation.source} />
+          </div>
+          <div className="min-w-0 text-right">
+            <strong className="block text-sm font-semibold wrap-anywhere text-card-foreground tabular-nums">
+              {fmtAmount(donation.amount, donation.currency, locale)}
+            </strong>
+            <time
+              className="mt-1 block text-micro text-muted-foreground"
+              dateTime={donation.occurredAt.toISOString()}
+              title={fmtDate(donation.occurredAt, locale)}
+            >
+              {fmtListDate(donation.occurredAt, locale)}
+            </time>
+          </div>
         </div>
         <p
           className={clsx(
@@ -92,7 +108,7 @@ export default function DonationCard({
                 key={index}
                 href={chunk.href}
                 target="_blank"
-                className="font-bold hover:underline"
+                className="rounded-sm font-bold hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               >
                 {chunk.text}
               </a>
@@ -129,18 +145,6 @@ export default function DonationCard({
             ))}
           </div>
         )}
-      </div>
-      <div className="shrink-0 text-right">
-        <strong className="block text-sm font-semibold tabular-nums text-card-foreground">
-          {fmtAmount(donation.amount, donation.currency, locale)}
-        </strong>
-        <time
-          className="mt-1 block text-micro text-muted-foreground"
-          dateTime={donation.occurredAt.toISOString()}
-          title={fmtDate(donation.occurredAt, locale)}
-        >
-          {fmtListDate(donation.occurredAt, locale)}
-        </time>
       </div>
     </div>
   );

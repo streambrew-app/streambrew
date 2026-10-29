@@ -28,6 +28,7 @@ import {
 } from "@web/components/streamlabs";
 import { buttonVariants } from "@web/components/ui/button";
 import { CosmicPageHeader } from "@web/components/ui/cosmic-page-header";
+import { EmptyState } from "@web/components/ui/empty-state";
 import { fmtRubles } from "@web/lib/fmt";
 import { createTranslations, createTranslator, useI18n } from "@web/lib/i18n";
 import { preloadRouteQuery } from "@web/lib/trpc";
@@ -64,6 +65,14 @@ const translations = createTranslations({
   recentActivity: {
     en: "Recent donations",
     ru: "Последние донаты",
+  },
+  noDonations: {
+    en: "No donations yet",
+    ru: "Донатов пока нет",
+  },
+  donationsWillAppear: {
+    en: "New donations will appear here.",
+    ru: "Новые донаты появятся здесь.",
   },
   viewAll: {
     en: "View all",
@@ -283,15 +292,26 @@ function Overview() {
                       {t("viewAll")} <Icons.chevronRight aria-hidden="true" size={16} />
                     </Link>
                   </div>
-                  <div>
-                    {donationOverviewQ.data?.recentDonations.map((donation) => (
-                      <DonationCard
-                        key={donation.donationId}
-                        className="border-t border-border"
-                        donation={donation}
-                      />
-                    ))}
-                  </div>
+                  {donationOverviewQ.data?.recentDonations.length ? (
+                    <div>
+                      {donationOverviewQ.data.recentDonations.map((donation) => (
+                        <DonationCard
+                          key={donation.donationId}
+                          className="border-t border-border"
+                          donation={donation}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <EmptyState
+                      art={false}
+                      className="min-h-0"
+                      description={t("donationsWillAppear")}
+                      headingLevel={3}
+                      icon={Icons.donations}
+                      title={t("noDonations")}
+                    />
+                  )}
                 </article>
                 <article className={`${panel} min-h-[290px] overflow-hidden`}>
                   <div className="flex items-start justify-between p-5 pb-1">
@@ -323,7 +343,7 @@ function Overview() {
                   </div>
                 </article>
               </section>
-              <section className="grid gap-4 xl:grid-cols-2">
+              <section className="grid items-start gap-4 xl:grid-cols-2">
                 <article
                   className={`${panel} flex min-h-[120px] flex-col gap-4 p-5`}
                   id="integrations"
@@ -344,7 +364,7 @@ function Overview() {
                       {t("manage")} <Icons.chevronRight aria-hidden="true" size={16} />
                     </Link>
                   </div>
-                  <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
                     {donationConnections.map(({ name, source, mark, status }) => (
                       <div
                         className="flex min-w-0 items-center gap-2 rounded-xl bg-muted/55 p-2.5"

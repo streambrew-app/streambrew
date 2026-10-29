@@ -31,7 +31,7 @@ export function CosmicPageHeader({
     >
       <div
         className={cn(
-          "relative z-10 flex min-w-0 flex-1 items-center",
+          "relative z-10 flex min-w-[min(100%,12rem)] flex-1 items-center",
           navigation && "min-w-[min(100%,15rem)]",
         )}
       >
@@ -39,14 +39,16 @@ export function CosmicPageHeader({
           className={
             navigation
               ? "sr-only"
-              : "font-heading text-xl leading-tight font-semibold tracking-tight text-milky-paper"
+              : "font-heading text-xl leading-tight font-semibold tracking-tight wrap-anywhere text-milky-paper"
           }
         >
           {title}
         </Heading>
         {navigation}
       </div>
-      {actions && <div className="relative z-10 flex shrink-0 items-center gap-2">{actions}</div>}
+      {actions && (
+        <div className="relative z-10 flex max-w-full flex-wrap items-center gap-2">{actions}</div>
+      )}
       <CosmicArt
         className={cn(
           "pointer-events-none absolute text-header-art/40",

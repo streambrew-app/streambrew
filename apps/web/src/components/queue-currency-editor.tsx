@@ -157,7 +157,7 @@ export function QueueCurrencyEditor() {
             <Field className="w-auto" orientation="horizontal">
               <FieldLabel htmlFor="queue-currency">{t("queueCurrency")}</FieldLabel>
               <select
-                className="h-9 rounded-lg border border-input bg-background px-2 text-sm outline-none focus:border-ring focus:ring-2 focus:ring-ring/20"
+                className="h-9 rounded-lg border border-input bg-background px-2 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm"
                 id="queue-currency"
                 {...register("queueCurrency", {
                   setValueAs: (value) => QueueCurrencySchema.parse(value),

@@ -167,13 +167,13 @@ export function DonationSourceConnectionStatus({ connected }: { connected: boole
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-micro font-bold",
+        "inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-micro font-bold whitespace-nowrap",
         connected
           ? "bg-status-success-surface text-status-success-text dark:bg-status-success-dark-surface/10 dark:text-status-success-dark-text"
           : "bg-status-warning-surface text-status-warning-text dark:bg-status-warning-dark-surface/10 dark:text-status-warning-dark-text",
       )}
     >
-      <i aria-hidden="true" className="size-1.5 rounded-full bg-current" />
+      <i aria-hidden="true" className="size-1.5 shrink-0 rounded-full bg-current" />
       {t(connected ? "connected" : "notConnected")}
     </span>
   );
