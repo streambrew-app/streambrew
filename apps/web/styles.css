@@ -11,8 +11,8 @@
 @theme inline {
   --font-heading: "Bitter Variable", serif;
   --font-sans: "Geist Variable", sans-serif;
-  --text-caption: 0.6875rem;
-  --text-micro: 0.625rem;
+  --text-caption: 0.75rem;
+  --text-micro: 0.6875rem;
   --text-compact: 0.8125rem;
   --text-display: clamp(2.75rem, 5.4vw, 4.75rem);
   --text-error-display: clamp(2rem, 7vw, 4rem);
@@ -318,6 +318,7 @@
   }
 
   .coffee-sidebar {
+    scrollbar-color: var(--sidebar-border) transparent;
     background-image:
       radial-gradient(ellipse at 0% 0%, #b9875729, transparent 50%),
       radial-gradient(ellipse at 100% 85%, #9271bc1a, transparent 45%);

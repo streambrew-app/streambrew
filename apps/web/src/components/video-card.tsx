@@ -430,9 +430,12 @@ function VideoSummary({
           {video.title}
         </h3>
       )}
-      <div className="flex min-w-0 flex-nowrap items-center gap-1.5">
+      <div className="flex min-w-0 flex-wrap items-center gap-1.5">
         {showPriorityLabel && (
-          <span className="rounded-md bg-secondary px-1.5 py-0.5 text-caption font-medium whitespace-nowrap text-secondary-foreground">
+          <span
+            className="max-w-full truncate rounded-md bg-secondary px-1.5 py-0.5 text-caption font-medium text-secondary-foreground"
+            title={video.priorityLabel ?? t("videoUnassigned")}
+          >
             {video.priorityLabel ?? t("videoUnassigned")}
           </span>
         )}

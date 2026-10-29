@@ -97,7 +97,7 @@ export function PagePagination({
         )}
       </div>
       {totalPages > 1 && (
-        <div className="flex self-center rounded-xl border border-border bg-secondary/35 p-1 shadow-sm sm:col-start-2 sm:row-start-1">
+        <div className="flex items-center self-center rounded-xl border border-border bg-secondary/35 p-1 shadow-sm sm:col-start-2 sm:row-start-1">
           <Button
             aria-label={t("previousPage")}
             elevation="subtle"

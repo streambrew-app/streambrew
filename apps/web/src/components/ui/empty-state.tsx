@@ -29,7 +29,7 @@ export function EmptyState({
       className={cn("grid min-h-72 place-items-center px-5 py-10 text-center", className)}
       {...props}
     >
-      <div className="relative flex max-w-sm flex-col items-center gap-3">
+      <div className="relative flex min-w-0 max-w-sm flex-col items-center gap-3 wrap-anywhere">
         {art !== false && (
           <CosmicArt
             className="pointer-events-none absolute -top-12 -right-4 w-44 text-primary/30 opacity-35"

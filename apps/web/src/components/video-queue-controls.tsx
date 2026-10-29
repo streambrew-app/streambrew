@@ -510,7 +510,7 @@ export function VideoQueueSelect({
       <span>{label}</span>
       <select
         aria-label={label}
-        className="h-8 min-w-0 max-w-full rounded-lg border border-input bg-background px-2 text-sm text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:opacity-50"
+        className="h-8 min-w-0 max-w-full rounded-lg border border-input bg-background px-2 text-base text-foreground outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:opacity-50 md:text-sm"
         disabled={disabled}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}

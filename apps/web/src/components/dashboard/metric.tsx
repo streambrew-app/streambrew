@@ -20,7 +20,7 @@ function Metric({ title, value, note, subnote, icon: MetricIcon, iconClass }: Me
           <MetricIcon aria-hidden="true" />
         </span>
       </div>
-      <strong className="block font-heading text-3xl leading-none font-medium tracking-tight text-card-foreground tabular-nums">
+      <strong className="block font-heading text-3xl leading-tight font-medium tracking-tight wrap-anywhere text-card-foreground tabular-nums">
         {value}
       </strong>
       <p

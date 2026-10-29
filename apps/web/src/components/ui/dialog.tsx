@@ -27,7 +27,7 @@ function DialogContent({ className, children, ...props }: DialogPrimitive.Popup.
 function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
   return (
     <DialogPrimitive.Title
-      className={cn("font-heading text-xl font-semibold", className)}
+      className={cn("font-heading text-xl font-semibold wrap-anywhere", className)}
       {...props}
     />
   );
@@ -36,7 +36,7 @@ function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
 function DialogDescription({ className, ...props }: DialogPrimitive.Description.Props) {
   return (
     <DialogPrimitive.Description
-      className={cn("text-sm leading-relaxed text-muted-foreground", className)}
+      className={cn("text-sm leading-relaxed wrap-anywhere text-muted-foreground", className)}
       {...props}
     />
   );

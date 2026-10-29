@@ -1145,7 +1145,7 @@ function SpeechSettings({
       <Field>
         <FieldLabel htmlFor="tts-voice">{t("voice")}</FieldLabel>
         <select
-          className="h-8 rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
+          className="h-8 rounded-lg border border-input bg-background px-2.5 text-base md:text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
           disabled={!draft.ttsEnabled}
           id="tts-voice"
           onChange={(event) => setSetting("ttsVoice", event.currentTarget.value)}
@@ -1233,7 +1233,7 @@ function AssetControl({
     : null;
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/20 p-3">
+    <div className="relative flex items-center gap-3 rounded-xl border border-border bg-muted/20 p-3">
       <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
         {icon}
       </span>
@@ -1258,6 +1258,7 @@ function AssetControl({
       </Button>
       <input
         accept={accept}
+        aria-label={label}
         className="sr-only"
         disabled={pending}
         name={`${kind}-upload`}
