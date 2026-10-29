@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { signIn } from "@web/lib/auth-client";
 import { useState } from "react";
 
-import productMark from "../../assets/logo.png";
+import productMark from "../../assets/logo.webp";
 import { createTranslations, useI18n } from "../lib/i18n";
 import { CosmicArt } from "./cosmic-art";
 import { Icons } from "./icons";

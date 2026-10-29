@@ -17,9 +17,9 @@ colors:
   accent: "#ffe0e5"
   accent-foreground: "#a82f53"
   border: "#e7dcd8"
-  input: "#d8cbc8"
+  input: "#938087"
   ring: "#7962cd"
-  destructive: "#d84557"
+  destructive: "#9d2036"
   sidebar: "#251c20"
   sidebar-foreground: "#fff8ed"
   sidebar-primary: "#edbf88"
@@ -55,7 +55,7 @@ colors:
   dark-accent: "#512b3d"
   dark-accent-foreground: "#ffc8d3"
   dark-border: "#493d46"
-  dark-input: "#5b4657"
+  dark-input: "#a58a9e"
   dark-ring: "#8c98ff"
   dark-destructive: "#ff7a88"
   dark-sidebar: "#120c14"
@@ -365,15 +365,22 @@ project-owned components. Feature-specific components remain in `apps/web/src/co
   Keyboard focus uses a 3 px ring at 50% opacity and a ring-colored border.
   Ordinary actions translate down 1 px when pressed; popup triggers do not.
   Disabled buttons retain 50% opacity. Preserve invalid states and use the
-  existing size, shape, and elevation variants.
+  existing size, shape, and elevation variants. The `icon-touch` size provides
+  a 44 px target, reducing to 28 px for fine pointers. Queue editing and chat
+  moderation use it; keep the full hit area free of adjacent controls.
 - **Inputs:** 32 px high, semantic border, transparent light surface, and a tinted
   dark surface. Inputs and native selects use 16 px text below `md` to avoid
   mobile browser zoom; compact desktop controls retain their smaller type.
   Focus uses the ring token; invalid fields use destructive styling. The `bare`
   appearance removes borders, rounding, and the focus ring for composed controls;
-  the `compact` density reduces padding and desktop text size.
+  the `compact` density reduces padding and desktop text size. Input boundaries
+  must retain at least 3:1 contrast against their adjacent surface in both themes;
+  error text must retain 4.5:1, including destructive button hover backgrounds.
 - **Panels:** `cosmic-panel` combines a card surface, semantic border, and the
   custom `rounded-2xl` radius. Keep content clean and legible.
+- **Chat moderation:** show actions without hover on touch devices and let their
+  row wrap below the message. Fine pointers retain hover and keyboard-focus reveal.
+  Accessible names and tooltips follow the selected Russian or English locale.
 - **Connection badges:** small pill labels use 11 px bold text, 8 px horizontal
   and 2 px vertical padding, and a 6 px dot. Connected and disconnected states
   pair their respective success and warning colors with readable text. Provider
@@ -447,7 +454,9 @@ Application icons use `lucide-react`; do not add another icon library, inline SV
 
 ### Brand assets
 
-- Use `apps/web/assets/logo.png` for both the product mark and browser favicon.
+- Use `apps/web/assets/logo.webp` (144 px) for the product mark and
+  `apps/web/assets/favicon.png` (32 px) for the browser icon.
+  `apps/web/assets/logo.png` is the source artwork; keep it out of runtime imports.
 - Keep the coffee-bean mark visually centred within its circular background. Use 36–40 px in compact navigation lockups and 48 px in the sign-in hero.
 - The static logo, `CosmicArt` drawings, and Lucide interface icons have different jobs and should not be substituted for one another.
 

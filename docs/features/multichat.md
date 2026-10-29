@@ -67,6 +67,11 @@ present an incomplete rolling window as a full history. These activity records c
 messages, provider identities, or overlay tokens.
 
 Messages are never written to PostgreSQL. The browser keeps at most 500 normalized messages.
+The feed identifies arrivals by source and message ID, so following new messages
+and counting unread messages continue when that buffer is full. Scrolling away,
+editing, or deleting existing messages does not add unread messages. Returning to
+the bottom clears the unread count. Moderation actions remain visible on touch
+devices, and their accessible labels follow the interface language.
 PostgreSQL stores command audit rows without message text: provider, source, action, provider
 message/user ID, duration, status, safe detail, and timestamp. Disconnecting an account does not
 delete those audit rows.

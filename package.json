@@ -18,6 +18,7 @@
     "concurrently": "^10.0.4",
     "dbmate": "2.35.1",
     "fallow": "3.24.0",
+    "happy-dom": "^21.0.4",
     "oxfmt": "^0.60.0",
     "oxlint-plugin-eslint": "1.85.0",
     "oxlint-tsgolint": "^7.0.2002",

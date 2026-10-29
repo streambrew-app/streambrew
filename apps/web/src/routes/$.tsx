@@ -3,7 +3,7 @@ import { CosmicArt } from "@web/components/cosmic-art";
 import { buttonVariants } from "@web/components/ui/button";
 import { createTranslations, createTranslator, useI18n } from "@web/lib/i18n";
 
-import productMark from "../../assets/logo.png";
+import productMark from "../../assets/logo.webp";
 
 const translations = createTranslations({
   pageTitle: {

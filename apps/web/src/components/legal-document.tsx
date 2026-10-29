@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
-import productMark from "../../assets/logo.png";
+import productMark from "../../assets/logo.webp";
 import { CosmicArt } from "./cosmic-art";
 
 export function LegalDocument({
