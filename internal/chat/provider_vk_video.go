@@ -60,7 +60,12 @@ func (provider *VKVideoProvider) Stream(ctx context.Context, source ConnectedSou
 				<-ctx.Done()
 				return
 			}
-			if err := provider.streamBroadcast(ctx, source, broadcast, events); err != nil {
+			polled, err := provider.streamBroadcast(ctx, source, broadcast, events)
+			if err != nil {
+				if polled {
+					// A session that delivered at least one poll was healthy, so start backing off again.
+					retry = vkStreamRetry
+				}
 				sendProviderError(ctx, errorsChannel, err)
 				if providerErrorType(err) == "provider unauthorized" || !provider.wait(ctx, retry) {
 					return
@@ -104,27 +109,30 @@ func (provider *VKVideoProvider) activeBroadcast(ctx context.Context, source Con
 	return vkBroadcast{}, nil
 }
 
-func (provider *VKVideoProvider) streamBroadcast(ctx context.Context, source ConnectedSource, broadcast vkBroadcast, events chan<- StreamEvent) error {
+// streamBroadcast reads the broadcast chat until it fails and reports whether any poll succeeded.
+func (provider *VKVideoProvider) streamBroadcast(ctx context.Context, source ConnectedSource, broadcast vkBroadcast, events chan<- StreamEvent) (bool, error) {
 	var response struct {
 		URL string `json:"url"`
 	}
 	query := url.Values{"owner_id": {strconv.FormatInt(broadcast.OwnerID, 10)}, "video_id": {strconv.FormatInt(broadcast.VideoID, 10)}}
 	if err := provider.requestAPI(ctx, source, "video.getLongPollServer", query, &response, "Could not connect to VK Video chat"); err != nil {
-		return err
+		return false, err
 	}
 	longPollURL, err := url.Parse(response.URL)
 	if err != nil || !provider.validLongPollURL(longPollURL) {
-		return &ProviderError{Type: "provider unavailable", Detail: "VK Video returned an invalid chat server", Cause: err}
+		return false, &ProviderError{Type: "provider unavailable", Detail: "VK Video returned an invalid chat server", Cause: err}
 	}
 	sendStreamEvent(ctx, events, StreamEvent{Type: "state", SourceID: source.Source.SourceID, State: "live"})
+	polled := false
 	for ctx.Err() == nil {
 		poll, err := provider.poll(ctx, longPollURL)
 		if err != nil {
-			return err
+			return polled, err
 		}
 		if poll.Failed != 0 {
-			return &ProviderError{Type: "provider unavailable", Detail: "VK Video chat session expired"}
+			return polled, &ProviderError{Type: "provider unavailable", Detail: "VK Video chat session expired"}
 		}
+		polled = true
 		if poll.TS != "" {
 			query := longPollURL.Query()
 			query.Set("ts", string(poll.TS))
@@ -137,7 +145,7 @@ func (provider *VKVideoProvider) streamBroadcast(ctx context.Context, source Con
 			}
 		}
 	}
-	return nil
+	return polled, nil
 }
 
 type vkLongPollResponse struct {

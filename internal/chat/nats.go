@@ -39,6 +39,7 @@ const (
 	chatDeadLetterRetryDelay          = 250 * time.Millisecond
 	collectorLeaseTTL                 = 30 * time.Second
 	collectorLeaseHeartbeat           = 10 * time.Second
+	natsReconnectWait                 = 2 * time.Second
 )
 
 var (
@@ -108,7 +109,20 @@ func ConnectNats(servers, namespace string) (*NatsConnection, error) {
 	for index := range parts {
 		parts[index] = strings.TrimSpace(parts[index])
 	}
-	connection, err := nats.Connect(strings.Join(parts, ","))
+	connection, err := nats.Connect(strings.Join(parts, ","),
+		// Keep reconnecting through long outages instead of closing the connection permanently.
+		nats.MaxReconnects(-1),
+		nats.ReconnectWait(natsReconnectWait),
+		nats.DisconnectErrHandler(func(_ *nats.Conn, disconnectErr error) {
+			if disconnectErr != nil {
+				slog.Warn("NATS connection lost", "error", disconnectErr)
+			}
+		}),
+		nats.ReconnectHandler(func(reconnected *nats.Conn) {
+			slog.Info("NATS connection restored", "server", reconnected.ConnectedUrlRedacted())
+			go restoreNatsResources(reconnected, resources)
+		}),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -117,53 +131,68 @@ func ConnectNats(servers, namespace string) (*NatsConnection, error) {
 		connection.Close()
 		return nil, err
 	}
-	if _, streamInfoErr := jetstream.StreamInfo(resources.stream); errors.Is(streamInfoErr, nats.ErrStreamNotFound) {
-		_, addStreamErr := jetstream.AddStream(&nats.StreamConfig{Name: resources.stream, Subjects: []string{resources.subjectPrefix + ".*"}, Storage: nats.MemoryStorage, Retention: nats.LimitsPolicy, Discard: nats.DiscardOld, MaxAge: chatEventMaxAge, MaxMsgsPerSubject: chatEventMaxPerUser, Duplicates: chatDuplicateWindow})
-		if addStreamErr != nil {
-			connection.Close()
-			return nil, addStreamErr
-		}
-	} else if streamInfoErr != nil {
-		connection.Close()
-		return nil, streamInfoErr
-	}
-	if _, streamInfoErr := jetstream.StreamInfo(resources.deadLetterStream); errors.Is(streamInfoErr, nats.ErrStreamNotFound) {
-		_, addStreamErr := jetstream.AddStream(&nats.StreamConfig{Name: resources.deadLetterStream, Subjects: []string{resources.deadLetterSubject}, Storage: nats.FileStorage, Retention: nats.LimitsPolicy, Discard: nats.DiscardOld, MaxAge: chatDeadLetterMaxAge, MaxMsgs: chatDeadLetterMaxMessages, MaxBytes: chatDeadLetterMaxBytes, Duplicates: chatDuplicateWindow})
-		if addStreamErr != nil {
-			connection.Close()
-			return nil, addStreamErr
-		}
-	} else if streamInfoErr != nil {
-		connection.Close()
-		return nil, streamInfoErr
-	}
-	leases, err := ensureKeyValue(jetstream, nats.KeyValueConfig{Bucket: resources.collectorLeaseBucket, TTL: collectorLeaseTTL, History: 1, Storage: nats.MemoryStorage})
-	if err != nil {
-		connection.Close()
-		return nil, err
-	}
-	states, err := ensureKeyValue(jetstream, nats.KeyValueConfig{Bucket: resources.chatStateBucket, TTL: chatEventMaxAge, History: 1, Storage: nats.MemoryStorage})
-	if err != nil {
-		connection.Close()
-		return nil, err
-	}
-	refreshes, err := ensureKeyValue(jetstream, nats.KeyValueConfig{Bucket: resources.collectorRefreshBucket, TTL: chatEventMaxAge, History: 1, Storage: nats.MemoryStorage})
-	if err != nil {
-		connection.Close()
-		return nil, err
-	}
-	activityLive, err := ensureKeyValue(jetstream, nats.KeyValueConfig{Bucket: resources.chatActivityLiveBucket, TTL: chatActivityLiveTTL, History: 1, Storage: nats.MemoryStorage})
-	if err != nil {
-		connection.Close()
-		return nil, err
-	}
-	activitySeen, err := ensureKeyValue(jetstream, nats.KeyValueConfig{Bucket: resources.chatActivitySeenBucket, TTL: chatActivitySeenTTL, History: 1, Storage: nats.FileStorage})
+	buckets, err := ensureNatsResources(jetstream, resources)
 	if err != nil {
 		connection.Close()
 		return nil, err
 	}
 	deadLetters := &NatsDeadLetterStore{jetstream: jetstream, stream: resources.deadLetterStream, subject: resources.deadLetterSubject}
-	return &NatsConnection{connection: connection, Broker: &NatsEventBroker{jetstream: jetstream, states: states, subjectPrefix: resources.subjectPrefix, stateBucket: resources.chatStateBucket, deadLetters: deadLetters}, Leases: &NatsCollectorLeases{bucket: leases}, CollectorControl: &NatsCollectorControl{bucket: refreshes}, DeadLetters: deadLetters, Activity: NewNatsActivityTracker(activityLive, activitySeen)}, nil
+	return &NatsConnection{connection: connection, Broker: &NatsEventBroker{jetstream: jetstream, states: buckets.states, subjectPrefix: resources.subjectPrefix, stateBucket: resources.chatStateBucket, deadLetters: deadLetters}, Leases: &NatsCollectorLeases{bucket: buckets.leases}, CollectorControl: &NatsCollectorControl{bucket: buckets.refreshes}, DeadLetters: deadLetters, Activity: NewNatsActivityTracker(buckets.activityLive, buckets.activitySeen)}, nil
+}
+
+// restoreNatsResources recreates streams and buckets that a restarted server lost, such as
+// memory-backed ones. Existing resources are left unchanged.
+func restoreNatsResources(connection *nats.Conn, resources natsResources) {
+	jetstream, err := connection.JetStream()
+	if err == nil {
+		_, err = ensureNatsResources(jetstream, resources)
+	}
+	if err != nil && !connection.IsClosed() {
+		slog.Error("Restore NATS chat resources after reconnect", "error", err)
+	}
+}
+
+type natsBuckets struct {
+	leases       nats.KeyValue
+	states       nats.KeyValue
+	refreshes    nats.KeyValue
+	activityLive nats.KeyValue
+	activitySeen nats.KeyValue
+}
+
+func ensureNatsResources(jetstream nats.JetStreamContext, resources natsResources) (natsBuckets, error) {
+	if err := ensureStream(jetstream, &nats.StreamConfig{Name: resources.stream, Subjects: []string{resources.subjectPrefix + ".*"}, Storage: nats.MemoryStorage, Retention: nats.LimitsPolicy, Discard: nats.DiscardOld, MaxAge: chatEventMaxAge, MaxMsgsPerSubject: chatEventMaxPerUser, Duplicates: chatDuplicateWindow}); err != nil {
+		return natsBuckets{}, err
+	}
+	if err := ensureStream(jetstream, &nats.StreamConfig{Name: resources.deadLetterStream, Subjects: []string{resources.deadLetterSubject}, Storage: nats.FileStorage, Retention: nats.LimitsPolicy, Discard: nats.DiscardOld, MaxAge: chatDeadLetterMaxAge, MaxMsgs: chatDeadLetterMaxMessages, MaxBytes: chatDeadLetterMaxBytes, Duplicates: chatDuplicateWindow}); err != nil {
+		return natsBuckets{}, err
+	}
+	var buckets natsBuckets
+	var err error
+	if buckets.leases, err = ensureKeyValue(jetstream, nats.KeyValueConfig{Bucket: resources.collectorLeaseBucket, TTL: collectorLeaseTTL, History: 1, Storage: nats.MemoryStorage}); err != nil {
+		return natsBuckets{}, err
+	}
+	if buckets.states, err = ensureKeyValue(jetstream, nats.KeyValueConfig{Bucket: resources.chatStateBucket, TTL: chatEventMaxAge, History: 1, Storage: nats.MemoryStorage}); err != nil {
+		return natsBuckets{}, err
+	}
+	if buckets.refreshes, err = ensureKeyValue(jetstream, nats.KeyValueConfig{Bucket: resources.collectorRefreshBucket, TTL: chatEventMaxAge, History: 1, Storage: nats.MemoryStorage}); err != nil {
+		return natsBuckets{}, err
+	}
+	if buckets.activityLive, err = ensureKeyValue(jetstream, nats.KeyValueConfig{Bucket: resources.chatActivityLiveBucket, TTL: chatActivityLiveTTL, History: 1, Storage: nats.MemoryStorage}); err != nil {
+		return natsBuckets{}, err
+	}
+	if buckets.activitySeen, err = ensureKeyValue(jetstream, nats.KeyValueConfig{Bucket: resources.chatActivitySeenBucket, TTL: chatActivitySeenTTL, History: 1, Storage: nats.FileStorage}); err != nil {
+		return natsBuckets{}, err
+	}
+	return buckets, nil
+}
+
+func ensureStream(jetstream nats.JetStreamContext, config *nats.StreamConfig) error {
+	_, err := jetstream.StreamInfo(config.Name)
+	if errors.Is(err, nats.ErrStreamNotFound) {
+		_, err = jetstream.AddStream(config)
+	}
+	return err
 }
 
 func DeleteNatsNamespace(servers, namespace string) error {

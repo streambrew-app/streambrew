@@ -13,7 +13,14 @@ import (
 	"github.com/coder/websocket"
 )
 
-const twitchReconnectDelay = 1500 * time.Millisecond
+const (
+	twitchReconnectDelay    = 1500 * time.Millisecond
+	twitchReconnectDelayMax = time.Minute
+	// EventSub sends a keepalive within this period unless the welcome message states another one.
+	twitchDefaultKeepalive = 10 * time.Second
+	twitchMaxKeepalive     = 600 * time.Second
+	twitchKeepaliveMargin  = 5 * time.Second
+)
 
 type TwitchProvider struct {
 	clientID     string
@@ -21,6 +28,7 @@ type TwitchProvider struct {
 	client       *http.Client
 	apiURL       string
 	dial         func(context.Context, string) (twitchSocket, error)
+	wait         func(context.Context, time.Duration) bool
 }
 
 type twitchSocket interface {
@@ -29,7 +37,7 @@ type twitchSocket interface {
 }
 
 func NewTwitchProvider(clientID, clientSecret string, client *http.Client) *TwitchProvider {
-	return &TwitchProvider{clientID: clientID, clientSecret: clientSecret, client: client, apiURL: "https://api.twitch.tv", dial: func(ctx context.Context, rawURL string) (twitchSocket, error) {
+	return &TwitchProvider{clientID: clientID, clientSecret: clientSecret, client: client, apiURL: "https://api.twitch.tv", wait: waitFor, dial: func(ctx context.Context, rawURL string) (twitchSocket, error) {
 		connection, response, err := websocket.Dial(ctx, rawURL, nil)
 		if response != nil && response.Body != nil {
 			_ = response.Body.Close()
@@ -53,17 +61,19 @@ func (provider *TwitchProvider) Stream(ctx context.Context, source ConnectedSour
 		}
 		sendStreamEvent(ctx, events, StreamEvent{Type: "state", SourceID: source.Source.SourceID, State: "connecting"})
 		reconnectURL := "wss://eventsub.wss.twitch.tv/ws"
+		retry := twitchReconnectDelay
 		for ctx.Err() == nil {
 			connection, err := provider.dial(ctx, reconnectURL)
 			if err != nil {
 				sendProviderError(ctx, errorsChannel, operationError("Twitch chat connection failed", err))
-				if !waitFor(ctx, twitchReconnectDelay) {
+				if !provider.wait(ctx, retry) {
 					return
 				}
+				retry = min(retry*2, twitchReconnectDelayMax)
 				reconnectURL = "wss://eventsub.wss.twitch.tv/ws"
 				continue
 			}
-			nextURL, immediate := provider.readTwitchSocket(ctx, connection, source, events, errorsChannel)
+			nextURL, immediate, subscribed := provider.readTwitchSocket(ctx, connection, source, events, errorsChannel)
 			_ = connection.Close(websocket.StatusNormalClosure, "")
 			if ctx.Err() != nil {
 				return
@@ -72,41 +82,56 @@ func (provider *TwitchProvider) Stream(ctx context.Context, source ConnectedSour
 				reconnectURL = nextURL
 				continue
 			}
+			if subscribed {
+				retry = twitchReconnectDelay
+			}
 			reconnectURL = "wss://eventsub.wss.twitch.tv/ws"
-			if !waitFor(ctx, twitchReconnectDelay) {
+			if !provider.wait(ctx, retry) {
 				return
 			}
+			retry = min(retry*2, twitchReconnectDelayMax)
 		}
 	}()
 	return events, errorsChannel
 }
 
-func (provider *TwitchProvider) readTwitchSocket(ctx context.Context, connection twitchSocket, source ConnectedSource, events chan<- StreamEvent, errorsChannel chan<- error) (string, bool) {
+// readTwitchSocket reads one EventSub session. It reports a reconnect URL for an immediate
+// reconnect and whether the session subscribed to chat messages.
+func (provider *TwitchProvider) readTwitchSocket(ctx context.Context, connection twitchSocket, source ConnectedSource, events chan<- StreamEvent, errorsChannel chan<- error) (string, bool, bool) {
+	// Silence longer than the keepalive period means that the connection was dropped.
+	readTimeout := twitchDefaultKeepalive + twitchKeepaliveMargin
+	subscribed := false
 	for ctx.Err() == nil {
-		_, body, err := connection.Read(ctx)
+		readCtx, cancelRead := context.WithTimeout(ctx, readTimeout)
+		_, body, err := connection.Read(readCtx)
+		cancelRead()
 		if err != nil {
 			if ctx.Err() == nil {
 				sendProviderError(ctx, errorsChannel, operationError("Twitch chat connection failed", err))
 			}
-			return "", false
+			return "", false, subscribed
 		}
 		event, err := decodeTwitchEvent(body)
 		if err != nil {
 			sendProviderError(ctx, errorsChannel, operationError("Twitch chat connection failed", err))
-			return "", false
+			return "", false, subscribed
 		}
 		if event == nil {
 			continue
 		}
 		switch event.Type {
 		case "welcome":
+			if event.KeepaliveTimeout > 0 {
+				readTimeout = event.KeepaliveTimeout + twitchKeepaliveMargin
+			}
 			if err := provider.createTwitchSubscription(ctx, source, event.SessionID); err != nil {
 				sendProviderError(ctx, errorsChannel, err)
-				return "", false
+				return "", false, subscribed
 			}
+			subscribed = true
 			sendStreamEvent(ctx, events, StreamEvent{Type: "state", SourceID: source.Source.SourceID, State: "live"})
 		case "reconnect":
-			return event.ReconnectURL, true
+			return event.ReconnectURL, true, subscribed
 		case "revocation":
 			sendProviderError(ctx, errorsChannel, &ProviderError{Type: "provider unavailable", Detail: event.Reason})
 		case "message":
@@ -114,20 +139,21 @@ func (provider *TwitchProvider) readTwitchSocket(ctx context.Context, connection
 			sendStreamEvent(ctx, events, StreamEvent{Type: "message", Message: &message})
 		}
 	}
-	return "", false
+	return "", false, subscribed
 }
 
 type twitchEvent struct {
-	Type          string
-	SessionID     string
-	ReconnectURL  string
-	Reason        string
-	BroadcasterID string
-	MessageID     string
-	AuthorID      string
-	Author        string
-	Text          string
-	OccurredAt    time.Time
+	Type             string
+	SessionID        string
+	KeepaliveTimeout time.Duration
+	ReconnectURL     string
+	Reason           string
+	BroadcasterID    string
+	MessageID        string
+	AuthorID         string
+	Author           string
+	Text             string
+	OccurredAt       time.Time
 }
 
 func decodeTwitchEvent(body []byte) (*twitchEvent, error) {
@@ -147,13 +173,18 @@ func decodeTwitchEvent(body []byte) (*twitchEvent, error) {
 	case "session_welcome":
 		var payload struct {
 			Session struct {
-				ID string `json:"id"`
+				ID                      string `json:"id"`
+				KeepaliveTimeoutSeconds int    `json:"keepalive_timeout_seconds"`
 			} `json:"session"`
 		}
 		if json.Unmarshal(envelope.Payload, &payload) != nil || payload.Session.ID == "" {
 			return nil, errors.New("could not decode the Twitch socket message")
 		}
-		return &twitchEvent{Type: "welcome", SessionID: payload.Session.ID}, nil
+		keepalive := time.Duration(payload.Session.KeepaliveTimeoutSeconds) * time.Second
+		if keepalive <= 0 || keepalive > twitchMaxKeepalive {
+			keepalive = 0
+		}
+		return &twitchEvent{Type: "welcome", SessionID: payload.Session.ID, KeepaliveTimeout: keepalive}, nil
 	case "session_reconnect":
 		var payload struct {
 			Session struct {

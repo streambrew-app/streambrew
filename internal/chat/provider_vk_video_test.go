@@ -8,7 +8,9 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 )
 
 func vkVideoTestSource() ConnectedSource {
@@ -119,5 +121,54 @@ func TestVKVideoReadOnlyCommandsAreRejected(t *testing.T) {
 	}
 	if _, err := provider.Moderate(context.Background(), vkVideoTestSource(), ModerationCommand{}, ""); err == nil {
 		t.Fatal("expected moderation to be rejected")
+	}
+}
+
+func TestVKVideoStreamResetsRetryAfterSuccessfulPoll(t *testing.T) {
+	var mutex sync.Mutex
+	polls := 0
+	client := &http.Client{Transport: oauthRoundTripFunc(func(request *http.Request) (*http.Response, error) {
+		switch request.URL.Path {
+		case "/method/video.get":
+			return vkVideoResponse(`{"response":{"count":1,"items":[{"id":456,"owner_id":123,"live":1}]}}`), nil
+		case "/method/video.getLongPollServer":
+			return vkVideoResponse(`{"response":{"url":"https://lp.vk.ru/longpoll?ts=1"}}`), nil
+		case "/longpoll":
+			mutex.Lock()
+			polls++
+			poll := polls
+			mutex.Unlock()
+			// The first session fails immediately; the second fails after one successful poll.
+			if poll == 2 {
+				return vkVideoResponse(`{"ts":2,"events":[]}`), nil
+			}
+			return &http.Response{StatusCode: http.StatusBadGateway, Body: io.NopCloser(strings.NewReader("")), Header: make(http.Header)}, nil
+		default:
+			t.Errorf("unexpected request: %s", request.URL)
+			return nil, errors.New("unexpected request")
+		}
+	})}
+	provider := NewVKVideoProvider(client)
+	provider.apiURL = "https://api.test/method"
+	var delays []time.Duration
+	provider.wait = func(_ context.Context, delay time.Duration) bool {
+		delays = append(delays, delay)
+		return len(delays) < 2
+	}
+	events, providerErrors := provider.Stream(context.Background(), vkVideoTestSource())
+	for events != nil || providerErrors != nil {
+		select {
+		case _, open := <-events:
+			if !open {
+				events = nil
+			}
+		case _, open := <-providerErrors:
+			if !open {
+				providerErrors = nil
+			}
+		}
+	}
+	if len(delays) != 2 || delays[0] != vkStreamRetry || delays[1] != vkStreamRetry {
+		t.Fatalf("retry delays = %v; want [%s %s]", delays, vkStreamRetry, vkStreamRetry)
 	}
 }
