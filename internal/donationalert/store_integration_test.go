@@ -404,6 +404,66 @@ func TestPreparationCrashAfterLastAttemptFallsBackToPending(t *testing.T) {
 	}
 }
 
+func TestWhitespaceOnlyMessageSkipsSpeechPreparation(t *testing.T) {
+	store, pool := newAlertIntegrationStore(t)
+	seedAlertUser(t, pool, 1)
+	ctx := context.Background()
+	settings := DefaultSettings()
+	settings.Enabled = true
+	settings.TTSEnabled = true
+	if _, err := store.UpdateSettings(ctx, 1, settings); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Now().UTC()
+	statuses := map[string]string{}
+	for sourceID, message := range map[string]string{
+		"whitespace": "\n\t\r\u00a0\u2028\u3000 ",
+		"speech":     "\nСпасибо\u3000",
+	} {
+		donationID := insertAlertDonation(t, pool, 1, sourceID, now)
+		if _, err := pool.Exec(ctx, `UPDATE donation SET message = $2 WHERE donation_id = $1`, donationID, message); err != nil {
+			t.Fatal(err)
+		}
+		tx, err := pool.Begin(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err = EnqueueIncoming(ctx, tx, 1, donationID, DonationAlertsSource, now); err != nil {
+			_ = tx.Rollback(ctx)
+			t.Fatal(err)
+		}
+		if err = tx.Commit(ctx); err != nil {
+			t.Fatal(err)
+		}
+		var playbackID, status string
+		if err = pool.QueryRow(ctx, `
+			SELECT donation_alert_playback_id::text, status::text
+			FROM donation_alert_playback
+			WHERE donation_id = $1
+		`, donationID).Scan(&playbackID, &status); err != nil {
+			t.Fatal(err)
+		}
+		statuses[sourceID] = status
+		if sourceID != "whitespace" {
+			continue
+		}
+		if _, err = pool.Exec(ctx, `
+			UPDATE donation_alert_playback SET status = 'completed', finished_at = $2
+			WHERE donation_alert_playback_id = $1
+		`, playbackID, now); err != nil {
+			t.Fatal(err)
+		}
+		replay, replayErr := store.Replay(ctx, 1, playbackID, now)
+		if replayErr != nil {
+			t.Fatal(replayErr)
+		}
+		statuses["replay"] = string(replay.State)
+	}
+	if statuses["whitespace"] != "pending" || statuses["replay"] != "pending" || statuses["speech"] != "preparing" {
+		t.Fatalf("statuses = %#v", statuses)
+	}
+}
+
 func newAlertIntegrationStore(t *testing.T) (*Store, *pgxpool.Pool) {
 	t.Helper()
 	databaseURL := os.Getenv("DONATION_ALERT_TEST_DATABASE_URL")

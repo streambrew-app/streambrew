@@ -45,6 +45,24 @@ func TestESpeakSynthesizerUsesBoundedPlainUTF8Pipeline(t *testing.T) {
 	}
 }
 
+func TestESpeakSynthesizerTruncatesLongSpeech(t *testing.T) {
+	runner := &recordingCommandRunner{results: []commandResult{
+		{output: wavSignature()},
+		{output: []byte(`{"streams":[{"codec_type":"audio","codec_name":"pcm_s16le"}],"format":{"duration":"34.5"}}`)},
+		{output: []byte("OggSspeech")},
+	}}
+	media, err := newESpeakSynthesizer(runner).Synthesize(context.Background(), strings.Repeat("Спасибо за донат. ", 27), DefaultTTSVoice)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if media.DurationMS != int(MaxAlertSoundDuration/time.Millisecond) || string(media.Content) != "OggSspeech" {
+		t.Fatalf("unexpected media: %#v", media)
+	}
+	if len(runner.calls) != 3 || !strings.Contains(strings.Join(runner.calls[2].args, " "), " -t 30 ") {
+		t.Fatalf("speech was not capped at the sound limit: %#v", runner.calls)
+	}
+}
+
 func TestESpeakSynthesizerRejectsUnsupportedVoiceBeforeExecution(t *testing.T) {
 	runner := &recordingCommandRunner{}
 	_, err := newESpeakSynthesizer(runner).Synthesize(context.Background(), "Привет", "en")

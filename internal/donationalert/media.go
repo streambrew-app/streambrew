@@ -141,6 +141,16 @@ func (processor *FFmpegMediaProcessor) PrepareImage(ctx context.Context, content
 }
 
 func (processor *FFmpegMediaProcessor) PrepareSound(ctx context.Context, content []byte) (Media, error) {
+	return processor.prepareSound(ctx, content, false)
+}
+
+// prepareSpeech normalizes generated speech. Speech longer than the alert sound
+// limit is truncated to that limit instead of being rejected like an upload.
+func (processor *FFmpegMediaProcessor) prepareSpeech(ctx context.Context, content []byte) (Media, error) {
+	return processor.prepareSound(ctx, content, true)
+}
+
+func (processor *FFmpegMediaProcessor) prepareSound(ctx context.Context, content []byte, truncate bool) (Media, error) {
 	if len(content) == 0 {
 		return Media{}, &MediaError{Code: MediaInvalid, Err: errors.New("empty sound")}
 	}
@@ -180,7 +190,10 @@ func (processor *FFmpegMediaProcessor) PrepareSound(ctx context.Context, content
 		return Media{}, &MediaError{Code: MediaInvalid, Err: errors.New("audio duration is unavailable")}
 	}
 	if duration > MaxAlertSoundDuration {
-		return Media{}, &MediaError{Code: MediaDuration}
+		if !truncate {
+			return Media{}, &MediaError{Code: MediaDuration}
+		}
+		duration = MaxAlertSoundDuration
 	}
 
 	commandCtx, cancel := context.WithTimeout(ctx, processor.timeout)
@@ -191,7 +204,7 @@ func (processor *FFmpegMediaProcessor) PrepareSound(ctx context.Context, content
 			"-nostdin", "-hide_banner", "-loglevel", "error", "-max_alloc", strconv.Itoa(maxNativeAllocation), "-threads", "1",
 			"-i", path,
 			"-map", "0:a:0", "-vn", "-sn", "-dn", "-map_metadata", "-1",
-			"-t", "30", "-ac", "2", "-ar", "48000",
+			"-t", strconv.Itoa(int(MaxAlertSoundDuration / time.Second)), "-ac", "2", "-ar", "48000",
 			"-c:a", "libopus", "-b:a", "64k", "-vbr", "on",
 			"-f", "ogg", "pipe:1",
 		},
