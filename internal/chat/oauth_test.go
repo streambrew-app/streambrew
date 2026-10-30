@@ -17,6 +17,7 @@ type oauthTestStore struct {
 	createdProvider string
 	savedConnection SaveConnection
 	savedSource     SaveSource
+	saveErr         error
 }
 
 func (store *oauthTestStore) CreateOauthAttempt(_ context.Context, _ string, _ int, provider, _, _ string, _ time.Time) error {
@@ -30,6 +31,9 @@ func (*oauthTestStore) HasSourceCapacity(context.Context, int, string, string) (
 	return true, nil
 }
 func (store *oauthTestStore) SaveProviderAccount(_ context.Context, _ int, connection SaveConnection, source SaveSource) (string, error) {
+	if store.saveErr != nil {
+		return "", store.saveErr
+	}
 	store.savedConnection = connection
 	store.savedSource = source
 	return "connection-id", nil
@@ -86,7 +90,7 @@ func TestOauthSubscribesToKickChatWebhook(t *testing.T) {
 		}
 	})}
 	oauth := NewOauth(store, "http://localhost:5173/api/chat", OauthConfigs(nil, nil, &[2]string{"client-id", "client-secret"}, nil), client)
-	returnURL, err := oauth.Finish(context.Background(), "kick", "http://localhost:5173/api/chat/oauth/kick/callback?state=state&code=code")
+	returnURL, err := oauth.Finish(context.Background(), "kick", "http://localhost:5173/api/chat/oauth/kick/callback?state=state&code=code", 42)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -135,12 +139,47 @@ func TestOauthConnectsVKVideoWithVKIDDevice(t *testing.T) {
 	})}
 	oauth := NewOauth(store, "http://localhost:5173/api/chat", OauthConfigs(nil, nil, nil, &[2]string{"client-id", "client-secret"}), client)
 	callbackPayload := url.QueryEscape(`{"code":"code","state":"state","device_id":"device-1"}`)
-	returnURL, err := oauth.Finish(context.Background(), "vk_video", "http://localhost:5173/api/chat/oauth/vk_video/callback?payload="+callbackPayload)
+	returnURL, err := oauth.Finish(context.Background(), "vk_video", "http://localhost:5173/api/chat/oauth/vk_video/callback?payload="+callbackPayload, 42)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if returnURL != "http://localhost:5173/chat" || requestNumber != 2 || store.savedConnection.OAuthDeviceID != "device-1" || store.savedConnection.ProviderUserID != "123" || store.savedSource.SourceURL != "https://vk.ru/streamer" {
 		t.Fatalf("returnURL=%q requests=%d connection=%#v source=%#v", returnURL, requestNumber, store.savedConnection, store.savedSource)
+	}
+}
+
+func TestOauthRejectsCallbackFromAnotherSession(t *testing.T) {
+	for _, sessionUserID := range []int{0, 7} {
+		store := &oauthTestStore{attempt: &OauthAttempt{UserID: 42, Provider: "twitch", Verifier: "verifier", ReturnURL: "http://localhost:5173/chat"}}
+		client := &http.Client{Transport: oauthRoundTripFunc(func(request *http.Request) (*http.Response, error) {
+			t.Fatalf("authorization code was redeemed for a foreign session: %s", request.URL)
+			return nil, errors.New("unexpected request")
+		})}
+		oauth := NewOauth(store, "http://localhost:5173/api/chat", OauthConfigs(nil, &[2]string{"client-id", "client-secret"}, nil, nil), client)
+		_, err := oauth.Finish(context.Background(), "twitch", "http://localhost:5173/api/chat/oauth/twitch/callback?state=state&code=code", sessionUserID)
+		var oauthError *OauthError
+		if !errors.As(err, &oauthError) || oauthError.Type != "oauth session mismatch" || oauthError.ReturnURL != "http://localhost:5173/chat" {
+			t.Fatalf("session=%d err=%v", sessionUserID, err)
+		}
+		if store.savedConnection.ProviderUserID != "" {
+			t.Fatalf("session=%d saved %#v", sessionUserID, store.savedConnection)
+		}
+	}
+}
+
+func TestOauthReportsAccountConnectedToAnotherUser(t *testing.T) {
+	store := &oauthTestStore{attempt: &OauthAttempt{UserID: 42, Provider: "twitch", Verifier: "verifier", ReturnURL: "http://localhost:5173/chat"}, saveErr: errProviderAccountConnectedElsewhere}
+	client := &http.Client{Transport: oauthRoundTripFunc(func(request *http.Request) (*http.Response, error) {
+		if request.URL.Host == "id.twitch.tv" {
+			return oauthResponse(`{"access_token":"token","refresh_token":"refresh","expires_in":3600}`), nil
+		}
+		return oauthResponse(`{"data":[{"id":"123","login":"Streamer","display_name":"Streamer"}]}`), nil
+	})}
+	oauth := NewOauth(store, "http://localhost:5173/api/chat", OauthConfigs(nil, &[2]string{"client-id", "client-secret"}, nil, nil), client)
+	_, err := oauth.Finish(context.Background(), "twitch", "http://localhost:5173/api/chat/oauth/twitch/callback?state=state&code=code", 42)
+	var oauthError *OauthError
+	if !errors.As(err, &oauthError) || oauthError.Type != "chat account connected to another user" || oauthError.ReturnURL != "http://localhost:5173/chat" {
+		t.Fatalf("err=%v", err)
 	}
 }
 

@@ -116,6 +116,18 @@ Incomplete or expired public OAuth callbacks return the usual connection error t
 without sending an operational alert. Exchange, profile, and storage failures remain operational
 errors.
 
+A callback is accepted only in the browser of the StreamBrew user who started it. `apps/web`
+resolves the signed-in user from the session and sends its ID to `apps/chat` in the
+`X-StreamBrew-Session-User-Id` header over the authenticated service channel, replacing any
+client-supplied value. `apps/chat` consumes the attempt and, before redeeming the authorization
+code, rejects the callback with the `oauth session mismatch` error when no user is signed in or
+the user differs from the attempt's owner.
+
+A provider account belongs to at most one StreamBrew user. Connecting an account that another
+user already connected fails with the `chat account connected to another user` error, for OAuth
+and Boosty alike. Reconnecting an existing source keeps its position; a new source takes the
+lowest free position below the 20-source limit.
+
 Token refresh is centralized in the chat service. Updates use `token_version` as a compare-and-swap
 guard so concurrent replicas cannot overwrite a newer token. Provider calls retry with the next
 collector/config snapshot after a refresh race.
@@ -173,7 +185,11 @@ Their explicit values remain useful when local ports differ.
 requests chat read/write and moderation scopes. Kick
 requests user/channel read, event subscription, chat write, message moderation, and ban scopes.
 Kick webhook signatures are verified over `message-id.timestamp.raw-body` with RSA-SHA256, stale
-timestamps are rejected, and `Kick-Event-Message-Id` is the JetStream idempotency key.
+timestamps are rejected, and `Kick-Event-Message-Id` is the JetStream idempotency key. Both
+`apps/web` and `apps/chat` reject webhook bodies over 64 KiB with HTTP 413. Missing headers, stale
+timestamps, and invalid signatures return 401; an invalid payload returns 400; a message for an
+unknown source returns 202; storage and NATS failures return 500 with a generic message so Kick can
+retry.
 
 VK Video uses VK ID OAuth 2.1 with PKCE-S256. Register a web application in VK ID and add the exact
 callback `${CHAT_PUBLIC_URL}/oauth/vk_video/callback`. The integration requests the `video` scope,
@@ -221,6 +237,10 @@ with the `apps/web` adapter and shared Zod schemas, then verify both sides.
 
 `just dev-cleanup`, run manually from the primary checkout, removes NATS namespaces belonging to
 secondary and already-deleted worktrees while preserving the primary checkout's namespace.
+
+`apps/chat` reconnects to NATS indefinitely every 2 seconds and, after a reconnect, recreates
+missing streams and buckets. On shutdown it ends open NDJSON streams, then waits for collectors to
+stop before closing NATS, all within 10 seconds.
 
 Production Compose runs NATS with JetStream storage and healthchecks the chat service. Caddy sends
 all public traffic to `apps/web`; only the web container reaches chat port 3001. Scale chat

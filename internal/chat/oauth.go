@@ -106,7 +106,9 @@ func (oauth *Oauth) Start(ctx context.Context, userID int, provider, returnURL s
 	return authorizationURL.String(), nil
 }
 
-func (oauth *Oauth) Finish(ctx context.Context, provider, requestURL string) (string, error) {
+// Finish completes an OAuth callback for the StreamBrew user signed in to the browser that
+// delivered it. A sessionUserID of zero means that no StreamBrew user is signed in.
+func (oauth *Oauth) Finish(ctx context.Context, provider, requestURL string, sessionUserID int) (string, error) {
 	callback, err := url.Parse(requestURL)
 	if err != nil {
 		return "", &OauthError{Type: "invalid oauth callback", Detail: "OAuth callback is incomplete", Cause: err}
@@ -121,6 +123,10 @@ func (oauth *Oauth) Finish(ctx context.Context, provider, requestURL string) (st
 	}
 	if attempt == nil {
 		return "", &OauthError{Type: "expired oauth attempt", Detail: "OAuth attempt expired"}
+	}
+	if sessionUserID <= 0 || sessionUserID != attempt.UserID {
+		// Never link a provider account through an authorization URL started by another StreamBrew user.
+		return "", &OauthError{Type: "oauth session mismatch", Detail: "OAuth callback does not belong to the signed-in StreamBrew user", ReturnURL: attempt.ReturnURL}
 	}
 	config, exists := oauth.configs[provider]
 	if !exists {
@@ -164,6 +170,12 @@ func (oauth *Oauth) Finish(ctx context.Context, provider, requestURL string) (st
 		expiresAt = &value
 	}
 	_, err = oauth.store.SaveProviderAccount(ctx, attempt.UserID, SaveConnection{Provider: provider, ProviderUserID: identity.ProviderUserID, DisplayName: identity.DisplayName, AccessToken: token.AccessToken, RefreshToken: token.RefreshToken, OAuthDeviceID: callbackValues.DeviceID, AccessTokenExpiresAt: expiresAt, Scopes: normalizedScopes(token.Scope, config.Scopes)}, SaveSource{Provider: provider, ProviderSourceID: identity.ProviderUserID, DisplayName: identity.DisplayName, SourceURL: identity.SourceURL})
+	if errors.Is(err, errProviderAccountConnectedElsewhere) {
+		return "", &OauthError{Type: "chat account connected to another user", Detail: "Аккаунт уже подключён к другому пользователю StreamBrew", ReturnURL: attempt.ReturnURL, Cause: err}
+	}
+	if errors.Is(err, errChatSourceLimitReached) {
+		return "", &OauthError{Type: "chat source limit reached", Detail: "Достигнут лимит подключённых чат-каналов", ReturnURL: attempt.ReturnURL, Cause: err}
+	}
 	if err != nil {
 		return "", err
 	}

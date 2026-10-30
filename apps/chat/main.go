@@ -94,6 +94,8 @@ func run() error {
 	}
 	handler := chat.NewHTTPHandler(application, natsConnection.Activity, oauth, store, config.serviceSecret, config.webURL, kickWebhook, chat.NewBoostyConnector(boosty, store), natsConnection.DeadLetters)
 	server := &http.Server{Addr: ":" + strconv.Itoa(config.port), Handler: handler, ReadHeaderTimeout: 10 * time.Second}
+	// Open NDJSON streams never become idle on their own, so shutdown must end them.
+	server.RegisterOnShutdown(handler.CloseStreams)
 	collectorErrors := make(chan error, 1)
 	go func() {
 		collectorErrors <- chat.RunCollectors(ctx, store, natsConnection.Broker, natsConnection.Leases, natsConnection.CollectorControl, providers)
@@ -104,26 +106,37 @@ func run() error {
 		serverErrors <- server.ListenAndServe()
 	}()
 
+	var runErr error
+	collectorsStopped := false
 	select {
 	case <-ctx.Done():
 	case err := <-collectorErrors:
+		collectorsStopped = true
 		if err != nil {
-			stop()
-			return fmt.Errorf("run chat collectors: %w", err)
+			runErr = fmt.Errorf("run chat collectors: %w", err)
 		}
 	case err := <-serverErrors:
 		if err != nil && !errors.Is(err, http.ErrServerClosed) {
-			stop()
-			return fmt.Errorf("serve chat HTTP: %w", err)
+			runErr = fmt.Errorf("serve chat HTTP: %w", err)
 		}
 	}
 	stop()
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	if err := server.Shutdown(shutdownCtx); err != nil {
-		return fmt.Errorf("shutdown chat HTTP: %w", err)
+	if err := server.Shutdown(shutdownCtx); err != nil && runErr == nil {
+		runErr = fmt.Errorf("shutdown chat HTTP: %w", err)
 	}
-	return nil
+	// Collectors publish and release leases through NATS, which closes when run returns.
+	if !collectorsStopped {
+		select {
+		case <-collectorErrors:
+		case <-shutdownCtx.Done():
+			if runErr == nil {
+				runErr = errors.New("chat collectors did not stop before the shutdown deadline")
+			}
+		}
+	}
+	return runErr
 }
 
 type serviceConfig struct {

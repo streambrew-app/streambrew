@@ -57,6 +57,7 @@ type httpTestOauth struct {
 	callbackError error
 	returnURL     string
 	started       string
+	sessionUserID int
 }
 
 func (oauth *httpTestOauth) Available(provider string) bool { return oauth.available[provider] }
@@ -64,8 +65,9 @@ func (oauth *httpTestOauth) Start(_ context.Context, _ int, provider, _ string) 
 	oauth.started = provider
 	return "https://oauth.example/authorize", nil
 }
-func (oauth *httpTestOauth) Finish(_ context.Context, _, callbackURL string) (string, error) {
+func (oauth *httpTestOauth) Finish(_ context.Context, _, callbackURL string, sessionUserID int) (string, error) {
 	oauth.callbackURL = callbackURL
+	oauth.sessionUserID = sessionUserID
 	return oauth.returnURL, oauth.callbackError
 }
 
@@ -261,6 +263,86 @@ func TestHTTPHandlerOauthCallbackUsesForwardedPublicURL(t *testing.T) {
 	if response.Code != http.StatusFound || oauth.callbackURL != "https://streambrew.example/api/chat/oauth/youtube/callback?state=state&code=code" {
 		t.Fatalf("status=%d callback=%s", response.Code, oauth.callbackURL)
 	}
+}
+
+func TestHTTPHandlerOauthCallbackForwardsSessionUser(t *testing.T) {
+	for _, scenario := range []struct {
+		header string
+		userID int
+	}{
+		{"42", 42},
+		{"", 0},
+		{"not-a-user", 0},
+		{"-7", 0},
+	} {
+		handler, oauth := newHTTPTestHandler(&httpTestApplication{})
+		request := authorizedRequest(http.MethodGet, "/oauth/twitch/callback?state=state&code=code", "")
+		if scenario.header != "" {
+			request.Header.Set("X-StreamBrew-Session-User-Id", scenario.header)
+		}
+		handler.ServeHTTP(httptest.NewRecorder(), request)
+		if oauth.sessionUserID != scenario.userID {
+			t.Errorf("header %q: session user = %d; want %d", scenario.header, oauth.sessionUserID, scenario.userID)
+		}
+	}
+}
+
+func TestHTTPHandlerReportsForeignOauthCallbackWithoutOperationalError(t *testing.T) {
+	var logs bytes.Buffer
+	previousLogger := slog.Default()
+	slog.SetDefault(slog.New(slog.NewJSONHandler(&logs, nil)))
+	t.Cleanup(func() { slog.SetDefault(previousLogger) })
+
+	for _, errorType := range []string{"oauth session mismatch", "chat account connected to another user"} {
+		handler, oauth := newHTTPTestHandler(&httpTestApplication{})
+		oauth.callbackError = &OauthError{Type: errorType, Detail: "rejected", ReturnURL: "https://web.example/chat"}
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, authorizedRequest(http.MethodGet, "/oauth/twitch/callback?state=state&code=code", ""))
+		location, err := url.Parse(response.Header().Get("Location"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if response.Code != http.StatusFound || location.Query().Get("chat_oauth") != "error" || location.Query().Get("chat_oauth_error") != errorType {
+			t.Fatalf("type=%s status=%d location=%s", errorType, response.Code, location)
+		}
+	}
+	if strings.Contains(logs.String(), `"level":"ERROR"`) {
+		t.Fatalf("user-facing OAuth rejection produced an operational error: %s", logs.String())
+	}
+}
+
+func TestHTTPHandlerCloseStreamsEndsOpenStreams(t *testing.T) {
+	application := &httpTestStreamingApplication{}
+	handler := NewHTTPHandler(application, &httpTestActivity{}, &httpTestOauth{available: map[string]bool{}}, &httpTestStore{}, httpTestSecret, "https://web.example", nil, nil, &httpTestDeadLetters{})
+	finished := make(chan struct{})
+	go func() {
+		defer close(finished)
+		handler.ServeHTTP(httptest.NewRecorder(), authorizedRequest(http.MethodGet, "/internal/stream?userId=42&consumer=multichat", ""))
+	}()
+	select {
+	case <-finished:
+		t.Fatal("stream finished before shutdown")
+	case <-time.After(50 * time.Millisecond):
+	}
+	handler.CloseStreams()
+	select {
+	case <-finished:
+	case <-time.After(time.Second):
+		t.Fatal("stream remained open after CloseStreams")
+	}
+	handler.CloseStreams()
+}
+
+// httpTestStreamingApplication keeps a stream open until its request context ends.
+type httpTestStreamingApplication struct{ httpTestApplication }
+
+func (*httpTestStreamingApplication) Stream(ctx context.Context, _ int) <-chan StreamEvent {
+	events := make(chan StreamEvent)
+	go func() {
+		defer close(events)
+		<-ctx.Done()
+	}()
+	return events
 }
 
 func TestHTTPHandlerIgnoresUnsolicitedOauthCallbacks(t *testing.T) {
