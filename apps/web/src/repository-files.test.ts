@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
 
 const repositoryRoot = fileURLToPath(import.meta.resolve("../../../"));
-const allowedRootMarkdownFiles = ["AGENTS.md", "README.md", "TODO.md"];
+const allowedRootMarkdownFiles = ["AGENTS.md", "CLAUDE.md", "README.md", "TODO.md"];
 
 it("does not contain vite.config.js alongside vite.config.ts", () => {
   expect(
