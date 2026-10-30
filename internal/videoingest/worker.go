@@ -78,7 +78,7 @@ func (worker *Worker) Run(ctx context.Context) error {
 	for {
 		worked, err := worker.ProcessNext(ctx)
 		if ctx.Err() != nil {
-			return nil
+			return nil //nolint:nilerr // Context cancellation is a graceful worker shutdown.
 		}
 		delay := worker.config.PollInterval
 		if err != nil {
@@ -112,7 +112,7 @@ func (worker *Worker) ProcessNext(ctx context.Context) (bool, error) {
 	err = worker.store.Complete(ctx, *job, scanVideos(job.Message), worker.clock.Now())
 	if err == nil || errors.Is(err, ErrLeaseLost) || ctx.Err() != nil {
 		// Cancellation leaves the lease to expire, so another attempt recovers it.
-		return true, nil
+		return true, nil //nolint:nilerr // A lost lease or cancellation is not a worker failure.
 	}
 	return true, worker.retry(ctx, *job, err)
 }
@@ -124,7 +124,7 @@ func (worker *Worker) retry(ctx context.Context, job Job, cause error) error {
 		"next_attempt_at", availableAt, "error", cause)
 	err := worker.store.Retry(ctx, job, availableAt, scanFailedError, now)
 	if err == nil || errors.Is(err, ErrLeaseLost) || ctx.Err() != nil {
-		return nil
+		return nil //nolint:nilerr // Lease expiry reschedules a job after a lost lease or cancellation.
 	}
 	return fmt.Errorf("reschedule donation video scan %d: %w", job.DonationID, err)
 }
