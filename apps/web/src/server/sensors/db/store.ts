@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 
 import {
+  DonationAmountSchema,
+  DonationAssetSchema,
   DonationSchema,
   type DonationSource,
   DonationIdSchema,
@@ -139,14 +141,22 @@ export class Store {
     };
   }
 
+  /**
+   * Summarizes donations without converting money: each original currency keeps its own total and
+   * average, ordered from the most frequently received currency.
+   */
   async getDonationOverview(userId: UserId) {
-    const [summaryRows, recentRows] = await Promise.all([
+    const [currencyRows, recentRows] = await Promise.all([
       this.sql`
         SELECT
+          currency,
           count(*)::int AS donation_count,
-          coalesce(sum(amount), 0) AS total_amount
+          sum(amount) AS total_amount,
+          round(avg(amount), greatest(max(min_scale(amount)), 2)) AS average_amount
         FROM donation
         WHERE user_id = ${userId}
+        GROUP BY currency
+        ORDER BY donation_count DESC, currency
       `,
       this.sql`
         SELECT *
@@ -156,12 +166,18 @@ export class Store {
         LIMIT 3
       `,
     ]);
-    const schema = z.object({
-      donationCount: z.int().nonnegative(),
-      totalAmount: z.coerce.number(),
+    const currencySchema = z.object({
+      currency: DonationAssetSchema,
+      donationCount: z.int().positive(),
+      totalAmount: DonationAmountSchema,
+      averageAmount: DonationAmountSchema,
     });
-    const summary = schema.parse(summaryRows[0]);
-    return { ...summary, recentDonations: z.array(DonationSchema).parse(recentRows) };
+    const currencies = z.array(currencySchema).parse(currencyRows);
+    return {
+      currencies,
+      donationCount: currencies.reduce((count, currency) => count + currency.donationCount, 0),
+      recentDonations: z.array(DonationSchema).parse(recentRows),
+    };
   }
 
   async setSlug(userId: UserId, slug: Slug) {
