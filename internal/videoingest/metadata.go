@@ -47,7 +47,7 @@ func (store *Store) RunMetadata(ctx context.Context, client *http.Client, apiKey
 	for {
 		worked, err := store.processMetadata(ctx, client, apiKey)
 		if ctx.Err() != nil {
-			return nil
+			return nil //nolint:nilerr // Context cancellation is a graceful worker shutdown.
 		}
 		delay := 2500 * time.Millisecond
 		if err != nil {
