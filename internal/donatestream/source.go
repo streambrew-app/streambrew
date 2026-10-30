@@ -50,8 +50,10 @@ func (source *Source) Authenticate(ctx context.Context, widgetToken string) erro
 func (source *Source) Run(ctx context.Context, widgetToken string, emit func(Donation) error) error {
 	retryDelay := source.retryStart
 	for ctx.Err() == nil {
-		emitted, err := source.runSession(ctx, widgetToken, emit, false)
-		if emitted {
+		authenticated, err := source.runSession(ctx, widgetToken, emit, false)
+		if authenticated {
+			// A session that authenticated was healthy; a later routine
+			// disconnect must not inherit the delay of earlier failures.
 			retryDelay = source.retryStart
 		}
 		if contextDone(ctx) {
@@ -77,37 +79,39 @@ func (source *Source) Run(ctx context.Context, widgetToken string, emit func(Don
 
 func contextDone(ctx context.Context) bool { return ctx.Err() != nil }
 
+// runSession reports whether the widget token authenticated, so Run can reset
+// its reconnect backoff after a healthy session.
 func (source *Source) runSession(ctx context.Context, widgetToken string, emit func(Donation) error, stopAfterAuthentication bool) (bool, error) {
 	socket, err := source.dial(ctx, source.webSocketURL)
 	if err != nil {
 		return false, fmt.Errorf("open donate.stream websocket: %w", err)
 	}
 	defer func() { _ = socket.Close() }()
-	emitted := false
+	authenticated := false
 	for ctx.Err() == nil {
 		body, err := socket.Read(ctx)
 		if err != nil {
-			return emitted, fmt.Errorf("read donate.stream websocket: %w", err)
+			return authenticated, fmt.Errorf("read donate.stream websocket: %w", err)
 		}
 		packet := string(body)
 		switch {
 		case strings.HasPrefix(packet, "0"):
 			if err := socket.Write(ctx, []byte("40")); err != nil {
-				return emitted, fmt.Errorf("open donate.stream Socket.IO namespace: %w", err)
+				return authenticated, fmt.Errorf("open donate.stream Socket.IO namespace: %w", err)
 			}
 		case packet == "2":
 			if err := socket.Write(ctx, []byte("3")); err != nil {
-				return emitted, fmt.Errorf("reply to donate.stream ping: %w", err)
+				return authenticated, fmt.Errorf("reply to donate.stream ping: %w", err)
 			}
 		case strings.HasPrefix(packet, "42"):
 			event, err := decodeEvent([]byte(strings.TrimPrefix(packet, "42")))
 			if err != nil {
-				return emitted, err
+				return authenticated, err
 			}
 			switch event.Name {
 			case "auth":
 				if err := writeEvent(ctx, socket, "auth.token", map[string]string{"token": widgetToken}); err != nil {
-					return emitted, err
+					return authenticated, err
 				}
 			case "authResult":
 				var result struct {
@@ -115,39 +119,37 @@ func (source *Source) runSession(ctx context.Context, widgetToken string, emit f
 				}
 				if len(event.Data) != 0 && string(event.Data) != "null" {
 					if err := json.Unmarshal(event.Data, &result); err != nil {
-						return emitted, fmt.Errorf("invalid donate.stream auth result: %w", err)
+						return authenticated, fmt.Errorf("invalid donate.stream auth result: %w", err)
 					}
 				}
 				if result.Error != "" {
-					return emitted, &RequestError{Unauthorized: true, Operation: "authenticate websocket", Cause: errors.New(result.Error)}
+					return authenticated, &RequestError{Unauthorized: true, Operation: "authenticate websocket", Cause: errors.New(result.Error)}
 				}
+				authenticated = true
 				if stopAfterAuthentication {
-					return emitted, nil
+					return authenticated, nil
 				}
 				for _, channel := range []string{"donates", "widget-alerts"} {
 					if err := writeEvent(ctx, socket, "join", map[string]string{"channel": channel}); err != nil {
-						return emitted, err
+						return authenticated, err
 					}
 				}
 			case "alert":
-				var raw rawAlert
-				if err := json.Unmarshal(event.Data, &raw); err != nil {
-					return emitted, fmt.Errorf("invalid donate.stream donation: %w", err)
-				}
-				donation, err := raw.donation(source.now())
+				donation, err := decodeAlert(event.Data, source.now())
 				if err != nil {
-					return emitted, &RequestError{Operation: "read websocket donation", Cause: err}
+					// One malformed alert must not tear down the live session.
+					slog.Warn("ignoring invalid donate.stream alert", "error", err)
+					continue
 				}
 				if err := emit(donation); err != nil {
-					return emitted, err
+					return authenticated, err
 				}
-				emitted = true
 			}
 		case packet == "41":
-			return emitted, errors.New("donate.stream closed Socket.IO namespace")
+			return authenticated, errors.New("donate.stream closed Socket.IO namespace")
 		}
 	}
-	return emitted, nil
+	return authenticated, nil
 }
 
 type socketEvent struct {

@@ -99,6 +99,14 @@ type rawAlert struct {
 	Currency   string  `json:"currency"`
 }
 
+func decodeAlert(body json.RawMessage, receivedAt time.Time) (Donation, error) {
+	var raw rawAlert
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return Donation{}, fmt.Errorf("invalid donate.stream donation: %w", err)
+	}
+	return raw.donation(receivedAt)
+}
+
 func (raw rawAlert) donation(receivedAt time.Time) (Donation, error) {
 	if raw.MessageUID == "" {
 		return Donation{}, errors.New("missing message_uid")
@@ -117,13 +125,23 @@ func (raw rawAlert) donation(receivedAt time.Time) (Donation, error) {
 	receivedAt = receivedAt.UTC()
 	return Donation{
 		SourceDonationID: string(raw.MessageUID),
-		Author:           raw.Nickname,
-		Message:          raw.Message,
+		Author:           donorText(raw.Nickname),
+		Message:          donorText(raw.Message),
 		Amount:           amount,
 		Currency:         currency,
 		SourceCreatedAt:  receivedAt.Format(time.RFC3339Nano),
 		OccurredAt:       receivedAt,
 	}, nil
+}
+
+// donorText removes NUL characters from donor-controlled text because
+// PostgreSQL text values cannot store them.
+func donorText(value *string) *string {
+	if value == nil || !strings.ContainsRune(*value, 0) {
+		return value
+	}
+	cleaned := strings.ReplaceAll(*value, "\x00", "")
+	return &cleaned
 }
 
 func invalidWidgetURL(cause error) error {

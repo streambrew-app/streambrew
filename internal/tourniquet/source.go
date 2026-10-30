@@ -46,8 +46,10 @@ func NewSource() *Source {
 func (source *Source) Run(ctx context.Context, widgetToken string, emit func(Donation) error) error {
 	retryDelay := source.retryStart
 	for ctx.Err() == nil {
-		emitted, err := source.runSession(ctx, widgetToken, emit)
-		if emitted {
+		established, err := source.runSession(ctx, widgetToken, emit)
+		if established {
+			// A subscribed session was healthy; a later routine disconnect
+			// must not inherit the delay of earlier failures.
 			retryDelay = source.retryStart
 		}
 		if contextDone(ctx) {
@@ -68,21 +70,23 @@ func (source *Source) Run(ctx context.Context, widgetToken string, emit func(Don
 	return nil
 }
 
+// runSession reports whether the session subscribed to the donation channel
+// or emitted a donation, so Run can reset its reconnect backoff.
 func (source *Source) runSession(ctx context.Context, widgetToken string, emit func(Donation) error) (bool, error) {
 	socket, err := source.dial(ctx, source.webSocketURL)
 	if err != nil {
 		return false, fmt.Errorf("open Tourniquet websocket: %w", err)
 	}
 	defer func() { _ = socket.Close() }()
-	emitted := false
+	established := false
 	for ctx.Err() == nil {
 		body, err := socket.Read(ctx)
 		if err != nil {
-			return emitted, fmt.Errorf("read Tourniquet websocket: %w", err)
+			return established, fmt.Errorf("read Tourniquet websocket: %w", err)
 		}
 		envelope, err := decodeEnvelope(body)
 		if err != nil {
-			return emitted, err
+			return established, err
 		}
 		switch envelope.Event {
 		case "pusher:connection_established":
@@ -90,11 +94,15 @@ func (source *Source) runSession(ctx context.Context, widgetToken string, emit f
 				"auth":    "",
 				"channel": donationChannel,
 			}); err != nil {
-				return emitted, err
+				return established, err
+			}
+		case "pusher_internal:subscription_succeeded":
+			if envelope.Channel == donationChannel {
+				established = true
 			}
 		case "pusher:ping":
 			if err := writeEnvelope(ctx, socket, "pusher:pong", struct{}{}); err != nil {
-				return emitted, err
+				return established, err
 			}
 		case donationEventPrefix + widgetToken:
 			raw, err := decodeDonation(envelope.Data)
@@ -111,19 +119,20 @@ func (source *Source) runSession(ctx context.Context, widgetToken string, emit f
 				continue
 			}
 			if err := emit(donation); err != nil {
-				return emitted, err
+				return established, err
 			}
-			emitted = true
+			established = true
 		case "pusher:error":
-			return emitted, errors.New("tourniquet websocket reported an error")
+			return established, errors.New("tourniquet websocket reported an error")
 		}
 	}
-	return emitted, nil
+	return established, nil
 }
 
 type envelope struct {
-	Event string          `json:"event"`
-	Data  json.RawMessage `json:"data"`
+	Event   string          `json:"event"`
+	Channel string          `json:"channel"`
+	Data    json.RawMessage `json:"data"`
 }
 
 func decodeEnvelope(body []byte) (envelope, error) {

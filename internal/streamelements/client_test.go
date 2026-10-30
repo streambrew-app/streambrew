@@ -395,7 +395,7 @@ func TestGetDonationsReturnsNoCheckpointForEmptyReplay(t *testing.T) {
 	}
 }
 
-func TestGetDonationsRejectsInvalidCompletedTips(t *testing.T) {
+func TestGetDonationsSkipsInvalidCompletedTips(t *testing.T) {
 	tests := []struct {
 		name   string
 		mutate func(map[string]any)
@@ -406,25 +406,62 @@ func TestGetDonationsRejectsInvalidCompletedTips(t *testing.T) {
 		{name: "unsupported fractional precision", mutate: func(tip map[string]any) { donationMap(tip)["amount"] = "1.1234567890123456789" }},
 		{name: "negative amount", mutate: func(tip map[string]any) { donationMap(tip)["amount"] = "-1" }},
 		{name: "invalid date", mutate: func(tip map[string]any) { tip["createdAt"] = "yesterday" }},
+		{name: "mistyped unused field", mutate: func(tip map[string]any) { tip["approved"] = true }},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			client := testClient(t, func(writer http.ResponseWriter, _ *http.Request) {
-				tip := completedTipMap("tip", "1", "USD", "2025-02-19T15:00:00Z")
-				test.mutate(tip)
-				body, err := json.Marshal(map[string]any{"docs": []any{tip}, "total": 1})
+				head := completedTipMap("head", "2", "USD", "2025-02-19T15:01:00Z")
+				invalid := completedTipMap("invalid", "1", "USD", "2025-02-19T15:00:00Z")
+				test.mutate(invalid)
+				body, err := json.Marshal(map[string]any{"docs": []any{head, invalid}, "total": 2})
 				if err != nil {
 					t.Fatal(err)
 				}
 				_, _ = writer.Write(body)
 			})
 			client.PageDelay = 0
-			_, err := client.GetDonations(context.Background(), "access-token", testChannelID, nil, nil)
-			var requestError *RequestError
-			if !errors.As(err, &requestError) || requestError.Unauthorized || !requestError.Permanent {
-				t.Fatalf("error = %v; want permanent validation RequestError", err)
+			history, err := client.GetDonations(context.Background(), "access-token", testChannelID, nil, nil)
+			if err != nil {
+				t.Fatalf("error = %v; want the invalid tip to be skipped", err)
+			}
+			if len(history.Donations) != 1 || history.Donations[0].SourceDonationID != "head" ||
+				history.Checkpoint == nil || *history.Checkpoint != "head" {
+				t.Fatalf("history = %#v", history)
+			}
+			if len(history.Rejected) != 1 || history.Rejected[0].Err == nil {
+				t.Fatalf("rejected = %#v", history.Rejected)
+			}
+			wantID := "invalid"
+			if test.name == "missing id" {
+				wantID = ""
+			}
+			if history.Rejected[0].SourceDonationID != wantID {
+				t.Fatalf("rejected id = %q; want %q", history.Rejected[0].SourceDonationID, wantID)
 			}
 		})
+	}
+}
+
+func TestGetDonationsStripsNULFromDonorText(t *testing.T) {
+	client := testClient(t, func(writer http.ResponseWriter, _ *http.Request) {
+		tip := completedTipMap("tip", "1", "USD", "2025-02-19T15:00:00Z")
+		donationMap(tip)["user"] = map[string]any{"username": "Tip\x00per"}
+		donationMap(tip)["message"] = "\x00Thanks"
+		body, err := json.Marshal(map[string]any{"docs": []any{tip}, "total": 1})
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, _ = writer.Write(body)
+	})
+	client.PageDelay = 0
+	history, err := client.GetDonations(context.Background(), "access-token", testChannelID, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(history.Donations) != 1 || history.Donations[0].Author == nil || *history.Donations[0].Author != "Tipper" ||
+		history.Donations[0].Message == nil || *history.Donations[0].Message != "Thanks" {
+		t.Fatalf("history = %#v", history)
 	}
 }
 

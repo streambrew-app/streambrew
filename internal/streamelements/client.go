@@ -54,9 +54,17 @@ type Donation struct {
 	OccurredAt       time.Time
 }
 
+// RejectedDonation is a history row that failed validation. It is skipped so
+// one malformed row cannot block the rest of the account's history.
+type RejectedDonation struct {
+	SourceDonationID string
+	Err              error
+}
+
 // History is a newest-first page traversal result and its next checkpoint.
 type History struct {
 	Donations  []Donation
+	Rejected   []RejectedDonation
 	Checkpoint *string
 }
 
@@ -170,6 +178,7 @@ func (client *Client) GetDonations(
 	}
 
 	donations := make([]Donation, 0)
+	var rejected []RejectedDonation
 	var newCheckpoint *string
 	initialTraversal := checkpoint == nil && occurredAfter == nil
 	offset := 0
@@ -198,42 +207,42 @@ func (client *Client) GetDonations(
 			return History{}, err
 		}
 		if len(page.Docs) == 0 {
-			return History{Donations: donations, Checkpoint: newCheckpoint}, nil
+			return History{Donations: donations, Rejected: rejected, Checkpoint: newCheckpoint}, nil
 		}
 
 		if initialTraversal && newCheckpoint == nil {
-			if page.Docs[0].ID == "" {
+			head := tipID(page.Docs[0])
+			if head == "" {
 				return History{}, permanentRequestError("read tips", errors.New("missing tip id"))
 			}
-			head := page.Docs[0].ID
 			newCheckpoint = &head
 		}
 
-		for _, raw := range page.Docs {
-			if raw.ID == "" {
-				return History{}, permanentRequestError("read tips", errors.New("missing tip id"))
-			}
-			donation, err := raw.donation(channelID)
+		for _, body := range page.Docs {
+			donation, err := decodeTip(body, channelID)
 			if err != nil {
-				return History{}, permanentRequestError("read tips", err)
+				rejected = append(rejected, RejectedDonation{SourceDonationID: tipID(body), Err: err})
+				continue
 			}
 			donations = append(donations, donation)
 		}
 
 		offset += len(page.Docs)
 		if page.last(offset, pageNumber) {
-			return History{Donations: donations, Checkpoint: newCheckpoint}, nil
+			return History{Donations: donations, Rejected: rejected, Checkpoint: newCheckpoint}, nil
 		}
 	}
 	return History{}, permanentRequestError("read tips", errors.New("history exceeds pagination safety limit"))
 }
 
 type tipsPage struct {
-	Docs        []rawTip `json:"docs"`
-	Total       *int     `json:"total"`
-	TotalDocs   *int     `json:"totalDocs"`
-	TotalPages  *int     `json:"totalPages"`
-	HasNextPage *bool    `json:"hasNextPage"`
+	// Tips are decoded individually so one malformed tip is skipped instead
+	// of rejecting its whole page.
+	Docs        []json.RawMessage `json:"docs"`
+	Total       *int              `json:"total"`
+	TotalDocs   *int              `json:"totalDocs"`
+	TotalPages  *int              `json:"totalPages"`
+	HasNextPage *bool             `json:"hasNextPage"`
 }
 
 func (page tipsPage) last(offset, pageNumber int) bool {
@@ -271,6 +280,25 @@ type rawTip struct {
 	UpdatedAt string `json:"updatedAt"`
 }
 
+func decodeTip(body []byte, channelID string) (Donation, error) {
+	var raw rawTip
+	if err := json.Unmarshal(body, &raw); err != nil {
+		return Donation{}, fmt.Errorf("invalid tip: %w", err)
+	}
+	return raw.donation(channelID)
+}
+
+// tipID identifies a tip even when its other fields are invalid.
+func tipID(body []byte) string {
+	var identity struct {
+		ID string `json:"_id"`
+	}
+	if json.Unmarshal(body, &identity) != nil {
+		return ""
+	}
+	return identity.ID
+}
+
 func (tip rawTip) donation(channelID string) (Donation, error) {
 	if tip.ID == "" || tip.Channel != channelID {
 		return Donation{}, errors.New("invalid tip identity or channel")
@@ -289,8 +317,8 @@ func (tip rawTip) donation(channelID string) (Donation, error) {
 	}
 	return Donation{
 		SourceDonationID: tip.ID,
-		Author:           tip.Donation.User.Username,
-		Message:          tip.Donation.Message,
+		Author:           donorText(tip.Donation.User.Username),
+		Message:          donorText(tip.Donation.Message),
 		Amount:           amount,
 		Currency:         currency,
 		SourceCreatedAt:  tip.CreatedAt,
@@ -388,6 +416,16 @@ func (client *Client) doJSON(
 		return requestValidationError(method+" "+path, err)
 	}
 	return nil
+}
+
+// donorText removes NUL characters from donor-controlled text because
+// PostgreSQL text values cannot store them.
+func donorText(value *string) *string {
+	if value == nil || !strings.ContainsRune(*value, 0) {
+		return value
+	}
+	cleaned := strings.ReplaceAll(*value, "\x00", "")
+	return &cleaned
 }
 
 func tokenGrantInvalid(body io.Reader) bool {

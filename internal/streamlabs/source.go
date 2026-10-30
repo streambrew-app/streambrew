@@ -94,7 +94,13 @@ func (source *Source) runSession(ctx context.Context, socketToken string, notify
 	}
 	socket, err := source.dial(ctx, socketURL)
 	if err != nil {
-		return false, fmt.Errorf("open Streamlabs Socket.IO websocket: %w", err)
+		var requestError *RequestError
+		if errors.As(err, &requestError) {
+			return false, requestError
+		}
+		// Dial errors such as *url.Error repeat the URL, which carries the
+		// socket token. Keep it out of errors and logs.
+		return false, requestValidationError("open Socket.IO websocket", errors.New("websocket dial failed"))
 	}
 	defer func() { _ = socket.Close() }()
 
@@ -218,9 +224,18 @@ type websocketAdapter struct{ connection *websocket.Conn }
 
 func dialSocket(ctx context.Context, rawURL string) (Socket, error) {
 	// websocket.Dial owns and closes the handshake response body.
-	connection, _, err := websocket.Dial(ctx, rawURL, nil) //nolint:bodyclose
+	connection, response, err := websocket.Dial(ctx, rawURL, nil) //nolint:bodyclose
 	if err != nil {
-		return nil, err
+		status := 0
+		if response != nil {
+			status = response.StatusCode
+		}
+		// The dial error repeats the token-bearing URL, so only its status is kept.
+		return nil, &RequestError{
+			Status:    status,
+			Operation: "open Socket.IO websocket",
+			Cause:     errors.New("websocket handshake failed"),
+		}
 	}
 	return &websocketAdapter{connection: connection}, nil
 }

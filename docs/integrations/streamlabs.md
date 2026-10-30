@@ -66,7 +66,9 @@ refresh flow with `expires_in`; the `/token` response schema does not document
 `expires_in`, and the same guide contains misspelled response keys. StreamBrew
 should therefore retain refresh credentials but refresh only after an
 authenticated API request returns 401, using the existing token-version
-compare-and-swap pattern. It should not invent a scheduled expiry.
+compare-and-swap pattern. It should not invent a scheduled expiry. A refresh
+rejected with HTTP 401, or with HTTP 400 and OAuth `invalid_grant`, removes only
+the matching connection version instead of retrying the revoked grant.
 
 The Streamlabs flow should use and validate `state`. The existing
 [DonationAlerts ownership ADR](../adr/0004-donations-service-ownership.md) records
@@ -106,12 +108,17 @@ Map a REST row into StreamBrew as follows:
 | Streamlabs    | StreamBrew         | Notes                                                                                                                                              |
 | ------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `donation_id` | `sourceDonationId` | Preserve the decimal string; do not parse through a fixed-width integer.                                                                           |
-| `name`        | `author`           | Preserve UTF-8 text.                                                                                                                               |
-| `message`     | `message`          | Accept `null`.                                                                                                                                     |
-| `amount`      | `amount`           | Normalize once with the shared money normalizer.                                                                                                   |
+| `name`        | `author`           | Preserve UTF-8 text without NUL characters, which PostgreSQL text cannot store.                                                                    |
+| `message`     | `message`          | Accept `null`; remove NUL characters.                                                                                                              |
+| `amount`      | `amount`           | Normalize once with the shared original-donation amount normalizer.                                                                                |
 | `currency`    | `currency`         | Preserve the originating currency.                                                                                                                 |
 | `created_at`  | `sourceCreatedAt`  | Preserve the exact source string.                                                                                                                  |
 | `created_at`  | `occurredAt`       | The sample is Unix-seconds-shaped, but the unit and timezone are not formally specified; confirm with a real fixture before relying on that parse. |
+
+History rows are validated individually. A row that fails validation is skipped
+and logged once per service process at error level with the source, user ID, and
+source donation ID. It still counts for pagination and the history checkpoint,
+so it cannot block later rows.
 
 Do not pass the optional `currency` parameter: Streamlabs describes it as the
 desired output currency, while StreamBrew must store original money without
@@ -204,7 +211,8 @@ and [delivery guarantees](https://socket.io/docs/v4/delivery-guarantees/).
 
 Consequently, reconnect with bounded exponential backoff and jitter, obtain a
 fresh socket token for each new outer session, and run a REST reconciliation
-after the initial socket connection and every reconnect. A successful
+after the initial socket connection and every reconnect. The socket token is
+part of the WebSocket URL, so dial failures are reported without the URL. A successful
 reconnection is not evidence that no donation was missed. Streamlabs' sample
 uses Socket.IO 2.0.3, while Socket.IO state recovery is a newer, server-enabled
 feature; Streamlabs does not claim to enable it, so it cannot replace history
@@ -274,6 +282,12 @@ application, account, token, IP, or endpoint. See
 [Tiers](https://dev.streamlabs.com/docs/tiers). Initial history pagination and
 event-triggered reconciliation must therefore pace 429 responses and honor a
 provider retry hint if one is returned.
+
+Event-triggered reconciliation keeps the socket open when a history request
+fails for any reason other than rejected credentials. It retries with exponential
+backoff from 5 to 60 seconds and waits at least as long as a `Retry-After` hint,
+bounded to five minutes. Initial history import does not retry yet: a 429 fails
+the connection attempt, which the streamer can repeat.
 
 ## Credentialed verification still required
 

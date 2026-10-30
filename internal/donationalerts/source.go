@@ -2,7 +2,6 @@ package donationalerts
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -118,11 +117,7 @@ func (source *Source) runSession(
 			return token, nil
 		},
 		onPublication: func(body []byte) error {
-			var raw rawDonation
-			if err := json.Unmarshal(body, &raw); err != nil {
-				return &invalidDonationError{cause: fmt.Errorf("invalid DonationAlerts donation: %w", err)}
-			}
-			donation, err := raw.donation()
+			donation, err := decodeDonation(body)
 			if err != nil {
 				return &invalidDonationError{cause: err}
 			}

@@ -24,7 +24,12 @@ matching saved connection if donate.stream later rejects its token.
 An alert's `message_uid` is stored as `source_donation_id`. The `sum` and `currency` reported by
 donate.stream are stored as the immutable donation `amount` and `currency`; StreamBrew does not convert
 them. The widget event does not include the payment time, so the time StreamBrew receives the event is
-used for `source_created_at` and `occurred_at`.
+used for `source_created_at` and `occurred_at`. NUL characters, which PostgreSQL text cannot store, are
+removed from the nickname and message. An alert that fails validation, such as one without a
+`message_uid`, is logged as a warning and skipped without closing the listener.
+
+After a transport failure the listener reconnects with exponential backoff from 5 to 60 seconds. A
+session that authenticated resets the delay, so routine disconnects reconnect promptly.
 
 The alert widget protocol exposes only live alerts, not donation history. Connecting this source
 therefore receives new donations from that point onward and cannot repair events missed while the

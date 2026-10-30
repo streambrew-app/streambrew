@@ -30,13 +30,12 @@ type notifyingRecoveryStore struct {
 
 func (store *notifyingRecoveryStore) SaveDonations(
 	ctx context.Context,
-	userID int,
-	tokenVersion int,
+	version connectionVersion,
 	batch DonationBatch,
 	origin IngestionOrigin,
 	acceptedAt time.Time,
 ) error {
-	err := store.persistence.SaveDonations(ctx, userID, tokenVersion, batch, origin, acceptedAt)
+	err := store.persistence.SaveDonations(ctx, version, batch, origin, acceptedAt)
 	select {
 	case store.saved <- err:
 	default:
@@ -134,16 +133,17 @@ func TestIngestionSuppressesInitialHistoryAndQueuesNewDonationsOnceInOrder(t *te
 		t.Fatal(err)
 	}
 	assertPlaybackIDs(t, pool, nil)
+	version := currentConnectionVersion(t, providerStore, 1)
 
 	live := DonationBatch{Donations: []Donation{
 		testDonation("live-new", now.Add(time.Second)),
 		testDonation("live-old", now),
 	}}
-	if err := providerStore.SaveDonations(ctx, 1, 1, live, LiveOrigin, now.Add(2*time.Second)); err != nil {
+	if err := providerStore.SaveDonations(ctx, version, live, LiveOrigin, now.Add(2*time.Second)); err != nil {
 		t.Fatal(err)
 	}
 	assertPlaybackIDs(t, pool, []string{"live-old", "live-new"})
-	if err := providerStore.SaveDonations(ctx, 1, 1, live, RecoveryOrigin, now.Add(3*time.Second)); err != nil {
+	if err := providerStore.SaveDonations(ctx, version, live, RecoveryOrigin, now.Add(3*time.Second)); err != nil {
 		t.Fatal(err)
 	}
 	assertPlaybackIDs(t, pool, []string{"live-old", "live-new"})
@@ -152,10 +152,88 @@ func TestIngestionSuppressesInitialHistoryAndQueuesNewDonationsOnceInOrder(t *te
 		testDonation("recovery-expired", now.Add(-11*time.Minute)),
 		testDonation("recovery-fresh", now.Add(-time.Minute)),
 	}}
-	if err := providerStore.SaveDonations(ctx, 1, 1, recovery, RecoveryOrigin, now); err != nil {
+	if err := providerStore.SaveDonations(ctx, version, recovery, RecoveryOrigin, now); err != nil {
 		t.Fatal(err)
 	}
 	assertPlaybackIDs(t, pool, []string{"live-old", "live-new", "recovery-fresh"})
+}
+
+func TestVersionGuardedWritesRejectRecreatedConnectionWithReusedVersion(t *testing.T) {
+	store, pool := newDonationIntegrationStore(t)
+	seedDonationUser(t, pool, 1)
+	ctx := context.Background()
+	now := time.Date(2026, 9, 13, 12, 0, 0, 0, time.UTC)
+	providerStore := store.forSource(DonationAlertsSource)
+	connect := func(sourceUserID string) connectionVersion {
+		t.Helper()
+		connection := ProviderConnection{SourceUserID: sourceUserID, Tokens: Tokens{AccessToken: sourceUserID + "-access", RefreshToken: sourceUserID + "-refresh"}}
+		if err := providerStore.SaveConnectionWithDonations(ctx, 1, connection, DonationBatch{}); err != nil {
+			t.Fatal(err)
+		}
+		return currentConnectionVersion(t, providerStore, 1)
+	}
+	assertStale := func(stale connectionVersion) {
+		t.Helper()
+		if err := providerStore.SaveDonations(ctx, stale, DonationBatch{Donations: []Donation{testDonation("stale-"+stale.sourceUserID, now)}}, LiveOrigin, now); !errors.Is(err, ErrStaleCredentials) {
+			t.Fatalf("stale save error = %v", err)
+		}
+		if updated, err := providerStore.SetTokensIfVersion(ctx, stale, Tokens{AccessToken: "stale", RefreshToken: "stale"}); err != nil || updated {
+			t.Fatalf("stale token save updated=%v error=%v", updated, err)
+		}
+		if updated, err := providerStore.RequireReauthorizationIfVersion(ctx, stale); err != nil || updated {
+			t.Fatalf("stale reauthorization updated=%v error=%v", updated, err)
+		}
+	}
+
+	accountA := connect("account-a")
+	if err := providerStore.Disconnect(ctx, 1); err != nil {
+		t.Fatal(err)
+	}
+	accountB := connect("account-b")
+	if accountB.tokenVersion != accountA.tokenVersion {
+		t.Fatalf("recreated token version = %d; want the reused version %d", accountB.tokenVersion, accountA.tokenVersion)
+	}
+	assertStale(accountA)
+
+	// connected_at has millisecond precision; reconnecting the same account
+	// after a deletion must still produce a distinct connection generation.
+	time.Sleep(5 * time.Millisecond)
+	if err := providerStore.Disconnect(ctx, 1); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(5 * time.Millisecond)
+	accountBAgain := connect("account-b")
+	assertStale(accountB)
+
+	if updated, err := providerStore.SetTokensIfVersion(ctx, accountBAgain, Tokens{AccessToken: "fresh", RefreshToken: "fresh"}); err != nil || !updated {
+		t.Fatalf("current token save updated=%v error=%v", updated, err)
+	}
+	current := currentConnectionVersion(t, providerStore, 1)
+	if current.sourceUserID != "account-b" || current.tokenVersion != accountBAgain.tokenVersion+1 {
+		t.Fatalf("current connection = %#v", current)
+	}
+	var donations int
+	if err := pool.QueryRow(ctx, `SELECT count(*) FROM donation`).Scan(&donations); err != nil {
+		t.Fatal(err)
+	}
+	if donations != 0 {
+		t.Fatalf("stale listeners saved %d donations", donations)
+	}
+}
+
+func currentConnectionVersion(t *testing.T, store *providerStore, userID int) connectionVersion {
+	t.Helper()
+	connections, err := store.Connections(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, connection := range connections {
+		if connection.UserID == userID {
+			return connection.version()
+		}
+	}
+	t.Fatalf("connection for user %d not found", userID)
+	return connectionVersion{}
 }
 
 func TestStreamElementsRecoveryReplayQueuesFreshDonationAndVideoScanOnce(t *testing.T) {
@@ -184,6 +262,7 @@ func TestStreamElementsRecoveryReplayQueuesFreshDonationAndVideoScanOnce(t *test
 	); err != nil {
 		t.Fatal(err)
 	}
+	version := currentConnectionVersion(t, providerStore, 1)
 
 	fresh := testDonation("fresh-delayed", now.Add(-time.Minute))
 	fresh.Amount = "0.004999999999999999"
@@ -195,7 +274,7 @@ func TestStreamElementsRecoveryReplayQueuesFreshDonationAndVideoScanOnce(t *test
 		testDonation("stale-backdated", now.Add(-11*time.Minute)),
 	}}
 	for range 2 {
-		if err := providerStore.SaveDonations(ctx, 1, 1, replay, RecoveryOrigin, now); err != nil {
+		if err := providerStore.SaveDonations(ctx, version, replay, RecoveryOrigin, now); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -240,8 +319,9 @@ func TestStreamElementsConnectionFailureStatusIsVersionGuarded(t *testing.T) {
 	if err := providerStore.SaveConnectionWithDonations(ctx, 1, connection, DonationBatch{}); err != nil {
 		t.Fatal(err)
 	}
+	first := currentConnectionVersion(t, providerStore, 1)
 
-	updated, err := providerStore.RequireReauthorizationIfVersion(ctx, 1, 1)
+	updated, err := providerStore.RequireReauthorizationIfVersion(ctx, first)
 	if err != nil || !updated {
 		t.Fatalf("require reauthorization updated=%v error=%v", updated, err)
 	}
@@ -251,8 +331,7 @@ func TestStreamElementsConnectionFailureStatusIsVersionGuarded(t *testing.T) {
 	}
 	if err := providerStore.SaveDonations(
 		ctx,
-		1,
-		1,
+		first,
 		DonationBatch{Donations: []Donation{testDonation("rejected", now)}},
 		RecoveryOrigin,
 		now,
@@ -267,10 +346,14 @@ func TestStreamElementsConnectionFailureStatusIsVersionGuarded(t *testing.T) {
 	if err := providerStore.SaveConnectionWithDonations(ctx, 1, reconnected, DonationBatch{}); err != nil {
 		t.Fatal(err)
 	}
-	if updated, err := providerStore.MarkConnectionErrorIfVersion(ctx, 1, 1); err != nil || updated {
+	second := currentConnectionVersion(t, providerStore, 1)
+	if second.tokenVersion != 2 || !second.connectedAt.Equal(first.connectedAt) {
+		t.Fatalf("reconnected version = %#v; want version 2 of the same connection", second)
+	}
+	if updated, err := providerStore.MarkConnectionErrorIfVersion(ctx, first); err != nil || updated {
 		t.Fatalf("stale failure updated=%v error=%v", updated, err)
 	}
-	if updated, err := providerStore.MarkConnectionErrorIfVersion(ctx, 1, 2); err != nil || !updated {
+	if updated, err := providerStore.MarkConnectionErrorIfVersion(ctx, second); err != nil || !updated {
 		t.Fatalf("current failure updated=%v error=%v", updated, err)
 	}
 
@@ -406,8 +489,7 @@ func TestIncomingAlertBoundsDonorControlledSnapshot(t *testing.T) {
 	donation.Message = &message
 	if err := providerStore.SaveDonations(
 		ctx,
-		1,
-		1,
+		currentConnectionVersion(t, providerStore, 1),
 		DonationBatch{Donations: []Donation{donation}},
 		LiveOrigin,
 		now,
