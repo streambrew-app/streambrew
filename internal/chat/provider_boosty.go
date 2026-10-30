@@ -152,6 +152,12 @@ func (connector *BoostyConnector) Connect(ctx context.Context, userID int, input
 		return &ApplicationError{Type: "chat source limit reached", Detail: "Chat source limit reached"}
 	}
 	_, err = connector.store.SaveProviderAccount(ctx, userID, SaveConnection{Provider: "boosty", ProviderUserID: string(identity.ID), DisplayName: identity.Name, AccessToken: token, RefreshToken: refreshToken, OAuthDeviceID: deviceID, AccessTokenExpiresAt: expiresAt, Scopes: []string{}}, SaveSource{Provider: "boosty", ProviderSourceID: blog, DisplayName: identity.Name, SourceURL: "https://boosty.to/" + blog + "/streams/video_stream"})
+	if errors.Is(err, errProviderAccountConnectedElsewhere) {
+		return &ApplicationError{Type: "chat account connected to another user", Detail: "This Boosty account is already connected to another StreamBrew account"}
+	}
+	if errors.Is(err, errChatSourceLimitReached) {
+		return &ApplicationError{Type: "chat source limit reached", Detail: "Chat source limit reached"}
+	}
 	return err
 }
 

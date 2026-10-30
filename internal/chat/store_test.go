@@ -1,10 +1,15 @@
 package chat
 
 import (
+	"bytes"
 	"context"
+	"errors"
+	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -276,5 +281,117 @@ func TestBoostySessionExpiryAndRotationWithPostgres(t *testing.T) {
 	credentials := reloaded[0].Credentials
 	if rotations != 1 || credentials.AccessToken != "renewed" || credentials.RefreshToken != "rotated" || credentials.DeviceID != "separate-device" || credentials.TokenVersion != sources[0].Credentials.TokenVersion+1 || credentials.ExpiresAt == nil || !credentials.ExpiresAt.Equal(now.Add(2*time.Hour)) {
 		t.Fatal("renewed session was not persisted consistently")
+	}
+}
+
+// newChatStoreTestPool shadows the chat tables with session-local copies of the applied schema.
+func newChatStoreTestPool(t *testing.T) *pgxpool.Pool {
+	t.Helper()
+	databaseURL := os.Getenv("CHAT_STORE_TEST_DATABASE_URL")
+	if databaseURL == "" {
+		t.Skip("CHAT_STORE_TEST_DATABASE_URL is required for PostgreSQL integration tests")
+	}
+	config, err := pgxpool.ParseConfig(databaseURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	config.MaxConns = 1 // Keep temporary tables on the same PostgreSQL session.
+	pool, err := pgxpool.NewWithConfig(context.Background(), config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(pool.Close)
+	_, err = pool.Exec(context.Background(), `
+		CREATE TEMP TABLE chat_provider_connection (LIKE public.chat_provider_connection INCLUDING ALL);
+		CREATE TEMP TABLE chat_source (LIKE public.chat_source INCLUDING ALL);
+	`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return pool
+}
+
+func saveTwitchTestAccount(ctx context.Context, store *Store, userID int, account string) error {
+	_, err := store.SaveProviderAccount(ctx, userID, SaveConnection{Provider: "twitch", ProviderUserID: account, DisplayName: account, AccessToken: "access-" + account, RefreshToken: "refresh-" + account, Scopes: []string{}}, SaveSource{Provider: "twitch", ProviderSourceID: account, DisplayName: account, SourceURL: "https://www.twitch.tv/" + account})
+	return err
+}
+
+func TestStoreReusesFreeSourcePositionsWithPostgres(t *testing.T) {
+	pool := newChatStoreTestPool(t)
+	ctx := context.Background()
+	cipher, err := NewTokenCipher("store-position-test-secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+	store := NewStore(pool, cipher)
+	position := func(account string) int {
+		t.Helper()
+		var value int
+		if err := pool.QueryRow(ctx, `SELECT position FROM pg_temp.chat_source WHERE provider_source_id = $1`, account).Scan(&value); err != nil {
+			t.Fatal(err)
+		}
+		return value
+	}
+	for index := range MaxSources {
+		if err := saveTwitchTestAccount(ctx, store, 1, fmt.Sprintf("channel-%d", index)); err != nil {
+			t.Fatalf("save source %d: %v", index, err)
+		}
+	}
+	if err := saveTwitchTestAccount(ctx, store, 1, "channel-19"); err != nil {
+		t.Fatalf("reauthorizing a source at the limit failed: %v", err)
+	}
+	if actual := position("channel-19"); actual != 19 {
+		t.Fatalf("reauthorized source position = %d; want 19", actual)
+	}
+	if err := saveTwitchTestAccount(ctx, store, 1, "channel-new"); !errors.Is(err, errChatSourceLimitReached) {
+		t.Fatalf("new source at the limit: err = %v", err)
+	}
+	if _, err := pool.Exec(ctx, `
+		DELETE FROM pg_temp.chat_source WHERE provider_source_id = 'channel-3';
+		DELETE FROM pg_temp.chat_provider_connection WHERE provider_user_id = 'channel-3';
+	`); err != nil {
+		t.Fatal(err)
+	}
+	if err := saveTwitchTestAccount(ctx, store, 1, "channel-new"); err != nil {
+		t.Fatalf("connect after disconnect: %v", err)
+	}
+	if actual := position("channel-new"); actual != 3 {
+		t.Fatalf("new source position = %d; want the freed slot 3", actual)
+	}
+	if err := saveTwitchTestAccount(ctx, store, 2, "channel-0"); !errors.Is(err, errProviderAccountConnectedElsewhere) {
+		t.Fatalf("connecting another user's provider account: err = %v", err)
+	}
+}
+
+func TestStoreSkipsUnreadableCollectorSourcesWithPostgres(t *testing.T) {
+	pool := newChatStoreTestPool(t)
+	ctx := context.Background()
+	cipher, err := NewTokenCipher("store-decryption-test-secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+	store := NewStore(pool, cipher)
+	for _, account := range []string{"readable", "unreadable"} {
+		if saveErr := saveTwitchTestAccount(ctx, store, 1, account); saveErr != nil {
+			t.Fatal(saveErr)
+		}
+	}
+	if _, updateErr := pool.Exec(ctx, `UPDATE pg_temp.chat_provider_connection SET access_token_ciphertext = '\x00'::bytea WHERE provider_user_id = 'unreadable'`); updateErr != nil {
+		t.Fatal(updateErr)
+	}
+	var logs bytes.Buffer
+	previousLogger := slog.Default()
+	slog.SetDefault(slog.New(slog.NewJSONHandler(&logs, nil)))
+	t.Cleanup(func() { slog.SetDefault(previousLogger) })
+
+	sources, err := store.GetAllEnabledSources(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(sources) != 1 || sources[0].ConnectedSource.Source.ProviderSourceID != "readable" || sources[0].ConnectedSource.Credentials.AccessToken != "access-readable" {
+		t.Fatalf("sources = %#v", sources)
+	}
+	if !strings.Contains(logs.String(), "unreadable credentials") {
+		t.Fatalf("skipped source was not logged: %s", logs.String())
 	}
 }

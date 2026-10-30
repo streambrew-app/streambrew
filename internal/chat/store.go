@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -14,6 +15,12 @@ type Store struct {
 	pool        *pgxpool.Pool
 	tokenCipher *TokenCipher
 }
+
+var (
+	errChatSourceLimitReached = errors.New("chat source limit reached")
+	// The provider account already belongs to a different StreamBrew user.
+	errProviderAccountConnectedElsewhere = errors.New("provider account is connected to another StreamBrew user")
+)
 
 type SaveConnection struct {
 	Provider             string
@@ -211,35 +218,50 @@ func (store *Store) loadConnectedSources(ctx context.Context, userID int, source
 
 type rowScanner interface{ Scan(...any) error }
 
+type encryptedConnectedSource struct {
+	source            ConnectedSource
+	accessCiphertext  []byte
+	refreshCiphertext []byte
+}
+
 func (store *Store) scanConnectedSource(row rowScanner) (ConnectedSource, error) {
-	var result ConnectedSource
-	var accessCiphertext, refreshCiphertext []byte
-	var deviceID *string
-	var expiresAt *time.Time
-	var scopes []string
-	if err := row.Scan(&result.Source.SourceID, &result.Source.ConnectionID, &result.Source.Provider, &result.Source.ProviderSourceID, &result.Source.DisplayName, &result.Source.SourceURL, &result.Source.Position, &result.Source.Enabled, &accessCiphertext, &refreshCiphertext, &deviceID, &expiresAt, &scopes, &result.Credentials.TokenVersion); err != nil {
+	encrypted, err := scanEncryptedConnectedSource(row)
+	if err != nil {
 		return ConnectedSource{}, err
 	}
-	if deviceID != nil {
-		result.Credentials.DeviceID = *deviceID
+	return store.decryptConnectedSource(encrypted)
+}
+
+func scanEncryptedConnectedSource(row rowScanner) (encryptedConnectedSource, error) {
+	var result encryptedConnectedSource
+	source := &result.source
+	var deviceID *string
+	if err := row.Scan(&source.Source.SourceID, &source.Source.ConnectionID, &source.Source.Provider, &source.Source.ProviderSourceID, &source.Source.DisplayName, &source.Source.SourceURL, &source.Source.Position, &source.Source.Enabled, &result.accessCiphertext, &result.refreshCiphertext, &deviceID, &source.Credentials.ExpiresAt, &source.Credentials.Scopes, &source.Credentials.TokenVersion); err != nil {
+		return encryptedConnectedSource{}, err
 	}
-	if accessCiphertext != nil {
-		accessToken, err := store.tokenCipher.Decrypt(accessCiphertext)
+	if deviceID != nil {
+		source.Credentials.DeviceID = *deviceID
+	}
+	source.Capabilities = CapabilitiesFor(source.Source.Provider, source.Credentials.Scopes)
+	return result, nil
+}
+
+func (store *Store) decryptConnectedSource(encrypted encryptedConnectedSource) (ConnectedSource, error) {
+	result := encrypted.source
+	if encrypted.accessCiphertext != nil {
+		accessToken, err := store.tokenCipher.Decrypt(encrypted.accessCiphertext)
 		if err != nil {
 			return ConnectedSource{}, err
 		}
 		result.Credentials.AccessToken = accessToken
 	}
-	if refreshCiphertext != nil {
-		refreshToken, err := store.tokenCipher.Decrypt(refreshCiphertext)
+	if encrypted.refreshCiphertext != nil {
+		refreshToken, err := store.tokenCipher.Decrypt(encrypted.refreshCiphertext)
 		if err != nil {
 			return ConnectedSource{}, err
 		}
 		result.Credentials.RefreshToken = refreshToken
 	}
-	result.Credentials.ExpiresAt = expiresAt
-	result.Credentials.Scopes = scopes
-	result.Capabilities = CapabilitiesFor(result.Source.Provider, scopes)
 	return result, nil
 }
 
@@ -275,10 +297,15 @@ func (store *Store) GetAllEnabledSources(ctx context.Context) ([]OwnedConnectedS
 	result := make([]OwnedConnectedSource, 0)
 	for rows.Next() {
 		var userID int
-		wrapped := &prefixedScanner{scanner: rows, prefix: []any{&userID}}
-		connectedSource, err := store.scanConnectedSource(wrapped)
+		encrypted, err := scanEncryptedConnectedSource(&prefixedScanner{scanner: rows, prefix: []any{&userID}})
 		if err != nil {
 			return nil, err
+		}
+		connectedSource, err := store.decryptConnectedSource(encrypted)
+		if err != nil {
+			// One unreadable credential must not stop collectors for every other source.
+			slog.Error("Skip chat source with unreadable credentials", "userId", userID, "sourceId", encrypted.source.Source.SourceID, "connectionId", encrypted.source.Source.ConnectionID, "error", err)
+			continue
 		}
 		result = append(result, OwnedConnectedSource{UserID: userID, ConnectedSource: connectedSource})
 	}
@@ -360,16 +387,42 @@ func (store *Store) SaveProviderAccount(ctx context.Context, userID int, connect
 	}
 	var connectionID string
 	err := pgx.BeginFunc(ctx, store.pool, func(tx pgx.Tx) error {
-		var err error
+		// Serialize source placement per user so concurrent connections cannot claim the same slot.
+		_, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtext('chat_source'), $1)`, userID)
+		if err != nil {
+			return err
+		}
 		connectionID, err = store.saveConnection(ctx, tx, userID, connection)
 		if err != nil {
 			return err
+		}
+		// An existing source keeps its slot; a new source takes the lowest free slot.
+		var position *int
+		err = tx.QueryRow(ctx, `
+			SELECT COALESCE(
+				(
+					SELECT position
+					FROM chat_source
+					WHERE user_id = $1 AND provider = $2 AND provider_source_id = $3
+				),
+				(
+					SELECT min(slot)
+					FROM generate_series(0, $4::integer) AS slot
+					WHERE NOT EXISTS (SELECT 1 FROM chat_source WHERE user_id = $1 AND position = slot)
+				)
+			)
+		`, userID, source.Provider, source.ProviderSourceID, MaxSources-1).Scan(&position)
+		if err != nil {
+			return err
+		}
+		if position == nil {
+			return errChatSourceLimitReached
 		}
 		_, err = tx.Exec(ctx, `
 			INSERT INTO chat_source (
 				chat_provider_connection_id, user_id, provider, provider_source_id, display_name, source_url, position
 			)
-			VALUES ($1, $2, $3, $4, $5, $6, (SELECT COALESCE(max(position) + 1, 0) FROM chat_source WHERE user_id = $2))
+			VALUES ($1, $2, $3, $4, $5, $6, $7)
 			ON CONFLICT (user_id, provider, provider_source_id) DO UPDATE
 			SET
 				chat_provider_connection_id = EXCLUDED.chat_provider_connection_id,
@@ -377,7 +430,7 @@ func (store *Store) SaveProviderAccount(ctx context.Context, userID int, connect
 				source_url = EXCLUDED.source_url,
 				enabled = true,
 				updated_at = now()
-		`, connectionID, userID, source.Provider, source.ProviderSourceID, source.DisplayName, source.SourceURL)
+		`, connectionID, userID, source.Provider, source.ProviderSourceID, source.DisplayName, source.SourceURL, *position)
 		return err
 	})
 	return connectionID, err
@@ -413,6 +466,10 @@ func (store *Store) saveConnection(ctx context.Context, tx pgx.Tx, userID int, c
 		WHERE chat_provider_connection.user_id = EXCLUDED.user_id
 		RETURNING chat_provider_connection_id::text
 	`, userID, connection.Provider, connection.ProviderUserID, connection.DisplayName, accessCiphertext, refreshCiphertext, connection.OAuthDeviceID, connection.AccessTokenExpiresAt, connection.Scopes).Scan(&connectionID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		// The conflict update is limited to the owner, so no row means another user owns the account.
+		return "", errProviderAccountConnectedElsewhere
+	}
 	return connectionID, err
 }
 
