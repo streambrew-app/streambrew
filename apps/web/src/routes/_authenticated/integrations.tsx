@@ -75,8 +75,8 @@ export const Route = createFileRoute("/_authenticated/integrations")({
     await preloadRouteQuery(context.queryClient, context.trpc.authUrls.queryOptions());
   },
   validateSearch: z.object({
-    source: DonationSourceSchema.optional(),
-    success: z.boolean().optional(),
+    source: DonationSourceSchema.optional().catch(undefined),
+    success: z.boolean().optional().catch(undefined),
   }),
 });
 

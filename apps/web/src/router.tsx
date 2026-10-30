@@ -2,6 +2,7 @@ import { createRouter } from "@tanstack/react-router";
 import { setupRouterSsrQueryIntegration } from "@tanstack/react-router-ssr-query";
 import { parseCookie } from "cookie-es";
 
+import { RouteErrorPage, RouteNotFoundPage } from "./components/route-status-page";
 import { localeCookieName, resolveLocale } from "./lib/locale";
 import { resolveTheme, themeCookieName } from "./lib/theme";
 import { createApi } from "./lib/trpc";
@@ -29,6 +30,8 @@ export function getRouter() {
     routeTree,
     pathParamsAllowedCharacters: ["@"],
     context: { locale, theme, viewer: null, ...api },
+    defaultErrorComponent: RouteErrorPage,
+    defaultNotFoundComponent: RouteNotFoundPage,
     defaultPreload: "intent",
     defaultPreloadStaleTime: 0,
     scrollRestoration: true,
