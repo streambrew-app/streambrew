@@ -82,6 +82,17 @@ channel is offline or the broadcast ends, discovery remains idle until the strea
 that owns the collector lease. Transport failures during an active operation still reconnect
 automatically with bounded exponential backoff.
 
+When a collector session ends, for example because a refresh token was revoked, the collector
+restarts it after 2 seconds and doubles the delay after each further short session, up to
+5 minutes. A session that lasts at least one minute resets the delay. The first restart of a
+failure streak after a provider error is logged with the error type and safe detail; later
+restarts in the same streak are not, because operational logs reach Telegram. A changed token
+version or **Check stream** starts a new collector immediately. Twitch reconnects its EventSub
+socket with its own backoff from 1.5 seconds to 1 minute, reset after a session that subscribed
+to chat. A Twitch socket that stays silent longer than the welcome message's keepalive timeout
+plus 5 seconds is treated as dropped and reconnected. A source whose stored credentials cannot be
+decrypted is logged and skipped; other sources keep collecting.
+
 ## Provider capabilities
 
 | Provider | Read | Send | Delete | Timeout / ban / unban | Collection                                                     |

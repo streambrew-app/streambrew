@@ -11,6 +11,9 @@ const (
 	collectorReconcileInterval = 10 * time.Second
 	collectorLeaseRetry        = 5 * time.Second
 	collectorStreamRetry       = 2 * time.Second
+	collectorStreamRetryMax    = 5 * time.Minute
+	// A collection session that lasts this long resets the restart backoff.
+	collectorHealthySession = time.Minute
 )
 
 type CollectorStore interface {
@@ -118,6 +121,7 @@ func RunCollectors(ctx context.Context, store CollectorStore, broker EventBroker
 
 func collectSource(ctx context.Context, owned OwnedConnectedSource, provider Provider, broker EventBroker, leases CollectorLeases, owner string) {
 	sourceID := owned.ConnectedSource.Source.SourceID
+	var backoff collectorBackoff
 	for ctx.Err() == nil {
 		lease, err := leases.Acquire(ctx, sourceID, owner)
 		if err != nil {
@@ -133,6 +137,8 @@ func collectSource(ctx context.Context, owned OwnedConnectedSource, provider Pro
 			}
 			continue
 		}
+		startedAt := time.Now()
+		var lastProviderErr error
 		collectionCtx, cancel := context.WithCancel(ctx)
 		maintained := make(chan error, 1)
 		go func() { maintained <- lease.Maintain(collectionCtx) }()
@@ -170,6 +176,7 @@ func collectSource(ctx context.Context, owned OwnedConnectedSource, provider Pro
 					continue
 				}
 				if providerErr != nil {
+					lastProviderErr = providerErr
 					event := StreamEvent{Type: "state", SourceID: sourceID, State: "error", Detail: providerErrorDetail(providerErr)}
 					if err := broker.Publish(collectionCtx, owned.UserID, event, eventKey(event)); err != nil {
 						slog.Error("publish chat provider error", "sourceId", sourceID, "error", err)
@@ -185,10 +192,31 @@ func collectSource(ctx context.Context, owned OwnedConnectedSource, provider Pro
 		if err := lease.Release(); err != nil && ctx.Err() == nil {
 			slog.Error("Chat collector lease release failed", "sourceId", sourceID, "error", err)
 		}
-		if !waitFor(ctx, collectorStreamRetry) {
+		if ctx.Err() != nil {
+			return
+		}
+		delay := backoff.next(time.Since(startedAt))
+		// Operational logs reach Telegram, so report only the first restart of a failure streak.
+		if lastProviderErr != nil && delay == collectorStreamRetry {
+			slog.Warn("Chat collector restarting after provider error", "sourceId", sourceID, "provider", provider.Name(), "errorType", providerErrorType(lastProviderErr), "detail", providerErrorDetail(lastProviderErr), "retryIn", delay.String())
+		}
+		if !waitFor(ctx, delay) {
 			return
 		}
 	}
+}
+
+// collectorBackoff doubles the restart delay after each short-lived collection session, such as
+// a revoked authorization, so a failing source does not call provider endpoints at a fixed rate.
+type collectorBackoff struct{ delay time.Duration }
+
+func (backoff *collectorBackoff) next(sessionDuration time.Duration) time.Duration {
+	if backoff.delay == 0 || sessionDuration >= collectorHealthySession {
+		backoff.delay = collectorStreamRetry
+	}
+	delay := backoff.delay
+	backoff.delay = min(delay*2, collectorStreamRetryMax)
+	return delay
 }
 
 func eventKey(event StreamEvent) string {

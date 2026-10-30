@@ -154,3 +154,97 @@ func TestTwitchStreamNormalizesNotification(t *testing.T) {
 func twitchResponse(body string) *http.Response {
 	return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(body)), Header: make(http.Header)}
 }
+
+func TestTwitchStreamBacksOffRepeatedConnectionFailures(t *testing.T) {
+	provider := NewTwitchProvider("client", "secret", http.DefaultClient)
+	provider.dial = func(context.Context, string) (twitchSocket, error) {
+		return nil, errors.New("connection refused")
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	var delays []time.Duration
+	provider.wait = func(_ context.Context, delay time.Duration) bool {
+		delays = append(delays, delay)
+		return len(delays) < 6
+	}
+	events, providerErrors := provider.Stream(ctx, twitchTestSource())
+	for events != nil || providerErrors != nil {
+		select {
+		case _, open := <-events:
+			if !open {
+				events = nil
+			}
+		case _, open := <-providerErrors:
+			if !open {
+				providerErrors = nil
+			}
+		}
+	}
+	expected := []time.Duration{1500 * time.Millisecond, 3 * time.Second, 6 * time.Second, 12 * time.Second, 24 * time.Second, 48 * time.Second}
+	if len(delays) != len(expected) {
+		t.Fatalf("delays = %v; want %v", delays, expected)
+	}
+	for index := range expected {
+		if delays[index] != expected[index] {
+			t.Fatalf("delays = %v; want %v", delays, expected)
+		}
+	}
+}
+
+// deadlineTwitchSocket reports how long each read may wait before the connection is considered dead.
+type deadlineTwitchSocket struct {
+	reads    chan []byte
+	timeouts chan time.Duration
+}
+
+func (socket *deadlineTwitchSocket) Read(ctx context.Context) (websocket.MessageType, []byte, error) {
+	deadline, ok := ctx.Deadline()
+	if !ok {
+		socket.timeouts <- 0
+	} else {
+		socket.timeouts <- time.Until(deadline)
+	}
+	select {
+	case <-ctx.Done():
+		return websocket.MessageText, nil, ctx.Err()
+	case body := <-socket.reads:
+		return websocket.MessageText, body, nil
+	}
+}
+
+func (*deadlineTwitchSocket) Close(websocket.StatusCode, string) error { return nil }
+
+func TestTwitchStreamTimesOutSilentConnections(t *testing.T) {
+	client := &http.Client{Transport: oauthRoundTripFunc(func(*http.Request) (*http.Response, error) {
+		return &http.Response{StatusCode: http.StatusAccepted, Body: io.NopCloser(&emptyReader{}), Header: make(http.Header)}, nil
+	})}
+	provider := NewTwitchProvider("client", "secret", client)
+	socket := &deadlineTwitchSocket{reads: make(chan []byte, 1), timeouts: make(chan time.Duration, 4)}
+	provider.dial = func(context.Context, string) (twitchSocket, error) { return socket, nil }
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	events, providerErrors := provider.Stream(ctx, twitchTestSource())
+	if event := <-events; event.State != "connecting" {
+		t.Fatalf("initial event = %#v", event)
+	}
+	assertTimeout := func(name string, want time.Duration) {
+		t.Helper()
+		select {
+		case actual := <-socket.timeouts:
+			if actual <= want-time.Second || actual > want {
+				t.Fatalf("%s read timeout = %s; want about %s", name, actual, want)
+			}
+		case <-time.After(time.Second):
+			t.Fatalf("%s read did not start", name)
+		}
+	}
+	assertTimeout("welcome", twitchDefaultKeepalive+twitchKeepaliveMargin)
+	socket.reads <- []byte(`{"metadata":{"message_type":"session_welcome"},"payload":{"session":{"id":"session-1","keepalive_timeout_seconds":30}}}`)
+	if event := <-events; event.State != "live" {
+		t.Fatalf("event after welcome = %#v", event)
+	}
+	assertTimeout("keepalive", 30*time.Second+twitchKeepaliveMargin)
+	cancel()
+	for range providerErrors {
+	}
+}

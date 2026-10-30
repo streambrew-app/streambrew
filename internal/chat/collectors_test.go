@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"sync"
 	"testing"
+	"time"
 )
 
 type collectorTestStore struct{ source OwnedConnectedSource }
@@ -155,5 +156,21 @@ func TestCollectorsRestartOnManualRefresh(t *testing.T) {
 	defer startsMutex.Unlock()
 	if starts != 2 {
 		t.Fatalf("provider started %d times; want 2", starts)
+	}
+}
+
+func TestCollectorBackoffGrowsUntilHealthySession(t *testing.T) {
+	var backoff collectorBackoff
+	expected := []time.Duration{2 * time.Second, 4 * time.Second, 8 * time.Second, 16 * time.Second, 32 * time.Second, 64 * time.Second, 128 * time.Second, 256 * time.Second, 5 * time.Minute, 5 * time.Minute}
+	for index, want := range expected {
+		if actual := backoff.next(time.Second); actual != want {
+			t.Fatalf("restart %d delay = %s; want %s", index, actual, want)
+		}
+	}
+	if actual := backoff.next(collectorHealthySession); actual != collectorStreamRetry {
+		t.Fatalf("delay after healthy session = %s; want %s", actual, collectorStreamRetry)
+	}
+	if actual := backoff.next(time.Second); actual != 2*collectorStreamRetry {
+		t.Fatalf("delay after reset = %s; want %s", actual, 2*collectorStreamRetry)
 	}
 }
