@@ -94,11 +94,11 @@ func (handler *KickWebhookHandler) Handle(ctx context.Context, headers http.Head
 		CreatedAt string `json:"created_at"`
 	}
 	if decodeErr := json.Unmarshal([]byte(body), &message); decodeErr != nil || message.MessageID == "" || message.Broadcaster.UserID == "" || message.Broadcaster.Username == "" || message.Sender.UserID == "" || message.Sender.Username == "" {
-		return &KickWebhookError{Type: "invalid kick webhook", Detail: "Kick message payload is invalid", Cause: decodeErr}
+		return &KickWebhookError{Type: "invalid kick payload", Detail: "Kick message payload is invalid", Cause: decodeErr}
 	}
 	occurredAt, err := time.Parse(time.RFC3339Nano, message.CreatedAt)
 	if err != nil {
-		return &KickWebhookError{Type: "invalid kick webhook", Detail: "Kick message payload is invalid", Cause: err}
+		return &KickWebhookError{Type: "invalid kick payload", Detail: "Kick message payload is invalid", Cause: err}
 	}
 	source, err := handler.store.GetEnabledSourceByProviderID(ctx, "kick", string(message.Broadcaster.UserID))
 	if err != nil {

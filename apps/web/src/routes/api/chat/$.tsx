@@ -1,20 +1,55 @@
 import { rurl } from "@lebedevna/readonly-url";
 import { createFileRoute } from "@tanstack/react-router";
+import { getUserId } from "@web/server/api/_util";
 import { env } from "@web/server/env";
+import {
+  BoundedRequestBodyError,
+  readBoundedRequestBody,
+  validateContentLength,
+} from "@web/server/request-body";
 
-function isAllowedRequest(method: string, pathname: string) {
+// apps/chat accepts an OAuth callback only for the StreamBrew user signed in to this browser.
+const SESSION_USER_HEADER = "X-StreamBrew-Session-User-Id";
+const MAX_WEBHOOK_BYTES = 64 * 1024;
+
+function isOauthCallback(method: string, pathname: string) {
   return (
-    (method === "GET" &&
-      /^\/api\/chat\/oauth\/(youtube|twitch|kick|vk_video)\/callback$/.test(pathname)) ||
-    (method === "POST" && pathname === "/api/chat/webhooks/kick")
+    method === "GET" &&
+    /^\/api\/chat\/oauth\/(youtube|twitch|kick|vk_video)\/callback$/.test(pathname)
   );
+}
+
+function isKickWebhook(method: string, pathname: string) {
+  return method === "POST" && pathname === "/api/chat/webhooks/kick";
+}
+
+async function readWebhookBody(request: Request): Promise<Uint8Array<ArrayBuffer> | Response> {
+  try {
+    validateContentLength(request, MAX_WEBHOOK_BYTES, false);
+    return request.body === null
+      ? new Uint8Array()
+      : await readBoundedRequestBody(request.body, MAX_WEBHOOK_BYTES, request.signal);
+  } catch (error) {
+    if (error instanceof BoundedRequestBodyError) {
+      return Response.json(
+        { error: "Invalid request" },
+        { status: error.kind === "too-large" ? 413 : 400 },
+      );
+    }
+    throw error;
+  }
 }
 
 async function handler({ request }: { request: Request }) {
   const publicUrl = rurl(request.url);
-  if (!isAllowedRequest(request.method, publicUrl.pathname)) {
+  const oauthCallback = isOauthCallback(request.method, publicUrl.pathname);
+  if (!oauthCallback && !isKickWebhook(request.method, publicUrl.pathname)) {
     return new Response("Not found", { status: 404 });
   }
+
+  const body = oauthCallback ? undefined : await readWebhookBody(request);
+  if (body instanceof Response) return body;
+  const sessionUserId = oauthCallback ? await getUserId(request) : null;
 
   const upstreamUrl = rurl(env.CHAT_SERVICE_URL)
     .withPathname(publicUrl.pathname.slice("/api/chat".length))
@@ -22,6 +57,8 @@ async function handler({ request }: { request: Request }) {
   const headers = new Headers(request.headers);
   headers.delete("cookie");
   headers.delete("host");
+  headers.delete(SESSION_USER_HEADER);
+  if (sessionUserId !== null) headers.set(SESSION_USER_HEADER, String(sessionUserId));
   headers.set("Authorization", `Bearer ${env.CHAT_SERVICE_SECRET}`);
   headers.set("X-Forwarded-Host", publicUrl.host);
   headers.set("X-Forwarded-Prefix", "/api/chat");
@@ -31,7 +68,7 @@ async function handler({ request }: { request: Request }) {
     method: request.method,
     headers,
     redirect: "manual",
-    ...(request.method === "GET" ? {} : { body: await request.arrayBuffer() }),
+    ...(body === undefined ? {} : { body }),
   });
   return new Response(response.body, {
     status: response.status,

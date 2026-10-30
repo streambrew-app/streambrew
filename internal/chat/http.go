@@ -12,6 +12,14 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
+)
+
+const (
+	// oauthSessionUserHeader carries the StreamBrew user signed in to the browser that delivered an
+	// OAuth callback. apps/web resolves it from the session and replaces any client-supplied value.
+	oauthSessionUserHeader  = "X-StreamBrew-Session-User-Id"
+	kickWebhookMaxBodyBytes = 64 << 10
 )
 
 type ChatAPI interface {
@@ -26,7 +34,7 @@ type ChatAPI interface {
 type HTTPOauth interface {
 	Available(string) bool
 	Start(context.Context, int, string, string) (string, error)
-	Finish(context.Context, string, string) (string, error)
+	Finish(context.Context, string, string, int) (string, error)
 }
 
 type HTTPStore interface {
@@ -43,10 +51,17 @@ type HTTPHandler struct {
 	kickWebhook   *KickWebhookHandler
 	boosty        *BoostyConnector
 	deadLetters   DeadLetterReader
+	streamsClosed chan struct{}
+	closeStreams  sync.Once
 }
 
 func NewHTTPHandler(application ChatAPI, activity ActivityTracker, oauth HTTPOauth, store HTTPStore, serviceSecret, webURL string, kickWebhook *KickWebhookHandler, boosty *BoostyConnector, deadLetters DeadLetterReader) *HTTPHandler {
-	return &HTTPHandler{application: application, activity: activity, oauth: oauth, store: store, serviceSecret: serviceSecret, webURL: webURL, kickWebhook: kickWebhook, boosty: boosty, deadLetters: deadLetters}
+	return &HTTPHandler{application: application, activity: activity, oauth: oauth, store: store, serviceSecret: serviceSecret, webURL: webURL, kickWebhook: kickWebhook, boosty: boosty, deadLetters: deadLetters, streamsClosed: make(chan struct{})}
+}
+
+// CloseStreams ends open and future NDJSON event streams so a graceful HTTP shutdown can finish.
+func (handler *HTTPHandler) CloseStreams() {
+	handler.closeStreams.Do(func() { close(handler.streamsClosed) })
 }
 
 func (handler *HTTPHandler) ServeHTTP(response http.ResponseWriter, request *http.Request) {
@@ -296,11 +311,20 @@ func (handler *HTTPHandler) handleStream(response http.ResponseWriter, request *
 	response.Header().Set("Content-Type", "application/x-ndjson")
 	response.Header().Set("Cache-Control", "no-cache")
 	response.Header().Set("X-Accel-Buffering", "no")
+	ctx, cancel := context.WithCancel(request.Context())
+	defer cancel()
+	go func() {
+		select {
+		case <-handler.streamsClosed:
+			cancel()
+		case <-ctx.Done():
+		}
+	}()
 	response.WriteHeader(http.StatusOK)
 	flusher.Flush()
-	go handler.activity.Track(request.Context(), userID, consumer)
+	go handler.activity.Track(ctx, userID, consumer)
 	encoder := json.NewEncoder(response)
-	for event := range handler.application.Stream(request.Context(), userID) {
+	for event := range handler.application.Stream(ctx, userID) {
 		if err := encoder.Encode(event); err != nil {
 			return
 		}
@@ -318,8 +342,13 @@ func (handler *HTTPHandler) handleKickWebhook(response http.ResponseWriter, requ
 		writeError(response, http.StatusServiceUnavailable, "Kick integration is unavailable")
 		return
 	}
-	body, err := io.ReadAll(request.Body)
+	body, err := io.ReadAll(http.MaxBytesReader(response, request.Body, kickWebhookMaxBodyBytes))
 	if err != nil {
+		var tooLarge *http.MaxBytesError
+		if errors.As(err, &tooLarge) {
+			writeError(response, http.StatusRequestEntityTooLarge, "request body too large")
+			return
+		}
 		writeError(response, http.StatusBadRequest, "invalid request")
 		return
 	}
@@ -328,13 +357,22 @@ func (handler *HTTPHandler) handleKickWebhook(response http.ResponseWriter, requ
 		response.WriteHeader(http.StatusNoContent)
 		return
 	}
-	status := http.StatusUnauthorized
 	var webhookError *KickWebhookError
-	if errors.As(err, &webhookError) && webhookError.Type == "unknown kick source" {
+	if !errors.As(err, &webhookError) {
+		// Storage and broker failures are retryable and must not be reported as signature failures.
+		slog.Error("Kick webhook processing failed", "error", err)
+		writeError(response, http.StatusInternalServerError, "internal server error")
+		return
+	}
+	status := http.StatusUnauthorized
+	switch webhookError.Type {
+	case "unknown kick source":
 		status = http.StatusAccepted
+	case "invalid kick payload":
+		status = http.StatusBadRequest
 	}
 	slog.Warn("Kick webhook rejected", "error", err)
-	http.Error(response, err.Error(), status)
+	http.Error(response, webhookError.Detail, status)
 }
 
 func (handler *HTTPHandler) handleOauthCallback(response http.ResponseWriter, request *http.Request) {
@@ -343,7 +381,11 @@ func (handler *HTTPHandler) handleOauthCallback(response http.ResponseWriter, re
 		http.NotFound(response, request)
 		return
 	}
-	returnURL, err := handler.oauth.Finish(request.Context(), provider, absoluteRequestURL(request))
+	sessionUserID, sessionErr := strconv.Atoi(request.Header.Get(oauthSessionUserHeader))
+	if sessionErr != nil || sessionUserID < 0 {
+		sessionUserID = 0
+	}
+	returnURL, err := handler.oauth.Finish(request.Context(), provider, absoluteRequestURL(request), sessionUserID)
 	status := "success"
 	oauthErrorType := ""
 	if err != nil {
@@ -360,7 +402,11 @@ func (handler *HTTPHandler) handleOauthCallback(response http.ResponseWriter, re
 		if returnURL == "" {
 			returnURL = strings.TrimSuffix(handler.webURL, "/") + "/chat"
 		}
-		if oauthErrorType != "invalid oauth callback" && oauthErrorType != "expired oauth attempt" {
+		switch oauthErrorType {
+		case "invalid oauth callback", "expired oauth attempt", "chat account connected to another user":
+		case "oauth session mismatch":
+			slog.Warn("OAuth callback rejected for a different StreamBrew session", "provider", provider)
+		default:
 			slog.Error("OAuth callback failed", "provider", provider, "error", err)
 		}
 	}

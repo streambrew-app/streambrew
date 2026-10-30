@@ -62,6 +62,14 @@ const translations = createTranslations({
     en: "The connected chat channel limit has been reached.",
     ru: "Достигнут лимит подключённых каналов чата.",
   },
+  chatOauthSessionMismatch: {
+    en: "This authorization was started from another StreamBrew account. Connect the chat account from this page.",
+    ru: "Эта авторизация начата из другого аккаунта StreamBrew. Подключите аккаунт чата с этой страницы.",
+  },
+  chatOauthAccountConnectedElsewhere: {
+    en: "This chat account is already connected to another StreamBrew account.",
+    ru: "Этот аккаунт чата уже подключён к другому аккаунту StreamBrew.",
+  },
   chatOauthUnknownError: {
     en: "Couldn't connect the chat account. Try again.",
     ru: "Не удалось подключить аккаунт чата. Попробуйте снова.",
@@ -89,6 +97,8 @@ const chatOauthErrorSchema = z.enum([
   "oauth token exchange failed",
   "oauth profile failed",
   "chat source limit reached",
+  "oauth session mismatch",
+  "chat account connected to another user",
   "unknown",
 ]);
 
@@ -99,6 +109,8 @@ const chatOauthErrorMessages = {
   "oauth token exchange failed": "chatOauthTokenExchangeFailed",
   "oauth profile failed": "chatOauthProfileFailed",
   "chat source limit reached": "chatOauthSourceLimitReached",
+  "oauth session mismatch": "chatOauthSessionMismatch",
+  "chat account connected to another user": "chatOauthAccountConnectedElsewhere",
   unknown: "chatOauthUnknownError",
 } as const satisfies Record<
   z.infer<typeof chatOauthErrorSchema>,
