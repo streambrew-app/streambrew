@@ -3,29 +3,31 @@ package videoingest
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/streambrew-app/streambrew/internal/money"
 )
 
 var ErrLeaseLost = errors.New("video ingest lease lost")
 
 type Job struct {
-	DonationID    int64
-	Generation    int64
-	Attempts      int
-	Message       *string
-	Amount        string
-	Currency      string
-	QueueCurrency string
+	DonationID int64
+	Generation int64
+	Attempts   int
+	Message    *string
+	Amount     string
+	Currency   string
 }
 
+// Video is a supported link found in a donation message. Its queue amount is
+// derived from the donation when the scan completes.
 type Video struct {
 	Title           string
 	ProviderVideoID string
 	URL             string
-	QueueAmount     *string
 	StartSeconds    int
 	EndSeconds      *int
 	DurationSeconds *int
@@ -74,14 +76,12 @@ func (store *Store) Claim(ctx context.Context, now time.Time, leaseDuration time
 			claimed.attempts,
 			donation.message,
 			donation.amount::text,
-			donation.currency::text,
-			"user".queue_currency::text
+			donation.currency::text
 		FROM claimed
 		JOIN donation USING (donation_id)
-		JOIN "user" USING (user_id)
 	`, now, now.Add(leaseDuration))
 	var job Job
-	if err := row.Scan(&job.DonationID, &job.Generation, &job.Attempts, &job.Message, &job.Amount, &job.Currency, &job.QueueCurrency); err != nil {
+	if err := row.Scan(&job.DonationID, &job.Generation, &job.Attempts, &job.Message, &job.Amount, &job.Currency); err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil //nolint:nilnil // A nil job is the established signal that the queue is empty.
 		}
@@ -90,6 +90,10 @@ func (store *Store) Claim(ctx context.Context, now time.Time, leaseDuration time
 	return &job, nil
 }
 
+// Complete inserts the scanned videos and finishes the scan in one transaction.
+// The queue amount uses the owner's current queue currency, read under a share
+// lock: a concurrent currency change either waits and converts these videos or
+// commits first and determines their currency.
 func (store *Store) Complete(ctx context.Context, job Job, videos []Video, now time.Time) error {
 	return pgx.BeginFunc(ctx, store.pool, func(tx pgx.Tx) error {
 		result, err := tx.Exec(ctx, `
@@ -108,6 +112,13 @@ func (store *Store) Complete(ctx context.Context, job Job, videos []Video, now t
 		if result.RowsAffected() != 1 {
 			return ErrLeaseLost
 		}
+		var queueAmount *string
+		if len(videos) > 0 {
+			queueAmount, err = convertedQueueAmount(ctx, tx, job)
+			if err != nil {
+				return err
+			}
+		}
 		for _, video := range videos {
 			_, err = tx.Exec(ctx, `
 				INSERT INTO video (
@@ -123,7 +134,7 @@ func (store *Store) Complete(ctx context.Context, job Job, videos []Video, now t
 				)
 				VALUES ($1, 'youtube', $2, $3, $4, $5, $6, $7, nullif($8, ''))
 				ON CONFLICT (donation_id, provider, provider_video_id) DO NOTHING
-			`, job.DonationID, video.ProviderVideoID, video.URL, video.QueueAmount, video.StartSeconds, video.EndSeconds, video.DurationSeconds, video.Title)
+			`, job.DonationID, video.ProviderVideoID, video.URL, queueAmount, video.StartSeconds, video.EndSeconds, video.DurationSeconds, video.Title)
 			if err != nil {
 				return err
 			}
@@ -136,6 +147,29 @@ func (store *Store) Complete(ctx context.Context, job Job, videos []Video, now t
 		`, job.DonationID, now)
 		return err
 	})
+}
+
+// convertedQueueAmount returns nil when the donation amount cannot be assigned
+// in the owner's queue currency.
+func convertedQueueAmount(ctx context.Context, tx pgx.Tx, job Job) (*string, error) {
+	var queueCurrency string
+	if err := tx.QueryRow(ctx, `
+		SELECT "user".queue_currency::text
+		FROM donation
+		JOIN "user" USING (user_id)
+		WHERE donation.donation_id = $1
+		FOR SHARE OF "user"
+	`, job.DonationID).Scan(&queueCurrency); err != nil {
+		return nil, err
+	}
+	amount, supported, err := money.ConvertWithDefaultRate(job.Amount, job.Currency, queueCurrency)
+	if err != nil {
+		return nil, fmt.Errorf("convert donation amount: %w", err)
+	}
+	if !supported {
+		return nil, nil //nolint:nilnil // A NULL queue amount leaves the video without a priority.
+	}
+	return &amount, nil
 }
 
 func (store *Store) Retry(ctx context.Context, job Job, availableAt time.Time, safeError string, now time.Time) error {

@@ -158,3 +158,68 @@ func TestOpenEndResolvesAndAssignsPriority(t *testing.T) {
 		t.Fatal("open end was not resolved and assigned")
 	}
 }
+
+func TestMetadataUsesStoredProviderVideoID(t *testing.T) {
+	store, pool := newIntegrationStore(t)
+	seedDonationWithoutScan(t, pool, 1)
+	ctx := context.Background()
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO video (user_id, added_at, provider, provider_video_id, url, queue_amount, start_seconds)
+		VALUES (1, now(), 'youtube', 'dQw4w9WgXcQ', $1, 10, 0)
+	`, `https://youtube.com\watch?v=dQw4w9WgXcQ`); err != nil {
+		t.Fatal(err)
+	}
+	requests := 0
+	client := &http.Client{Transport: metadataTransport(func(request *http.Request) (*http.Response, error) {
+		requests++
+		if request.URL.Query().Get("id") != "dQw4w9WgXcQ" {
+			t.Errorf("requested %s", request.URL)
+		}
+		body := `{"items":[{"id":"dQw4w9WgXcQ","contentDetails":{"duration":"PT3M33S"},"snippet":{"title":"Title","liveBroadcastContent":"none"}}]}`
+		return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(body)), Header: make(http.Header)}, nil
+	})}
+	if worked, err := store.processMetadata(ctx, client, "key"); err != nil || !worked {
+		t.Fatalf("processMetadata() = %v, %v", worked, err)
+	}
+	var duration *int
+	var completed bool
+	if err := pool.QueryRow(ctx, `
+		SELECT video.duration_seconds, job.completed_at IS NOT NULL
+		FROM video
+		JOIN video_metadata_job AS job USING (video_id)
+	`).Scan(&duration, &completed); err != nil {
+		t.Fatal(err)
+	}
+	if requests != 1 || duration == nil || *duration != 213 || !completed {
+		t.Fatalf("requests=%d duration=%v completed=%v", requests, duration, completed)
+	}
+}
+
+func TestMetadataStopsRetryingInvalidProviderVideoID(t *testing.T) {
+	store, pool := newIntegrationStore(t)
+	seedDonationWithoutScan(t, pool, 1)
+	ctx := context.Background()
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO video (user_id, added_at, provider, provider_video_id, url, queue_amount, start_seconds)
+		VALUES (1, now(), 'youtube', 'not-an-id', 'https://youtube.com/watch%zz?v=not-an-id', 10, 0)
+	`); err != nil {
+		t.Fatal(err)
+	}
+	client := &http.Client{Transport: metadataTransport(func(*http.Request) (*http.Response, error) {
+		t.Error("unexpected request")
+		return nil, errors.New("unexpected request")
+	})}
+	if worked, err := store.processMetadata(ctx, client, "key"); err != nil || !worked {
+		t.Fatalf("processMetadata() = %v, %v", worked, err)
+	}
+	var code string
+	var completed bool
+	if err := pool.QueryRow(ctx, `
+		SELECT last_error_code, completed_at IS NOT NULL FROM video_metadata_job
+	`).Scan(&code, &completed); err != nil {
+		t.Fatal(err)
+	}
+	if code != "invalid_video_id" || !completed {
+		t.Fatalf("code=%q completed=%v", code, completed)
+	}
+}

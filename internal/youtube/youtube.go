@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -15,6 +16,7 @@ import (
 var (
 	urlPattern             = regexp.MustCompile(`(?i)(?:(?:https?://)|(?:www\.))(?:[a-z0-9-]+\.)*(?:youtube\.com|youtube-nocookie\.com)(?:/[^\s<>]*)?|(?:(?:https?://)|(?:www\.))youtu\.be(?:/[^\s<>]*)?`)
 	timestampPattern       = regexp.MustCompile(`^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$`)
+	videoIDPattern         = regexp.MustCompile(`^[A-Za-z0-9_-]{11}$`)
 	trailingURLPunctuation = regexp.MustCompile(`[!.,;:?)\]}]+$`)
 )
 
@@ -68,45 +70,59 @@ func ExtractURLs(message string) []string {
 	return result
 }
 
+// VideoID returns the provider video ID of a supported YouTube URL. Only IDs in
+// YouTube's eleven-character format are accepted, so decoded query values such
+// as invalid UTF-8 or NUL bytes never reach storage or API requests.
 func VideoID(rawURL string) (string, bool) {
 	parsed, err := parseURL(rawURL)
 	if err != nil || !isYoutubeURL(parsed) {
 		return "", false
 	}
 
-	host := strings.ToLower(parsed.Hostname())
-	if host == "youtu.be" {
-		id := strings.Split(strings.TrimPrefix(parsed.Path, "/"), "/")[0]
-		return id, id != ""
-	}
-	if id := parsed.Query().Get("v"); id != "" {
-		return id, true
-	}
+	id := parsed.Query().Get("v")
 	parts := strings.Split(strings.Trim(parsed.Path, "/"), "/")
-	if len(parts) >= 2 && (parts[0] == "embed" || parts[0] == "shorts") && parts[1] != "" {
-		return parts[1], true
+	switch {
+	case strings.EqualFold(parsed.Hostname(), "youtu.be"):
+		id = strings.Split(strings.TrimPrefix(parsed.Path, "/"), "/")[0]
+	case id == "" && len(parts) >= 2 && (parts[0] == "embed" || parts[0] == "shorts"):
+		id = parts[1]
 	}
-	return "", false
+	if !ValidVideoID(id) {
+		return "", false
+	}
+	return id, true
 }
 
+// ValidVideoID reports whether id has the format of a YouTube video ID.
+func ValidVideoID(id string) bool {
+	return videoIDPattern.MatchString(id)
+}
+
+// ParseTimestamp parses a URL time parameter as whole seconds. Values beyond
+// the PostgreSQL integer range are rejected, like other invalid timestamps.
 func ParseTimestamp(value string) (int, bool) {
 	if value == "" {
 		return 0, false
 	}
-	if seconds, err := strconv.Atoi(value); err == nil && seconds >= 0 {
-		return seconds, true
+	if seconds, err := strconv.ParseInt(value, 10, 32); err == nil && seconds >= 0 {
+		return int(seconds), true
 	}
 	match := timestampPattern.FindStringSubmatch(value)
 	if match == nil || match[0] == "" {
 		return 0, false
 	}
-	hours, errHours := strconv.Atoi(zeroIfEmpty(match[1]))
-	minutes, errMinutes := strconv.Atoi(zeroIfEmpty(match[2]))
-	seconds, errSeconds := strconv.Atoi(zeroIfEmpty(match[3]))
-	if errHours != nil || errMinutes != nil || errSeconds != nil {
-		return 0, false
+	total := int64(0)
+	for i, multiplier := range []int64{3600, 60, 1} {
+		component, err := strconv.ParseInt(zeroIfEmpty(match[i+1]), 10, 32)
+		if err != nil {
+			return 0, false
+		}
+		total += component * multiplier
+		if total > math.MaxInt32 {
+			return 0, false
+		}
 	}
-	return hours*3600 + minutes*60 + seconds, true
+	return int(total), true
 }
 
 // GetTiming preserves a successfully retrieved title even when duration is unknown.
@@ -173,7 +189,7 @@ func durationSeconds(value string) (int, bool) {
 			return 0, false
 		}
 		total += component * multiplier
-		if total > 2147483647 {
+		if total > math.MaxInt32 {
 			return 0, false
 		}
 	}

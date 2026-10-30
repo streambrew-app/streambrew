@@ -13,14 +13,21 @@ import (
 	"github.com/streambrew-app/streambrew/internal/youtube"
 )
 
+// invalidVideoIDError is recorded when a stored provider video ID cannot
+// identify a YouTube video. Automatic retries stop; the owner can retry.
+const invalidVideoIDError = "invalid_video_id"
+
+var errInvalidVideoID = errors.New("stored video has invalid provider video ID")
+
 type metadataJob struct {
-	VideoID    int64
-	Generation int64
-	Attempts   int
-	URL        string
+	VideoID         int64
+	Generation      int64
+	Attempts        int
+	ProviderVideoID string
 }
 
-func metadataDelay(attempt int) time.Duration {
+// retryDelay is the shared backoff for metadata lookups and failed donation scans.
+func retryDelay(attempt int) time.Duration {
 	delays := [...]time.Duration{15 * time.Second, time.Minute, 5 * time.Minute, 15 * time.Minute, time.Hour, 6 * time.Hour, 24 * time.Hour}
 	return delays[min(max(attempt-1, 0), len(delays)-1)]
 }
@@ -36,22 +43,28 @@ func (store *Store) RunMetadata(ctx context.Context, client *http.Client, apiKey
 	if err != nil {
 		return err
 	}
-	for ctx.Err() == nil {
+	errorDelay := workerErrorDelayStart
+	for {
 		worked, err := store.processMetadata(ctx, client, apiKey)
-		if err != nil && ctx.Err() == nil {
-			return err
+		if ctx.Err() != nil {
+			return nil
 		}
-		if worked {
-			continue
+		delay := 2500 * time.Millisecond
+		if err != nil {
+			// Lease expiry recovers a claimed job whose result could not be stored.
+			slog.Error("process video metadata", "error", err, "retry", errorDelay)
+			delay = errorDelay
+			errorDelay = min(errorDelay*2, workerErrorDelayMax)
+		} else {
+			errorDelay = workerErrorDelayStart
+			if worked {
+				continue
+			}
 		}
-		timer := time.NewTimer(2500 * time.Millisecond)
-		select {
-		case <-ctx.Done():
-			timer.Stop()
-		case <-timer.C:
+		if !waitContext(ctx, delay) {
+			return nil
 		}
 	}
-	return nil
 }
 
 func (store *Store) processMetadata(ctx context.Context, client *http.Client, apiKey string) (bool, error) {
@@ -70,9 +83,9 @@ func (store *Store) processMetadata(ctx context.Context, client *http.Client, ap
 			FROM candidate WHERE job.video_id = candidate.video_id
 			RETURNING job.video_id, job.generation, job.attempts
 		)
-		SELECT claimed.video_id, generation, attempts, video.url
+		SELECT claimed.video_id, generation, attempts, video.provider_video_id
 		FROM claimed JOIN video USING (video_id)
-	`).Scan(&job.VideoID, &job.Generation, &job.Attempts, &job.URL)
+	`).Scan(&job.VideoID, &job.Generation, &job.Attempts, &job.ProviderVideoID)
 	if errors.Is(claimErr, pgx.ErrNoRows) {
 		return false, nil
 	}
@@ -80,29 +93,34 @@ func (store *Store) processMetadata(ctx context.Context, client *http.Client, ap
 		return false, claimErr
 	}
 
-	// Fetch a canonical watch URL: source segment parameters must not constrain
-	// the duration lookup or overwrite current user-selected boundaries.
-	id, ok := youtube.VideoID(job.URL)
-	if !ok {
-		return true, errors.New("stored video has invalid provider URL")
-	}
-	timing, lookupErr := youtube.GetTiming(ctx, client, apiKey, "https://www.youtube.com/watch?v="+url.QueryEscape(id), nil)
-	if ctx.Err() != nil {
-		return true, nil //nolint:nilerr // Context cancellation is a graceful worker shutdown.
+	// Fetch a canonical watch URL for the stored provider video ID: the source
+	// URL's syntax and segment parameters must not affect the duration lookup or
+	// overwrite current user-selected boundaries.
+	id := job.ProviderVideoID
+	var timing youtube.Timing
+	lookupErr := errInvalidVideoID
+	if youtube.ValidVideoID(id) {
+		timing, lookupErr = youtube.GetTiming(ctx, client, apiKey, "https://www.youtube.com/watch?v="+url.QueryEscape(id), nil)
+		if ctx.Err() != nil {
+			return true, nil //nolint:nilerr // Context cancellation is a graceful worker shutdown.
+		}
 	}
 	title := timing.Title
 
 	code := ""
 	var status *int
+	terminal := false
 	nextAttempt := time.Now()
 	if lookupErr != nil {
 		code = "duration_unavailable"
 		// Retry jitter is not used for a security-sensitive value.
 		//nolint:gosec
-		delay := time.Duration(float64(metadataDelay(job.Attempts)) * (0.8 + rand.Float64()*0.4))
+		delay := time.Duration(float64(retryDelay(job.Attempts)) * (0.8 + rand.Float64()*0.4))
 		var httpError *youtube.HTTPError
 		var transport *youtube.TransportError
 		switch {
+		case errors.Is(lookupErr, errInvalidVideoID):
+			code, terminal, delay = invalidVideoIDError, true, 0
 		case errors.As(lookupErr, &httpError):
 			code, status = "http_failure", &httpError.Status
 			if httpError.Reason != "" {
@@ -120,7 +138,7 @@ func (store *Store) processMetadata(ctx context.Context, client *http.Client, ap
 				}
 				return *status
 			}(),
-			"next_attempt_at", nextAttempt)
+			"terminal", terminal, "next_attempt_at", nextAttempt)
 	}
 
 	transactionErr := pgx.BeginFunc(ctx, store.pool, func(tx pgx.Tx) error {
@@ -131,7 +149,7 @@ func (store *Store) processMetadata(ctx context.Context, client *http.Client, ap
 				available_at = $4, last_error_code = nullif($5, ''), last_http_status = $6
 			WHERE video_id = $1 AND generation = $2
 				AND completed_at IS NULL AND lease_expires_at > now()
-		`, job.VideoID, job.Generation, lookupErr == nil, nextAttempt, code, status)
+		`, job.VideoID, job.Generation, lookupErr == nil || terminal, nextAttempt, code, status)
 		if err != nil {
 			return err
 		}

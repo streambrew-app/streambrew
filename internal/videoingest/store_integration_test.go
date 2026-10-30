@@ -188,6 +188,108 @@ func TestNoLinksCompletionSetsVideosParsedAt(t *testing.T) {
 	}
 }
 
+func TestScanPersistsValidLinksAndIgnoresInvalidTiming(t *testing.T) {
+	store, pool := newIntegrationStore(t)
+	seedDonation(t, pool, 1)
+	if _, err := pool.Exec(context.Background(), `
+		UPDATE donation
+		SET message = 'https://youtu.be/%ff https://www.youtube.com/watch?v=%00 https://www.youtube.com/watch?v=dQw4w9WgXcQ&end=99999999999'
+		WHERE donation_id = 1
+	`); err != nil {
+		t.Fatal(err)
+	}
+	worker := newWorker(store, &fakeClock{now: time.Date(2026, 9, 4, 12, 0, 0, 0, time.UTC)}, DefaultConfig())
+	if worked, err := worker.ProcessNext(context.Background()); err != nil || !worked {
+		t.Fatalf("ProcessNext() = %v, %v", worked, err)
+	}
+	var providerVideoID string
+	var endSeconds *int
+	var queueAmount string
+	if err := pool.QueryRow(context.Background(), `
+		SELECT provider_video_id, end_seconds, queue_amount::text
+		FROM video
+		WHERE donation_id = 1
+	`).Scan(&providerVideoID, &endSeconds, &queueAmount); err != nil {
+		t.Fatal(err)
+	}
+	if providerVideoID != "dQw4w9WgXcQ" || endSeconds != nil || queueAmount != "10.00" {
+		t.Fatalf("video = %q end=%v amount=%q", providerVideoID, endSeconds, queueAmount)
+	}
+}
+
+func TestCompletionWaitsForQueueCurrencyChange(t *testing.T) {
+	store, pool := newIntegrationStore(t)
+	seedDonation(t, pool, 1)
+	ctx := context.Background()
+	now := time.Date(2026, 9, 4, 12, 0, 0, 0, time.UTC)
+	job, err := store.Claim(ctx, now, time.Minute)
+	if err != nil || job == nil {
+		t.Fatalf("claim = %#v, %v", job, err)
+	}
+
+	// Mirror the web currency change: it locks the user row before converting.
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	if _, err = tx.Exec(ctx, `SELECT queue_currency FROM "user" WHERE user_id = 1 FOR UPDATE`); err != nil {
+		t.Fatal(err)
+	}
+	completed := make(chan error, 1)
+	video := Video{ProviderVideoID: "dQw4w9WgXcQ", URL: "https://youtu.be/dQw4w9WgXcQ"}
+	go func() { completed <- store.Complete(ctx, *job, []Video{video}, now.Add(time.Second)) }()
+	select {
+	case err = <-completed:
+		t.Fatalf("completion did not wait for the currency change: %v", err)
+	case <-time.After(200 * time.Millisecond):
+	}
+	if _, err = tx.Exec(ctx, `UPDATE "user" SET queue_currency = 'USD' WHERE user_id = 1`); err != nil {
+		t.Fatal(err)
+	}
+	if err = tx.Commit(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if err = <-completed; err != nil {
+		t.Fatal(err)
+	}
+	var queueAmount string
+	if err = pool.QueryRow(ctx, `SELECT queue_amount::text FROM video WHERE donation_id = 1`).Scan(&queueAmount); err != nil {
+		t.Fatal(err)
+	}
+	if queueAmount != "0.11" {
+		t.Fatalf("queue amount = %q, want 10 RUB converted to USD", queueAmount)
+	}
+}
+
+func TestRetryReleasesLeaseUntilAvailable(t *testing.T) {
+	store, pool := newIntegrationStore(t)
+	seedDonation(t, pool, 1)
+	ctx := context.Background()
+	now := time.Date(2026, 9, 4, 12, 0, 0, 0, time.UTC)
+	job, err := store.Claim(ctx, now, time.Minute)
+	if err != nil || job == nil {
+		t.Fatalf("claim = %#v, %v", job, err)
+	}
+	if err = store.Retry(ctx, *job, now.Add(time.Hour), "scan_failed", now.Add(time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	if err = store.Retry(ctx, *job, now.Add(time.Hour), "scan_failed", now.Add(time.Second)); !errors.Is(err, ErrLeaseLost) {
+		t.Fatalf("repeated retry error = %v", err)
+	}
+	var lastError string
+	if err = pool.QueryRow(ctx, `SELECT last_error FROM donation_video_scan WHERE donation_id = 1`).Scan(&lastError); err != nil || lastError != "scan_failed" {
+		t.Fatalf("last_error=%q err=%v", lastError, err)
+	}
+	if early, claimErr := store.Claim(ctx, now.Add(time.Minute), time.Minute); claimErr != nil || early != nil {
+		t.Fatalf("claim before retry = %#v, %v", early, claimErr)
+	}
+	retried, err := store.Claim(ctx, now.Add(time.Hour), time.Minute)
+	if err != nil || retried == nil || retried.Attempts != 2 {
+		t.Fatalf("retried claim = %#v, %v", retried, err)
+	}
+}
+
 func newIntegrationStore(t *testing.T) (*Store, *pgxpool.Pool) {
 	t.Helper()
 	databaseURL := os.Getenv("VIDEO_INGEST_TEST_DATABASE_URL")

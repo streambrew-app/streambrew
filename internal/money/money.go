@@ -43,7 +43,9 @@ func NormalizeDonationAmount(amount string) (string, error) {
 
 // ConvertWithDefaultRate converts a precise original donation amount between
 // queue currencies without floating-point arithmetic, then rounds the result
-// to two decimal places. The boolean is false when either currency is unsupported.
+// to two decimal places. The boolean is false when either currency is
+// unsupported or the result exceeds the range accepted by Normalize, so the
+// amount cannot be assigned as a queue amount.
 func ConvertWithDefaultRate(amount, sourceCurrency, targetCurrency string) (string, bool, error) {
 	sourceRate, sourceOK := rublesPerUnit[sourceCurrency]
 	targetRate, targetOK := rublesPerUnit[targetCurrency]
@@ -58,8 +60,11 @@ func ConvertWithDefaultRate(amount, sourceCurrency, targetCurrency string) (stri
 	numerator := new(big.Int).Mul(units, big.NewInt(sourceRate))
 	numerator.Mul(numerator, big.NewInt(100))
 	denominator := new(big.Int).Mul(scale, big.NewInt(targetRate))
-	converted := roundDiv(numerator, denominator)
-	return formatCents(converted), true, nil
+	converted := formatCents(roundDiv(numerator, denominator))
+	if !amountPattern.MatchString(converted) {
+		return "", false, nil
+	}
+	return converted, true, nil
 }
 
 func parseDonationUnits(amount string) (*big.Int, *big.Int, error) {

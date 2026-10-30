@@ -17,6 +17,9 @@ func TestConvertWithDefaultRate(t *testing.T) {
 		{name: "half cent rounds up", amount: "0.005", from: "USD", to: "USD", expected: "0.01", ok: true},
 		{name: "provider precision rounds once", amount: "0.004999999999999999", from: "USD", to: "USD", expected: "0.00", ok: true},
 		{name: "unsupported source", amount: "1.00", from: "AUD", to: "RUB", ok: false},
+		{name: "largest queue amount", amount: "999999999999999999.99", from: "RUB", to: "RUB", expected: "999999999999999999.99", ok: true},
+		{name: "beyond queue amount range", amount: "11111111111111111112", from: "USD", to: "RUB", ok: false},
+		{name: "rounds beyond queue amount range", amount: "999999999999999999.995", from: "RUB", to: "RUB", ok: false},
 	}
 
 	for _, test := range tests {
