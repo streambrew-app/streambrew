@@ -173,3 +173,51 @@ describe("Store.listDonationsPage", () => {
     }
   });
 });
+
+describe("Store.getDonationOverview", () => {
+  it("keeps each original currency separate instead of summing across currencies", async () => {
+    const query = vi
+      .fn()
+      .mockResolvedValueOnce([
+        {
+          currency: "RUB",
+          donationCount: 2,
+          totalAmount: "500.000000000000000000",
+          averageAmount: "250.00",
+        },
+        {
+          currency: "USD",
+          donationCount: 1,
+          totalAmount: "10.500000000000000000",
+          averageAmount: "10.50",
+        },
+      ])
+      .mockResolvedValueOnce([]);
+    const store = new Store(query as never);
+
+    const overview = await store.getDonationOverview(UserIdSchema.parse(7));
+
+    expect(overview).toEqual({
+      currencies: [
+        { currency: "RUB", donationCount: 2, totalAmount: "500.00", averageAmount: "250.00" },
+        { currency: "USD", donationCount: 1, totalAmount: "10.50", averageAmount: "10.50" },
+      ],
+      donationCount: 3,
+      recentDonations: [],
+    });
+    const summaryQuery = query.mock.calls[0]?.[0].join("?");
+    expect(summaryQuery).toContain("GROUP BY currency");
+    expect(summaryQuery).toContain("ORDER BY donation_count DESC, currency");
+  });
+
+  it("reports no currencies before the first donation", async () => {
+    const query = vi.fn().mockResolvedValueOnce([]).mockResolvedValueOnce([]);
+    const store = new Store(query as never);
+
+    await expect(store.getDonationOverview(UserIdSchema.parse(7))).resolves.toEqual({
+      currencies: [],
+      donationCount: 0,
+      recentDonations: [],
+    });
+  });
+});

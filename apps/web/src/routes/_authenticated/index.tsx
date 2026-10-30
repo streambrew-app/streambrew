@@ -29,8 +29,8 @@ import {
 import { buttonVariants } from "@web/components/ui/button";
 import { CosmicPageHeader } from "@web/components/ui/cosmic-page-header";
 import { EmptyState } from "@web/components/ui/empty-state";
-import { fmtRubles } from "@web/lib/fmt";
-import { createTranslations, createTranslator, useI18n } from "@web/lib/i18n";
+import { fmtAmount } from "@web/lib/fmt";
+import { createTranslations, createTranslator, useI18n, type Locale } from "@web/lib/i18n";
 import { preloadRouteQuery } from "@web/lib/trpc";
 import { cn } from "@web/lib/utils";
 import { z } from "zod";
@@ -58,9 +58,15 @@ const translations = createTranslations({
     en: "Average donation",
     ru: "Средний донат",
   },
-  acrossPlatforms: {
-    en: "Across connected platforms",
-    ru: "По всем подключённым платформам",
+  averageDonationNote: {
+    en: ({ otherAmounts }: { otherAmounts: readonly string[] }) =>
+      otherAmounts.length === 0
+        ? "Across connected platforms"
+        : `Across connected platforms. Other currencies: ${otherAmounts.join(", ")}`,
+    ru: ({ otherAmounts }: { otherAmounts: readonly string[] }) =>
+      otherAmounts.length === 0
+        ? "По всем подключённым платформам"
+        : `По всем подключённым платформам. Другие валюты: ${otherAmounts.join(", ")}`,
   },
   recentActivity: {
     en: "Recent donations",
@@ -122,6 +128,16 @@ const translations = createTranslations({
     en: "All time",
     ru: "За всё время",
   },
+  totalReceivedNote: {
+    en: ({ otherAmounts }: { otherAmounts: readonly string[] }) =>
+      otherAmounts.length === 0
+        ? "All time"
+        : `All time. Other currencies: ${otherAmounts.join(", ")}`,
+    ru: ({ otherAmounts }: { otherAmounts: readonly string[] }) =>
+      otherAmounts.length === 0
+        ? "За всё время"
+        : `За всё время. Другие валюты: ${otherAmounts.join(", ")}`,
+  },
   sampleChart: {
     en: "Example",
     ru: "Пример",
@@ -155,9 +171,28 @@ export const Route = createFileRoute("/_authenticated/")({
     await preloadRouteQuery(context.queryClient, context.trpc.donationOverview.queryOptions());
   },
   validateSearch: z.object({
-    success: z.boolean().optional(),
+    success: z.boolean().optional().catch(undefined),
   }),
 });
+
+type DonationCurrencySummary = NonNullable<
+  ReturnType<typeof useDonationOverviewQ>["data"]
+>["currencies"][number];
+
+/**
+ * Formats one amount per original currency. The most frequently received currency becomes the
+ * metric value; the others stay visible in its note instead of being summed or converted.
+ */
+function currencyMetric(
+  currencies: readonly DonationCurrencySummary[],
+  amount: (summary: DonationCurrencySummary) => DonationCurrencySummary["totalAmount"],
+  locale: Locale,
+) {
+  const [primary, ...others] = currencies.map((summary) =>
+    fmtAmount(amount(summary), summary.currency, locale),
+  );
+  return { value: primary ?? "0", others };
+}
 
 const panel = "cosmic-panel overflow-hidden";
 
@@ -215,8 +250,10 @@ function Overview() {
   const hasDonationConnection = donationConnections.some(({ connected }) => connected);
   const { locale, t } = useI18n(translations);
 
-  const total = donationOverviewQ.data?.totalAmount ?? 0;
+  const currencies = donationOverviewQ.data?.currencies ?? [];
   const donationsLength = donationOverviewQ.data?.donationCount ?? 0;
+  const totalReceived = currencyMetric(currencies, (summary) => summary.totalAmount, locale);
+  const averageDonation = currencyMetric(currencies, (summary) => summary.averageAmount, locale);
   const chartDates = ["2026-06-29", "2026-07-06", "2026-07-13", "2026-07-20", "2026-07-27"].map(
     (date) =>
       new Intl.DateTimeFormat(locale === "ru" ? "ru-RU" : "en-US", {
@@ -254,8 +291,8 @@ function Overview() {
               <section className="grid gap-4 md:grid-cols-3" aria-label={t("streamStatistics")}>
                 <Metric
                   title={t("totalReceived")}
-                  value={fmtRubles(total, locale)}
-                  note={t("allTime")}
+                  value={totalReceived.value}
+                  note={t("totalReceivedNote", { otherAmounts: totalReceived.others })}
                   icon={Icons.wallet}
                   iconClass="bg-solar-mango/20 text-status-warning-text dark:text-status-warning-dark-text"
                 />
@@ -268,11 +305,8 @@ function Overview() {
                 />
                 <Metric
                   title={t("averageDonation")}
-                  value={fmtRubles(
-                    donationsLength ? Math.round(total / donationsLength) : 0,
-                    locale,
-                  )}
-                  note={t("acrossPlatforms")}
+                  value={averageDonation.value}
+                  note={t("averageDonationNote", { otherAmounts: averageDonation.others })}
                   icon={Icons.platform}
                   iconClass="bg-mint-signal/18 text-status-success-text dark:text-status-success-dark-text"
                 />

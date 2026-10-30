@@ -14,7 +14,9 @@ The original amount supports up to 20 digits before the decimal point and 18
 after it. Its currency may be a three-letter fiat code or a provider's asset
 label of up to 32 characters, for example `USDT (TRX)`. StreamBrew preserves
 that label on the donation instead of collapsing assets from different
-networks.
+networks. Donation summaries, such as the overview's total and average, are
+therefore grouped by original currency and never add amounts in different
+currencies together.
 
 The first release supports RUB, USD, and EUR for queue conversion. Its default
 rates are static: `1 USD = 90 RUB` and `1 EUR = 100 RUB`. They are not live
