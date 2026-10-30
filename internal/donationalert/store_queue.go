@@ -3,10 +3,30 @@ package donationalert
 import (
 	"context"
 	"errors"
+	"strings"
 	"time"
+	"unicode"
 
 	"github.com/jackc/pgx/v5"
 )
+
+// ttsWhitespace lists the Unicode White_Space characters that speech text
+// normalization removes. A message made only of them is queued without speech
+// preparation; PostgreSQL trim() would remove only spaces.
+var ttsWhitespace = func() string {
+	var characters strings.Builder
+	for _, span := range unicode.White_Space.R16 {
+		for character := rune(span.Lo); character <= rune(span.Hi); character += rune(span.Stride) {
+			characters.WriteRune(character)
+		}
+	}
+	for _, span := range unicode.White_Space.R32 {
+		for character := rune(span.Lo); character <= rune(span.Hi); character += rune(span.Stride) {
+			characters.WriteRune(character)
+		}
+	}
+	return characters.String()
+}()
 
 // EnqueueIncoming snapshots a newly inserted donation and the current alert
 // configuration in the caller's transaction. Initial history callers must not
@@ -42,7 +62,7 @@ func EnqueueIncoming(ctx context.Context, tx pgx.Tx, userID int, donationID int6
 			donation.donation_id,
 			'incoming',
 			CASE
-				WHEN configuration.tts_enabled AND nullif(trim(donation.message), '') IS NOT NULL
+				WHEN configuration.tts_enabled AND translate(left(donation.message, $7), $8, '') <> ''
 					THEN 'preparing'::donation_alert_playback_status
 				ELSE 'pending'::donation_alert_playback_status
 			END,
@@ -75,7 +95,7 @@ func EnqueueIncoming(ctx context.Context, tx pgx.Tx, userID int, donationID int6
 			AND alert_source.enabled
 			AND donation.occurred_at > $4::timestamptz - make_interval(secs => $5::double precision) + interval '1 millisecond'
 		ON CONFLICT (donation_id) WHERE kind = 'incoming' DO NOTHING
-	`, userID, donationID, source, acceptedAt, int(MaxAlertAge/time.Second), MaxAlertAuthorRunes, MaxAlertMessageRunes); err != nil {
+	`, userID, donationID, source, acceptedAt, int(MaxAlertAge/time.Second), MaxAlertAuthorRunes, MaxAlertMessageRunes, ttsWhitespace); err != nil {
 		return err
 	}
 	return boundBacklog(ctx, tx, userID, acceptedAt)
@@ -209,7 +229,7 @@ func (store *Store) Replay(ctx context.Context, userID int, sourcePlaybackID str
 				source_playback.donation_id,
 				'replay',
 				CASE
-					WHEN configuration.tts_enabled AND nullif(trim(source_playback.message), '') IS NOT NULL
+					WHEN configuration.tts_enabled AND translate(left(source_playback.message, $6), $7, '') <> ''
 						THEN 'preparing'::donation_alert_playback_status
 					ELSE 'pending'::donation_alert_playback_status
 				END,
@@ -236,7 +256,7 @@ func (store *Store) Replay(ctx context.Context, userID int, sourcePlaybackID str
 				AND source_playback.donation_id IS NOT NULL
 				AND source_playback.status IN ('completed', 'skipped', 'expired', 'interrupted')
 			RETURNING donation_alert_playback_id::text
-		`, userID, sourcePlaybackID, now, now.Add(MaxAlertAge), MaxAlertAuthorRunes, MaxAlertMessageRunes).Scan(&playbackID)
+		`, userID, sourcePlaybackID, now, now.Add(MaxAlertAge), MaxAlertAuthorRunes, MaxAlertMessageRunes, ttsWhitespace).Scan(&playbackID)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrNotFound
 		}

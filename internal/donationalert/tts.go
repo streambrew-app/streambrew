@@ -94,7 +94,7 @@ func (synthesizer *ESpeakSynthesizer) Synthesize(ctx context.Context, text, voic
 		return Media{}, &SynthesisError{Code: SynthesisFailed, Err: errors.New("espeak-ng returned invalid WAV output")}
 	}
 
-	media, err := synthesizer.processor.PrepareSound(ctx, wave)
+	media, err := synthesizer.processor.prepareSpeech(ctx, wave)
 	if err != nil {
 		var mediaError *MediaError
 		if errors.As(err, &mediaError) {

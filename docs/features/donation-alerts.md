@@ -247,9 +247,12 @@ PostgreSQL so all service replicas and backups see the same bytes.
 Speech is prepared on the server with eSpeak NG's Russian voice, then normalized
 to Ogg Opus with FFmpeg. TTS input must be valid UTF-8 and is capped at both 500
 Unicode code points and 4 KiB. Whitespace is normalized, and any remaining
-control characters are rejected. Identical generated audio is deduplicated by
-its content hash. The production image includes both command-line tools; no
-external speech credentials are required.
+control characters are rejected. A message containing only Unicode whitespace
+is queued without speech preparation. Generated speech longer than the
+30-second sound limit is truncated to 30 seconds rather than rejected.
+Identical generated audio is deduplicated by its content hash. The production
+image includes both command-line tools; no external speech credentials are
+required.
 
 Native media commands share a process-wide budget of two concurrent commands.
 Each probe, decode, transcode, or speech command has a ten-second timeout;
@@ -314,8 +317,10 @@ them. Lifecycle diagnostics use the playback's finish time when present, then
 its start time, then its creation time.
 
 The alert workers run inside `apps/donations`; there is no additional service or
-port. An hourly retention sweep keeps at most 20 terminal playbacks per user and
-removes terminal history older than 30 days. It releases unselected media from
+port. A database failure while claiming speech preparation is logged and retried
+after one second, doubling to at most one minute, so it does not stop the
+service. An hourly retention sweep keeps at most 20 terminal playbacks per user
+and removes terminal history older than 30 days. It releases unselected media from
 terminal snapshots, deletes unreferenced uploaded assets and generated TTS, and
 keeps files still needed by preparing, pending, or playing alerts. **Remove**
 deselects an image or sound immediately; if a queued playback still references

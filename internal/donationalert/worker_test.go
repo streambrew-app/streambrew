@@ -9,12 +9,18 @@ import (
 )
 
 type workerTestStore struct {
+	claimErrs   []error
 	preparation *Preparation
 	complete    func(Preparation, Media)
 	fail        func(Preparation, string)
 }
 
 func (store *workerTestStore) ClaimPreparation(context.Context, time.Time) (*Preparation, error) {
+	if len(store.claimErrs) > 0 {
+		err := store.claimErrs[0]
+		store.claimErrs = store.claimErrs[1:]
+		return nil, err
+	}
 	preparation := store.preparation
 	store.preparation = nil
 	return preparation, nil
@@ -61,6 +67,33 @@ func TestWorkerCompletesClaimedPreparation(t *testing.T) {
 	worker.idleDelay = time.Millisecond
 	if err := worker.Run(ctx); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestWorkerContinuesAfterClaimFailures(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	store := &workerTestStore{
+		claimErrs:   []error{errors.New("connection refused"), errors.New("connection refused")},
+		preparation: &Preparation{PlaybackID: "playback", Text: "hello", Voice: "ru"},
+	}
+	completed := false
+	store.complete = func(Preparation, Media) {
+		completed = true
+		cancel()
+	}
+	store.fail = func(Preparation, string) { t.Error("unexpected failure") }
+	worker := newWorker(store, workerTestSynthesizer{media: Media{MIMEType: "audio/ogg", Content: []byte("sound")}})
+	worker.idleDelay, worker.errorDelayStart, worker.errorDelayMax = time.Millisecond, time.Millisecond, 2*time.Millisecond
+	done := make(chan error, 1)
+	go func() { done <- worker.Run(ctx) }()
+	select {
+	case err := <-done:
+		if err != nil || !completed {
+			t.Fatalf("worker stopped: err=%v completed=%v", err, completed)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("worker did not recover from claim failures")
 	}
 }
 
