@@ -271,24 +271,27 @@ export class RestreamStore {
         RETURNING restream_destination_id
       `;
       if (rows.length === 0) throw new RestreamDestinationNotFoundError();
-      await sql`
-        UPDATE restream_destination
-        SET "position" = "position" + ${MAX_RESTREAM_DESTINATIONS}
+      const remainingRows = await sql`
+        SELECT restream_destination_id AS destination_id, "position"
+        FROM restream_destination
         WHERE user_id = ${userId}
+        ORDER BY "position"
       `;
-      await sql`
-        WITH ordered AS (
-          SELECT
-            restream_destination_id,
-            row_number() OVER (ORDER BY "position") - 1 AS new_position
-          FROM restream_destination
-          WHERE user_id = ${userId}
-        )
-        UPDATE restream_destination
-        SET "position" = ordered.new_position
-        FROM ordered
-        WHERE restream_destination.restream_destination_id = ordered.restream_destination_id
-      `;
+      const schema = z.object({
+        destinationId: RestreamDestinationIdSchema,
+        position: z.int().nonnegative(),
+      });
+      const remaining = z.array(schema).parse(remainingRows);
+      // Moving rows one at a time in ascending order always targets a free lower slot, so the
+      // immediate unique position constraint and the position bound hold after each statement.
+      for (const [position, destination] of remaining.entries()) {
+        if (destination.position === position) continue;
+        await sql`
+          UPDATE restream_destination
+          SET "position" = ${position}
+          WHERE restream_destination_id = ${destination.destinationId}
+        `;
+      }
     });
   }
 

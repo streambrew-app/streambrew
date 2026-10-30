@@ -1,4 +1,7 @@
-import { RestreamIngestKeySchema } from "@streambrew/packages/restream.js";
+import {
+  RestreamDestinationIdSchema,
+  RestreamIngestKeySchema,
+} from "@streambrew/packages/restream.js";
 import { UserIdSchema } from "@streambrew/packages/schemas.js";
 import type { Sql } from "postgres";
 import { describe, expect, it, vi } from "vitest";
@@ -75,6 +78,31 @@ describe("RestreamStore", () => {
     ).rejects.toBeInstanceOf(RestreamDestinationLimitError);
     expect(database.queries[0]?.text).toContain("FOR UPDATE");
     expect(database.queries.some(({ text }) => text.startsWith("INSERT"))).toBe(false);
+  });
+
+  it("compacts remaining destination positions one row at a time from the lowest", async () => {
+    const second = "a1d6f1c4-34c3-4f0e-9f61-1f3c4a3b1c2d";
+    const third = "b2e7a2d5-45d4-4a1f-8a72-2a4d5b4c2d3e";
+    const database = createSqlMock((query) => {
+      if (query.text.startsWith("DELETE FROM restream_destination")) return [{ destinationId }];
+      if (query.text.startsWith('SELECT restream_destination_id AS destination_id, "position"')) {
+        return [
+          { destinationId: second, position: 1 },
+          { destinationId: third, position: 2 },
+        ];
+      }
+      return [];
+    });
+    const store = new RestreamStore(database.sql, testCipher(), "rtmp://restream.example.com:1935");
+
+    await store.deleteDestination(userId, RestreamDestinationIdSchema.parse(destinationId));
+
+    const updates = database.queries.filter(({ text }) => text.startsWith("UPDATE"));
+    expect(updates.map(({ values }) => values)).toEqual([
+      [0, second],
+      [1, third],
+    ]);
+    expect(updates.every(({ text }) => !text.includes('"position" +'))).toBe(true);
   });
 
   it("decrypts destination credentials only while authorizing an active publisher", async () => {
