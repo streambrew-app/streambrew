@@ -269,7 +269,7 @@ func (adapter *StreamlabsAdapter) Run(ctx context.Context, accessToken, _ string
 		})
 	}()
 	listenerResult := func() error {
-		if ctx.Err() != nil {
+		if contextDone(ctx) {
 			return nil
 		}
 		if err := <-listenerDone; err != nil {
