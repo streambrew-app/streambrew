@@ -114,6 +114,11 @@ export const Route = createFileRoute("/_authenticated/donations/")({
   },
 });
 
+/** The URL holds the trimmed query; keep typed spaces while the input already matches it. */
+function searchInputValue(input: string, urlQuery: string) {
+  return input.trim() === urlQuery ? input : urlQuery;
+}
+
 function DonationsIndex() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
@@ -121,7 +126,7 @@ function DonationsIndex() {
   const { t } = useI18n(translations);
   const [query, setQuery] = useState(search.query);
 
-  useEffect(() => setQuery(search.query), [search.query]);
+  useEffect(() => setQuery((current) => searchInputValue(current, search.query)), [search.query]);
   useEffect(() => {
     const timeout = setTimeout(() => {
       const normalizedQuery = query.trim();

@@ -272,9 +272,9 @@ function OwnerVideoCard({ page, video }: { page: VideoQueuePage; video: QueueVid
     <VideoCard
       isUpdating={isUpdating}
       key={video.videoId}
-      onRetryMetadata={() => page.retryMetadataM.mutate({ videoId: video.videoId })}
+      onRetryMetadata={() => page.retryMetadataM.mutateAsync({ videoId: video.videoId })}
       onStatusChange={(status) =>
-        page.updateVideoStatusM.mutate({ videoId: video.videoId, ...status })
+        page.updateVideoStatusM.mutateAsync({ videoId: video.videoId, ...status })
       }
       onUpdate={(input) => page.updateVideoM.mutateAsync({ videoId: video.videoId, ...input })}
       queueControl={queueControl}

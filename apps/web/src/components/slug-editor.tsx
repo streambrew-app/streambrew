@@ -2,6 +2,7 @@ import { SlugSchema } from "@streambrew/packages/schemas.js";
 import { Link } from "@tanstack/react-router";
 import { Button, buttonVariants } from "@web/components/ui/button";
 import { useSetSlugM, useUserInfo } from "@web/hooks/api";
+import { useApiErrorMessage } from "@web/lib/api-error";
 import { cn } from "@web/lib/utils";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -27,6 +28,10 @@ const translations = createTranslations({
     en: "Use 3–47 lowercase letters, numbers, or hyphens.",
     ru: "Введите от 3 до 47 строчных латинских букв, цифр или дефисов.",
   },
+  slugTaken: {
+    en: "This handle is already taken.",
+    ru: "Этот адрес уже занят.",
+  },
   publicQueueEnabled: { en: "Link enabled", ru: "Доступ по ссылке включён" },
   publicQueueDisabled: { en: "Link disabled", ru: "Доступ по ссылке выключен" },
   saving: { en: "Saving…", ru: "Сохраняем…" },
@@ -48,6 +53,7 @@ type SlugAction = "saving" | "save" | "copied" | "copy";
 
 function useSlugEditor() {
   const { t } = useI18n(translations);
+  const apiErrorMessage = useApiErrorMessage();
   const [copied, setCopied] = useState(false);
   const userInfo = useUserInfo();
   const { formState, handleSubmit, register, reset } = useForm<SlugFormValues>({
@@ -55,11 +61,21 @@ function useSlugEditor() {
     mode: "onChange",
   });
   const setSlugM = useSetSlugM();
-  const saveSlug = async ({ slug }: SlugFormValues) => {
-    await setSlugM.mutateAsync({ slug });
-    reset({ slug });
-    setCopied(false);
+  const saveSlug = ({ slug }: SlugFormValues) => {
+    setSlugM.mutate(
+      { slug },
+      {
+        onSuccess: () => {
+          reset({ slug });
+          setCopied(false);
+        },
+      },
+    );
   };
+  const saveError = apiErrorMessage(setSlugM.error, {
+    BAD_REQUEST: t("slugInvalid"),
+    CONFLICT: t("slugTaken"),
+  });
   const copyShareUrl = async () => {
     try {
       await navigator.clipboard.writeText(`${window.location.origin}/@${userInfo.slug}/videos`);
@@ -82,6 +98,7 @@ function useSlugEditor() {
     formState,
     handleSubmit,
     register,
+    saveError,
     saveSlug,
     setCopied,
     setSlugM,
@@ -155,6 +172,8 @@ function SlugField({ className, editor }: { className?: string; editor: SlugEdit
           id="public-video-queue-slug"
           maxLength={47}
           {...register("slug", {
+            // The change handler lowercases the visible input only after the form stores its value.
+            setValueAs: (value: string) => value.toLowerCase(),
             onChange: (event: unknown) => {
               if (
                 typeof event === "object" &&
@@ -237,7 +256,10 @@ export function SlugEditor({ className, showAllVideos = false }: Props) {
 
   return (
     <div className={cn("border-b border-border px-3 py-2 sm:px-5", className)}>
-      <form className="flex flex-col gap-1.5" onSubmit={editor.handleSubmit(editor.saveSlug)}>
+      <form
+        className="flex flex-col gap-1.5"
+        onSubmit={(event) => void editor.handleSubmit(editor.saveSlug)(event)}
+      >
         <div className="flex min-w-0 items-start gap-1">
           <SlugField className="flex-1 sm:w-64 sm:flex-none" editor={editor} />
           <div className="flex shrink-0 items-center gap-1">
@@ -245,7 +267,7 @@ export function SlugEditor({ className, showAllVideos = false }: Props) {
             {showAllVideos && <AllVideosLink editor={editor} />}
           </div>
         </div>
-        {editor.setSlugM.error && <FieldError>{editor.setSlugM.error.message}</FieldError>}
+        {editor.saveError && <FieldError>{editor.saveError}</FieldError>}
       </form>
     </div>
   );

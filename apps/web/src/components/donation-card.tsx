@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import type { inferRouterOutputs } from "@trpc/server";
-import { fmtAmount, fmtDate, fmtListDate } from "@web/lib/fmt";
+import { fmtAmount } from "@web/lib/fmt";
 import type { AppRouter } from "@web/server/api/trpc";
 import type { Donation } from "@web/server/exports";
 import { clsx } from "clsx";
@@ -9,6 +9,7 @@ import { useTextWithLinks } from "../hooks/use-text-with-links";
 import { createTranslations, useI18n } from "../lib/i18n";
 import { DonationSourceBadge } from "./donation-source";
 import { Icons } from "./icons";
+import { LocalTime } from "./local-time";
 import { buttonVariants } from "./ui/button";
 
 const translations = createTranslations({
@@ -85,13 +86,12 @@ export default function DonationCard({
             <strong className="block text-sm font-semibold wrap-anywhere text-card-foreground tabular-nums">
               {fmtAmount(donation.amount, donation.currency, locale)}
             </strong>
-            <time
+            <LocalTime
               className="mt-1 block text-micro text-muted-foreground"
-              dateTime={donation.occurredAt.toISOString()}
-              title={fmtDate(donation.occurredAt, locale)}
-            >
-              {fmtListDate(donation.occurredAt, locale)}
-            </time>
+              locale={locale}
+              showFullDate
+              value={donation.occurredAt}
+            />
           </div>
         </div>
         <p
@@ -107,6 +107,7 @@ export default function DonationCard({
               <a
                 key={index}
                 href={chunk.href}
+                rel="noreferrer"
                 target="_blank"
                 className="rounded-sm font-bold hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               >

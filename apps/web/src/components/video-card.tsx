@@ -6,7 +6,8 @@ import {
   getWatchDurationSeconds,
 } from "@streambrew/packages/video-timing.js";
 import { Link } from "@tanstack/react-router";
-import { fmtAmount, fmtDate, fmtListDate, formatMoneyInputValue } from "@web/lib/fmt";
+import { useApiErrorMessage } from "@web/lib/api-error";
+import { fmtAmount, formatMoneyInputValue } from "@web/lib/fmt";
 import type { Video } from "@web/server/exports";
 import { clsx } from "clsx";
 import { useState, type ReactNode } from "react";
@@ -15,6 +16,7 @@ import { FormProvider, useForm } from "react-hook-form";
 import { useTextWithLinks } from "../hooks/use-text-with-links";
 import { createTranslations, useI18n } from "../lib/i18n";
 import { Icons } from "./icons";
+import { LocalTime } from "./local-time";
 import { Button } from "./ui/button";
 import { Field, FieldError, FieldLabel } from "./ui/field";
 import { Input } from "./ui/input";
@@ -145,6 +147,14 @@ const translations = createTranslations({
     en: ({ date }: { date: string }) => `Watched ${date}`,
     ru: ({ date }: { date: string }) => `Просмотрено: ${date}`,
   },
+  videoStatusUpdateFailed: {
+    en: "Couldn't update the video status. Please try again.",
+    ru: "Не удалось обновить статус видео. Попробуйте ещё раз.",
+  },
+  videoMetadataRetryFailed: {
+    en: "Couldn't request video data again. Please try again.",
+    ru: "Не удалось повторно запросить данные видео. Попробуйте ещё раз.",
+  },
 });
 
 type Props = {
@@ -152,14 +162,17 @@ type Props = {
   video: Video;
   showPriorityLabel?: boolean;
   showSource?: boolean;
-  onStatusChange?: (status: { watchedAt?: Date | null; bookmarkedAt?: Date | null }) => void;
+  onStatusChange?: (status: {
+    watchedAt?: Date | null;
+    bookmarkedAt?: Date | null;
+  }) => Promise<void>;
   onUpdate?: (input: {
     amount: string;
     startSeconds: number;
     endSeconds: number | null;
   }) => Promise<void>;
   isUpdating?: boolean;
-  onRetryMetadata?: () => void;
+  onRetryMetadata?: () => Promise<void>;
 };
 
 type VideoFormValues = VideoTimingValues & {
@@ -172,6 +185,41 @@ function videoFormValues(video: Video): VideoFormValues {
     startTime: formatVideoTime(video.startSeconds),
     endTime: video.endSeconds === null ? "" : formatVideoTime(video.endSeconds),
   };
+}
+
+type ActionFailure = { error: unknown } | null;
+
+function useActionFailure() {
+  const [failure, setFailure] = useState<ActionFailure>(null);
+
+  const run = async (action: () => Promise<void>) => {
+    setFailure(null);
+    try {
+      await action();
+      return true;
+    } catch (error) {
+      setFailure({ error });
+      return false;
+    }
+  };
+
+  return { clear: () => setFailure(null), failure, run };
+}
+
+function ActionFailureMessage({
+  failure,
+  fallback,
+}: {
+  failure: ActionFailure;
+  fallback?: string;
+}) {
+  const apiErrorMessage = useApiErrorMessage();
+  if (failure === null) return null;
+  return (
+    <FieldError>
+      {apiErrorMessage(failure.error, fallback === undefined ? undefined : { fallback })}
+    </FieldError>
+  );
 }
 
 const getYoutubeThumbnailUrl = (videoId: string) =>
@@ -241,35 +289,48 @@ function VideoStatusControls({
   video: Video;
 }) {
   const { t } = useI18n(translations);
+  const statusChange = useActionFailure();
   const isWatched = video.watchedAt !== null;
   const isBookmarked = video.bookmarkedAt !== null;
+  const changeStatus = (status: Parameters<typeof onStatusChange>[0]) =>
+    void statusChange.run(() => onStatusChange(status));
 
   return (
-    <div className="grid grid-cols-2 gap-2">
-      <Button
-        aria-label={t(isWatched ? "markVideoNotWatched" : "markVideoWatched")}
-        aria-pressed={isWatched}
-        className="h-8"
-        disabled={isUpdating}
-        onClick={() => onStatusChange({ watchedAt: isWatched ? null : new Date() })}
-        size="sm"
-        variant={isWatched ? "secondary" : "ghost"}
-      >
-        {isWatched ? <Icons.watched aria-hidden="true" /> : <Icons.notWatched aria-hidden="true" />}
-        {t("watched")}
-      </Button>
-      <Button
-        aria-label={t(isBookmarked ? "removeVideoBookmark" : "bookmarkVideo")}
-        aria-pressed={isBookmarked}
-        className="h-8"
-        disabled={isUpdating}
-        onClick={() => onStatusChange({ bookmarkedAt: isBookmarked ? null : new Date() })}
-        size="sm"
-        variant={isBookmarked ? "secondary" : "ghost"}
-      >
-        <Icons.bookmark aria-hidden="true" fill={isBookmarked ? "currentColor" : "none"} />
-        {t(isBookmarked ? "bookmarked" : "bookmark")}
-      </Button>
+    <div className="flex flex-col gap-1.5">
+      <div className="grid grid-cols-2 gap-2">
+        <Button
+          aria-label={t(isWatched ? "markVideoNotWatched" : "markVideoWatched")}
+          aria-pressed={isWatched}
+          className="h-8"
+          disabled={isUpdating}
+          onClick={() => changeStatus({ watchedAt: isWatched ? null : new Date() })}
+          size="sm"
+          variant={isWatched ? "secondary" : "ghost"}
+        >
+          {isWatched ? (
+            <Icons.watched aria-hidden="true" />
+          ) : (
+            <Icons.notWatched aria-hidden="true" />
+          )}
+          {t("watched")}
+        </Button>
+        <Button
+          aria-label={t(isBookmarked ? "removeVideoBookmark" : "bookmarkVideo")}
+          aria-pressed={isBookmarked}
+          className="h-8"
+          disabled={isUpdating}
+          onClick={() => changeStatus({ bookmarkedAt: isBookmarked ? null : new Date() })}
+          size="sm"
+          variant={isBookmarked ? "secondary" : "ghost"}
+        >
+          <Icons.bookmark aria-hidden="true" fill={isBookmarked ? "currentColor" : "none"} />
+          {t(isBookmarked ? "bookmarked" : "bookmark")}
+        </Button>
+      </div>
+      <ActionFailureMessage
+        failure={statusChange.failure}
+        fallback={t("videoStatusUpdateFailed")}
+      />
     </div>
   );
 }
@@ -293,9 +354,9 @@ function VideoPreview({
       )}
       {video.watchedAt && (
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-          <time dateTime={video.watchedAt.toISOString()} title={fmtDate(video.watchedAt, locale)}>
-            {t("watchedOn", { date: fmtListDate(video.watchedAt, locale) })}
-          </time>
+          <LocalTime locale={locale} showFullDate value={video.watchedAt}>
+            {(date) => t("watchedOn", { date })}
+          </LocalTime>
         </div>
       )}
     </div>
@@ -304,6 +365,7 @@ function VideoPreview({
 
 function useVideoEditor(video: Video, onUpdate: Props["onUpdate"]) {
   const [isEditing, setIsEditing] = useState(false);
+  const saving = useActionFailure();
   const form = useForm<VideoFormValues>({
     defaultValues: videoFormValues(video),
     mode: "onChange",
@@ -311,11 +373,13 @@ function useVideoEditor(video: Video, onUpdate: Props["onUpdate"]) {
 
   const startEditing = () => {
     form.reset(videoFormValues(video));
+    saving.clear();
     setIsEditing(true);
   };
 
   const cancelEditing = () => {
     form.reset(videoFormValues(video));
+    saving.clear();
     setIsEditing(false);
   };
 
@@ -331,15 +395,17 @@ function useVideoEditor(video: Video, onUpdate: Props["onUpdate"]) {
       return;
     }
 
-    await onUpdate({
-      amount: input.amount,
-      ...timing,
-      endSeconds: timing.endSeconds,
-    });
-    setIsEditing(false);
+    const saved = await saving.run(() =>
+      onUpdate({
+        amount: input.amount,
+        ...timing,
+        endSeconds: timing.endSeconds,
+      }),
+    );
+    if (saved) setIsEditing(false);
   };
 
-  return { cancelEditing, form, isEditing, save, startEditing };
+  return { cancelEditing, form, isEditing, save, saveFailure: saving.failure, startEditing };
 }
 
 type VideoEditor = ReturnType<typeof useVideoEditor>;
@@ -367,13 +433,12 @@ function VideoHeading({
         <span aria-hidden="true" className="text-xs text-muted-foreground/60">
           ·
         </span>
-        <time
+        <LocalTime
           className="text-xs whitespace-nowrap text-muted-foreground tabular-nums"
-          dateTime={video.createdAt.toISOString()}
-          title={fmtDate(video.createdAt, locale)}
-        >
-          {fmtListDate(video.createdAt, locale)}
-        </time>
+          locale={locale}
+          showFullDate
+          value={video.createdAt}
+        />
         {showSource && video.source === "manual" && (
           <>
             <span aria-hidden="true" className="text-xs text-muted-foreground/60">
@@ -515,6 +580,7 @@ function VideoEditForm({
             {t("save")}
           </Button>
         </div>
+        <ActionFailureMessage failure={editor.saveFailure} />
       </form>
     </FormProvider>
   );
@@ -527,6 +593,7 @@ function VideoMetadataStatus({
   video,
 }: Pick<Props, "onRetryMetadata" | "video"> & { isEditing: boolean; isUpdating: boolean }) {
   const { locale, t } = useI18n(translations);
+  const retry = useActionFailure();
   if (video.durationSeconds !== null && video.startSeconds >= video.durationSeconds) {
     return <p className="text-xs text-destructive">{t("videoInvalidRange")}</p>;
   }
@@ -535,29 +602,36 @@ function VideoMetadataStatus({
   }
 
   return (
-    <div className="flex items-center gap-1.5">
-      <span className="text-xs text-muted-foreground">
-        {t("videoNextRetry", { date: fmtListDate(video.metadataRetryAt, locale) })}
-      </span>
-      {!isEditing && (
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                aria-label={t("videoRetryMetadata")}
-                disabled={isUpdating}
-                onClick={onRetryMetadata}
-                size="icon-xs"
-                type="button"
-                variant="ghost"
-              >
-                <Icons.retry aria-hidden="true" />
-              </Button>
-            }
-          />
-          <TooltipContent>{t("videoRetryMetadata")}</TooltipContent>
-        </Tooltip>
-      )}
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-1.5">
+        <LocalTime
+          className="text-xs text-muted-foreground"
+          locale={locale}
+          value={video.metadataRetryAt}
+        >
+          {(date) => t("videoNextRetry", { date })}
+        </LocalTime>
+        {!isEditing && (
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  aria-label={t("videoRetryMetadata")}
+                  disabled={isUpdating}
+                  onClick={() => void retry.run(onRetryMetadata)}
+                  size="icon-xs"
+                  type="button"
+                  variant="ghost"
+                >
+                  <Icons.retry aria-hidden="true" />
+                </Button>
+              }
+            />
+            <TooltipContent>{t("videoRetryMetadata")}</TooltipContent>
+          </Tooltip>
+        )}
+      </div>
+      <ActionFailureMessage failure={retry.failure} fallback={t("videoMetadataRetryFailed")} />
     </div>
   );
 }
