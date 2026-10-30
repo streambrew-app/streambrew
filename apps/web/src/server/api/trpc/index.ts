@@ -1,3 +1,4 @@
+import { violatedConstraint } from "@streambrew/packages/pg.js";
 import {
   DonationIdSchema,
   DonationSourceSchema,
@@ -91,14 +92,19 @@ export const appRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const wasUpdated = await store.setSlug(ctx.userId, input.slug);
-
-      if (!wasUpdated) {
-        throw new TRPCError({
+      const conflict = (cause?: unknown) =>
+        new TRPCError({
           code: "CONFLICT",
           message: "This slug is already in use.",
+          cause,
         });
-      }
+      const wasUpdated = await store.setSlug(ctx.userId, input.slug).catch((error: unknown) => {
+        // A concurrent claim can pass the existence check and still fail the unique constraint.
+        if (violatedConstraint(error) === "user_slug_key") throw conflict(error);
+        throw error;
+      });
+
+      if (!wasUpdated) throw conflict();
 
       return { slug: input.slug };
     }),

@@ -32,13 +32,15 @@ type VideoQueue = Pick<
 >;
 
 const PAGE_SIZE = 25;
+// Video timing columns are PostgreSQL integers.
+const MAX_VIDEO_SECONDS = 2_147_483_647;
 const PageSchema = z.int().positive();
 const VideoStatusSchema = z.enum(["all", "notwatched", "watched", "bookmarked"]);
 const SharedVideoStatusSchema = z.enum(["queue", "watched"]);
 const videoDetailsShape = {
   amount: MoneyAmountSchema,
-  startSeconds: z.int().nonnegative(),
-  endSeconds: z.int().positive().nullable(),
+  startSeconds: z.int().nonnegative().max(MAX_VIDEO_SECONDS),
+  endSeconds: z.int().positive().max(MAX_VIDEO_SECONDS).nullable(),
 };
 const validVideoTiming = ({
   startSeconds,
@@ -105,6 +107,24 @@ function translateVideoQueueError(error: unknown): never {
       throw new TRPCError({
         code: "NOT_FOUND",
         message: "Video priority not found.",
+        cause: error,
+      });
+    case "video priority label taken":
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: "Video priority label already exists.",
+        cause: error,
+      });
+    case "invalid video priority threshold":
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Video priority threshold must be greater than zero.",
+        cause: error,
+      });
+    case "invalid video timing":
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Video end must be after video start.",
         cause: error,
       });
   }

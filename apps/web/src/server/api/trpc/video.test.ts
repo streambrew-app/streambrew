@@ -109,6 +109,64 @@ describe("videoRouter error translation", () => {
     await expect(promise).rejects.toMatchObject({ code: "NOT_FOUND", message });
   });
 
+  it.each([
+    ["video priority label taken", "CONFLICT"],
+    ["invalid video priority threshold", "BAD_REQUEST"],
+  ] as const)("translates a rejected priority update: %s", async (type, code) => {
+    const moduleError = new VideoQueueError(type);
+    const caller = createCaller(
+      createQueue({ updatePriority: vi.fn(async () => await Promise.reject(moduleError)) }),
+    );
+
+    await expect(
+      caller.updateVideoPriority({
+        videoPriorityId: 2,
+        label: "Urgent",
+        minPricePerMinute: MoneyAmountSchema.parse("0"),
+      }),
+    ).rejects.toMatchObject({ code, cause: moduleError });
+  });
+
+  it("translates a segment that ends before its start", async () => {
+    const moduleError = new VideoQueueError("invalid video timing");
+    const caller = createCaller(
+      createQueue({ updateVideo: vi.fn(async () => await Promise.reject(moduleError)) }),
+    );
+
+    await expect(
+      caller.updateVideo({
+        videoId: VideoIdSchema.parse("41"),
+        amount: MoneyAmountSchema.parse("10"),
+        startSeconds: 90,
+        endSeconds: null,
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST", cause: moduleError });
+  });
+
+  it("rejects segment seconds outside the database integer range before storage", async () => {
+    const queue = createQueue();
+    const caller = createCaller(queue);
+
+    await expect(
+      caller.updateVideo({
+        videoId: VideoIdSchema.parse("41"),
+        amount: MoneyAmountSchema.parse("10"),
+        startSeconds: 2_147_483_648,
+        endSeconds: null,
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    await expect(
+      caller.addVideo({
+        url: "https://youtu.be/youtube-id",
+        amount: MoneyAmountSchema.parse("10"),
+        startSeconds: 0,
+        endSeconds: 2_147_483_648,
+      }),
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+    expect(queue.updateVideo).not.toHaveBeenCalled();
+    expect(queue.addManualVideo).not.toHaveBeenCalled();
+  });
+
   it("does not translate unknown failures", async () => {
     const databaseError = new Error("database unavailable");
     const caller = createCaller(

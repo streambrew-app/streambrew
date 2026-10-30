@@ -19,6 +19,11 @@ parallel result abstraction.
   public contract.
 - tRPC procedures translate known service errors into `TRPCError` codes and attach the original
   error as `cause`. Unknown errors continue to the framework's internal-error handler.
+- Translate expected database constraint violations, such as a duplicate label, into a domain error
+  or a client `TRPCError` code at the store or router seam.
+- The tRPC error formatter logs server errors (HTTP 5xx) and replaces their message with a generic
+  one. Client errors (4xx) are returned unchanged and are not logged. Clients choose localized text
+  by `error.data.code`, not by message.
 - Internal invariant failures, database failures, and programmer errors fail fast unless that layer
   has a concrete recovery policy.
 

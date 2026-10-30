@@ -54,5 +54,5 @@ after switching the schema: its user creation does not create the required defau
 worker integration tests, it uses `VIDEO_INGEST_TEST_DATABASE_URL`, creates isolated schemas and
 removes only those test schemas. Without the variable, database integration tests are skipped.
 The cases cover shared thresholds, moving, unknown metadata, status preservation, default queue
-changes, cross-user access, currency conversion, legacy-data backfill, and consolidation of the
-early per-queue-priority preview.
+changes, cross-user access, currency conversion, constraint rejections, legacy-data backfill, and
+consolidation of the early per-queue-priority preview.

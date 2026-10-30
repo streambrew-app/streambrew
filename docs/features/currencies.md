@@ -25,7 +25,9 @@ currency units in one larger unit, for example `90 RUB` per `1 USD`. The form
 prefills the rounded rate derived from the static table; the user may replace
 it.
 The operation atomically converts existing video amounts and priority
-thresholds. A video's queue and priority assignments are retained;
+thresholds, rounding to two decimal places. A non-default threshold that would
+round to zero becomes `0.01` so that it stays positive; the default threshold
+stays zero. A video's queue and priority assignments are retained;
 assignments are not recalculated during the currency change.
 
 When the video worker processes a donation, it reads the current user queue

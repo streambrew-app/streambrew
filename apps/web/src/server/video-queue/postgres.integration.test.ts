@@ -273,6 +273,69 @@ describe.skipIf(!databaseUrl)("video queues in PostgreSQL", () => {
     ]);
   });
 
+  it("reports constraint rejections as video queue errors", async () => {
+    const owner = await user();
+    const [first, second] = await queue.listPriorities(owner.id);
+    await expect(
+      queue.updatePriority(owner.id, {
+        videoPriorityId: second!.videoPriorityId,
+        label: first!.label,
+        minPricePerMinute: MoneyAmountSchema.parse(second!.minPricePerMinute),
+      }),
+    ).rejects.toMatchObject({ type: "video priority label taken" });
+    await expect(
+      queue.updatePriority(owner.id, {
+        videoPriorityId: second!.videoPriorityId,
+        label: second!.label,
+        minPricePerMinute: MoneyAmountSchema.parse("0"),
+      }),
+    ).rejects.toMatchObject({ type: "invalid video priority threshold" });
+    const { videoId } = await queue.addManualVideo(owner.id, videoInput);
+    await sql`UPDATE video SET duration_seconds = 60 WHERE video_id = ${String(videoId)}`;
+    await expect(
+      queue.updateVideo(owner.id, videoId, {
+        amount: videoInput.amount,
+        startSeconds: 60,
+        endSeconds: null,
+      }),
+    ).rejects.toMatchObject({ type: "invalid video timing" });
+  });
+
+  it("keeps converted non-default thresholds positive when they round to zero", async () => {
+    const owner = await user();
+    await queue.setQueueCurrency(owner.id, "USD", MoneyAmountSchema.parse("100000"));
+    expect(
+      (await queue.listPriorities(owner.id)).map(({ isDefault, minPricePerMinute }) => [
+        isDefault,
+        minPricePerMinute,
+      ]),
+    ).toEqual([
+      [false, "0.01"],
+      [false, "0.01"],
+      [false, "0.01"],
+      [true, "0.00"],
+    ]);
+  });
+
+  it("reports a terminal metadata failure as unavailable but not a retrying one", async () => {
+    const owner = await user();
+    const { videoId } = await queue.addManualVideo(owner.id, { ...videoInput, endSeconds: null });
+    await sql`
+      UPDATE video_metadata_job
+      SET last_error_code = 'quota_exceeded', available_at = now() + interval '1 day'
+      WHERE video_id = ${String(videoId)}
+    `;
+    const retrying = (await queue.listPage(owner.id, pageInput)).items[0]!;
+    expect(retrying).toMatchObject({ metadataUnavailable: false });
+    expect(retrying.metadataRetryAt).toBeInstanceOf(Date);
+
+    await sql`UPDATE video_metadata_job SET completed_at = now() WHERE video_id = ${String(videoId)}`;
+    expect((await queue.listPage(owner.id, pageInput)).items[0]).toMatchObject({
+      metadataUnavailable: true,
+      metadataRetryAt: null,
+    });
+  });
+
   it("consolidates an early per-queue priority preview into the default queue's set", async () => {
     const owner = await user();
     const second = await queue.createQueue(owner.id, "Kick");
