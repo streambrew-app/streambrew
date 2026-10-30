@@ -4,17 +4,27 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"time"
 
-	"github.com/streambrew-app/streambrew/internal/money"
 	"github.com/streambrew-app/streambrew/internal/youtube"
+)
+
+// scanFailedError is the bounded category stored when a scan attempt fails.
+// Details are logged rather than persisted.
+const scanFailedError = "scan_failed"
+
+const (
+	workerErrorDelayStart = 5 * time.Second
+	workerErrorDelayMax   = time.Minute
 )
 
 type jobStore interface {
 	Backfill(context.Context) error
 	Claim(context.Context, time.Time, time.Duration) (*Job, error)
 	Complete(context.Context, Job, []Video, time.Time) error
+	Retry(context.Context, Job, time.Time, string, time.Time) error
 }
 
 type clock interface {
@@ -34,9 +44,11 @@ func DefaultConfig() Config {
 }
 
 type Worker struct {
-	store  jobStore
-	clock  clock
-	config Config
+	store           jobStore
+	clock           clock
+	config          Config
+	errorDelayStart time.Duration
+	errorDelayMax   time.Duration
 }
 
 func NewWorker(store *Store, config Config) *Worker {
@@ -44,9 +56,17 @@ func NewWorker(store *Store, config Config) *Worker {
 }
 
 func newWorker(store jobStore, workerClock clock, config Config) *Worker {
-	return &Worker{store: store, clock: workerClock, config: config}
+	return &Worker{
+		store:           store,
+		clock:           workerClock,
+		config:          config,
+		errorDelayStart: workerErrorDelayStart,
+		errorDelayMax:   workerErrorDelayMax,
+	}
 }
 
+// Run stops only when its context is cancelled. Failed scans are rescheduled
+// individually, and store failures are logged and retried with backoff.
 func (worker *Worker) Run(ctx context.Context) error {
 	if err := worker.store.Backfill(ctx); err != nil {
 		if ctx.Err() != nil {
@@ -54,29 +74,31 @@ func (worker *Worker) Run(ctx context.Context) error {
 		}
 		return fmt.Errorf("backfill donation video scans: %w", err)
 	}
+	errorDelay := worker.errorDelayStart
 	for {
 		worked, err := worker.ProcessNext(ctx)
-		if err != nil {
-			if ctx.Err() != nil {
-				return nil //nolint:nilerr // Context cancellation is a graceful worker shutdown.
-			}
-			return err
-		}
-		if worked {
-			continue
-		}
-		timer := time.NewTimer(worker.config.PollInterval)
-		select {
-		case <-ctx.Done():
-			if !timer.Stop() {
-				<-timer.C
-			}
+		if ctx.Err() != nil {
 			return nil
-		case <-timer.C:
+		}
+		delay := worker.config.PollInterval
+		if err != nil {
+			slog.Error("process donation video scan", "error", err, "retry", errorDelay)
+			delay = errorDelay
+			errorDelay = min(errorDelay*2, worker.errorDelayMax)
+		} else {
+			errorDelay = worker.errorDelayStart
+			if worked {
+				continue
+			}
+		}
+		if !waitContext(ctx, delay) {
+			return nil
 		}
 	}
 }
 
+// ProcessNext scans one available donation. A scan that cannot be completed is
+// rescheduled with backoff; the returned error reports only store failures.
 func (worker *Worker) ProcessNext(ctx context.Context) (bool, error) {
 	now := worker.clock.Now()
 	job, err := worker.store.Claim(ctx, now, worker.config.LeaseDuration)
@@ -87,57 +109,63 @@ func (worker *Worker) ProcessNext(ctx context.Context) (bool, error) {
 		return false, nil
 	}
 
-	videos, err := worker.scan(ctx, *job)
-	if err != nil {
-		if (errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded)) && ctx.Err() != nil {
-			return true, nil //nolint:nilerr // Cancellation finishes the claimed attempt without failing the worker.
-		}
-		return true, fmt.Errorf("scan donation %d: %w", job.DonationID, err)
+	err = worker.store.Complete(ctx, *job, scanVideos(job.Message), worker.clock.Now())
+	if err == nil || errors.Is(err, ErrLeaseLost) || ctx.Err() != nil {
+		// Cancellation leaves the lease to expire, so another attempt recovers it.
+		return true, nil
 	}
-
-	if err := worker.store.Complete(ctx, *job, videos, worker.clock.Now()); err != nil {
-		if errors.Is(err, ErrLeaseLost) {
-			return true, nil
-		}
-		return true, fmt.Errorf("complete donation video scan %d: %w", job.DonationID, err)
-	}
-	return true, nil
+	return true, worker.retry(ctx, *job, err)
 }
 
-func (worker *Worker) scan(ctx context.Context, job Job) ([]Video, error) {
-	message := ""
-	if job.Message != nil {
-		message = *job.Message
+func (worker *Worker) retry(ctx context.Context, job Job, cause error) error {
+	now := worker.clock.Now()
+	availableAt := now.Add(retryDelay(job.Attempts))
+	slog.Warn("donation video scan failed", "donation_id", job.DonationID, "attempt", job.Attempts,
+		"next_attempt_at", availableAt, "error", cause)
+	err := worker.store.Retry(ctx, job, availableAt, scanFailedError, now)
+	if err == nil || errors.Is(err, ErrLeaseLost) || ctx.Err() != nil {
+		return nil
 	}
-	queueAmount, supported, err := money.ConvertWithDefaultRate(job.Amount, job.Currency, job.QueueCurrency)
-	if err != nil {
-		return nil, fmt.Errorf("convert donation amount: %w", err)
-	}
+	return fmt.Errorf("reschedule donation video scan %d: %w", job.DonationID, err)
+}
+
+func scanVideos(message *string) []Video {
 	videos := make([]Video, 0)
-	for _, rawURL := range youtube.ExtractURLs(message) {
+	if message == nil {
+		return videos
+	}
+	for _, rawURL := range youtube.ExtractURLs(*message) {
 		providerVideoID, ok := youtube.VideoID(rawURL)
 		if !ok {
 			continue
 		}
-		parsed, _ := url.Parse(rawURL)
 		var end *int
-		if seconds, ok := youtube.ParseTimestamp(parsed.Query().Get("end")); ok && seconds > 0 {
-			end = &seconds
-		}
-		var amount *string
-		if supported {
-			value := queueAmount
-			amount = &value
+		if parsed, err := url.Parse(rawURL); err == nil {
+			// An invalid end is ignored; the video remains with an open segment.
+			if seconds, valid := youtube.ParseTimestamp(parsed.Query().Get("end")); valid && seconds > 0 {
+				end = &seconds
+			}
 		}
 		videos = append(videos, Video{
 			ProviderVideoID: providerVideoID,
 			URL:             rawURL,
-			QueueAmount:     amount,
 			StartSeconds:    0,
 			EndSeconds:      end,
 		})
 	}
-	return videos, nil
+	return videos
+}
+
+// waitContext reports false when ctx is cancelled before delay elapses.
+func waitContext(ctx context.Context, delay time.Duration) bool {
+	timer := time.NewTimer(delay)
+	defer timer.Stop()
+	select {
+	case <-ctx.Done():
+		return false
+	case <-timer.C:
+		return true
+	}
 }
 
 type realClock struct{}

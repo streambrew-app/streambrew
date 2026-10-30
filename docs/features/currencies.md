@@ -28,9 +28,11 @@ The operation atomically converts existing video amounts and priority
 thresholds. A video's queue and priority assignments are retained;
 assignments are not recalculated during the currency change.
 
-When the video worker processes a donation, it uses the current user queue
-currency and default rate table to store one converted queue amount on the
-video. A donation in an unsupported original currency remains visible with its
+When the video worker processes a donation, it reads the current user queue
+currency in the transaction that stores the videos, locked against a concurrent
+currency change, and uses the default rate table to store one converted queue
+amount on the video. A donation in an unsupported original currency, or one
+whose converted amount exceeds the queue amount range, remains visible with its
 original amount and currency. Its videos stay in their assigned video queue,
 but their `queue_amount` and `video_priority_id` remain `NULL` until an amount
 can be assigned.

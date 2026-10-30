@@ -9,13 +9,28 @@ the full provider duration is known.
 A donation scan is complete only after its supported links have been persisted,
 including a scan that finds no links. `videos_parsed_at` records completion;
 metadata retries belong to `video_metadata_job`, not to donation parsing.
+A supported link needs a YouTube video ID of eleven letters, digits, `_`, or
+`-`; other links are skipped. An `end` value that is not a whole number of
+seconds within the PostgreSQL integer range is ignored, leaving an open segment.
+The scan converts the donation into a queue amount in the transaction that
+inserts its videos, reading the owner's queue currency under a row lock, so a
+concurrent currency change cannot leave the amount in the previous currency.
+A converted amount beyond the `queue_amount` range is stored as NULL, like an
+amount in an unsupported currency.
 Missing watch time leaves `video_priority_id` NULL while preserving any known
 `queue_amount`. Watch time is calculated as `end_seconds - start_seconds`;
 it is unknown while the end is NULL and is not stored separately.
 
+A scan that cannot be persisted records `scan_failed` in
+`donation_video_scan.last_error` and is retried on the metadata schedule below,
+without jitter. Database failures in either worker loop are logged and retried
+after 5 seconds, doubling to at most 1 minute; they do not stop `apps/video`.
+
 Metadata comes from YouTube Data API v3 `videos.list`, requesting
 `contentDetails.duration`, `snippet.title`, and `snippet.liveBroadcastContent`
-in one request. ISO 8601 durations are normalized to positive integer seconds.
+in one request. The lookup uses the stored `provider_video_id`, not the
+original URL, so URL syntax and segment parameters cannot affect it. ISO 8601
+durations are normalized to positive integer seconds.
 Active and upcoming live broadcasts keep an unknown duration and retry until
 a final duration becomes available; their titles can be saved immediately.
 Title backfills also use this API. HTML scraping, the internal player endpoint,
@@ -29,10 +44,11 @@ Empty API results remain retryable: they do not distinguish private, deleted,
 or otherwise inaccessible videos. API quota exhaustion is recorded as
 `quota_exceeded` and postpones retries by at least 24 hours. Invalid/restricted
 keys and disabled APIs are recorded as `api_configuration`; generic HTTP
-failures retain their HTTP status. The owner can request another attempt when
-access changes. Requests within one
-minute of the previous attempt, or while a lease is active, do not accelerate
-the job. They never reset attempt history.
+failures retain their HTTP status. A stored provider video ID outside YouTube's
+format is recorded as `invalid_video_id` without a request and stops automatic
+retries. The owner can request another attempt when access changes. Requests
+within one minute of the previous attempt, or while a lease is active, do not
+accelerate the job. They never reset attempt history.
 
 ## Deployment
 
