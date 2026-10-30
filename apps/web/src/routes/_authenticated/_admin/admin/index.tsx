@@ -1,14 +1,13 @@
-import type { ChatProvider } from "@streambrew/packages/chat.js";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import type { inferRouterOutputs } from "@trpc/server";
 import { AdminTabs } from "@web/components/admin-tabs";
-import { Icons, PlatformIcons } from "@web/components/icons";
+import { ChatProviderMeta, Icons } from "@web/components/icons";
+import { LocalTime } from "@web/components/local-time";
 import QueryErrorState from "@web/components/query-error-state";
 import { Button } from "@web/components/ui/button";
 import { CosmicPageHeader } from "@web/components/ui/cosmic-page-header";
 import { Skeleton } from "@web/components/ui/skeleton";
 import { useAdminDashboardQ } from "@web/hooks/api";
-import { fmtDate } from "@web/lib/fmt";
 import { createTranslations, createTranslator, useI18n, type TranslationKey } from "@web/lib/i18n";
 import { preloadRouteQuery } from "@web/lib/trpc";
 import { cn } from "@web/lib/utils";
@@ -182,14 +181,6 @@ const translations = createTranslations({
 type Dashboard = inferRouterOutputs<AppRouter>["admin"]["dashboard"];
 type ActivityPeriod = NonNullable<Dashboard["multichat"]["activity"]>["multichat"];
 type Service = Dashboard["services"][number];
-
-const providerMeta = {
-  youtube: { label: "YouTube", logo: PlatformIcons.youtube },
-  twitch: { label: "Twitch", logo: PlatformIcons.twitch },
-  kick: { label: "Kick", logo: PlatformIcons.kick },
-  boosty: { label: "Boosty", logo: PlatformIcons.boosty },
-  vk_video: { label: "VK Video", logo: PlatformIcons.vk_video },
-} as const satisfies Record<ChatProvider, { label: string; logo: string }>;
 
 const serviceLabels = {
   web: "serviceWeb",
@@ -528,11 +519,15 @@ function ActivitySection({ dashboard }: { dashboard: Dashboard }) {
             activity ? "text-muted-foreground" : "bg-destructive/5 text-destructive",
           )}
         >
-          {activity === null
-            ? t("telemetryUnavailable")
-            : coverageDays < 30
-              ? t("trackingPartial", { date: fmtDate(activity.trackingSince, locale) })
-              : t("trackingComplete")}
+          {activity === null ? (
+            t("telemetryUnavailable")
+          ) : coverageDays < 30 ? (
+            <LocalTime format="date" locale={locale} value={activity.trackingSince}>
+              {(date) => t("trackingPartial", { date })}
+            </LocalTime>
+          ) : (
+            t("trackingComplete")
+          )}
         </div>
       </div>
     </section>
@@ -678,7 +673,7 @@ function PeriodTable({
 
 function ProviderRow({ provider }: { provider: Dashboard["multichat"]["providers"][number] }) {
   const { locale, t } = useI18n(translations);
-  const meta = providerMeta[provider.provider];
+  const meta = ChatProviderMeta[provider.provider];
   return (
     <div className="flex min-w-0 items-center gap-3 rounded-lg bg-muted/40 px-3 py-2.5">
       <img alt="" aria-hidden="true" className="size-5 shrink-0" src={meta.logo} />

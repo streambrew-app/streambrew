@@ -66,6 +66,12 @@ service restarts. The overview exposes when tracking began so a newly deployed i
 present an incomplete rolling window as a full history. These activity records contain no chat
 messages, provider identities, or overlay tokens.
 
+When a chat subscription ends while the page or overlay is still open, for example because
+`apps/chat` restarted, the browser keeps its messages, reports the connection error, and
+resubscribes after 1 second, doubling the delay up to 30 seconds. A subscription that lasted
+30 seconds resets the delay. A rotated overlay link is not retried. The multichat page shows a
+localized connection warning; the OBS overlay shows nothing on the broadcast.
+
 Messages are never written to PostgreSQL. The browser keeps at most 500 normalized messages.
 The feed identifies arrivals by source and message ID, so following new messages
 and counting unread messages continue when that buffer is full. Scrolling away,
