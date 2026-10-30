@@ -200,4 +200,37 @@ describe("donation alert service client", () => {
       detail: "validation error",
     });
   });
+
+  it.each(["asset", "stream"] as const)(
+    "releases the %s connection when the service rejects the request",
+    async (operation) => {
+      const cancel = vi.fn();
+      const body = new ReadableStream<Uint8Array>({ cancel });
+      vi.stubGlobal(
+        "fetch",
+        vi.fn<typeof fetch>().mockResolvedValue(new Response(body, { status: 416 })),
+      );
+      const request = async () => {
+        if (operation === "asset") {
+          return await donationAlertService.asset(
+            "64fb569a-95bb-4d1a-a6ad-765b0f2d5702",
+            { userId: 42 },
+            "bytes=999999-",
+          );
+        }
+        for await (const _event of donationAlertService.streamOverlay(
+          "s".repeat(32),
+          "6a9cabbb-d675-40f5-a248-c40558f75d58",
+          3,
+          new AbortController().signal,
+        )) {
+          // The rejected stream yields no events.
+        }
+        return null;
+      };
+
+      await expect(request()).rejects.toMatchObject({ detail: "http error", status: 416 });
+      expect(cancel).toHaveBeenCalledOnce();
+    },
+  );
 });

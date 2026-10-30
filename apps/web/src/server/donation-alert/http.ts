@@ -212,8 +212,12 @@ async function uploadAsset(
     return Response.json(asset, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     if (signal.aborted) return Response.json({ error: "Upload timed out" }, { status: 504 });
-    logError("Donation alert upload failed", error, { kind: upload.kind, userId });
-    return errorResponse(error, "Upload failed");
+    const response = errorResponse(error, "Upload failed");
+    // Rejected media (413, 415, 422, 429) is the uploader's error, not an operational failure.
+    if (response.status >= 500) {
+      logError("Donation alert upload failed", error, { kind: upload.kind, userId });
+    }
+    return response;
   }
 }
 
@@ -299,6 +303,9 @@ async function proxyAlertMedia(
   } catch (error) {
     if (error instanceof DonationAlertServiceError && error.status === 404) {
       return new Response("Not found", { status: 404 });
+    }
+    if (error instanceof DonationAlertServiceError && error.status === 416) {
+      return new Response("Range not satisfiable", { status: 416 });
     }
     logError("Donation alert media proxy failed", error, { assetId });
     return new Response("Media unavailable", { status: 503 });

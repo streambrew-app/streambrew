@@ -1,13 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const { asset, getUserId, streamOverlay, uploadAsset } = vi.hoisted(() => ({
+const { asset, getUserId, logError, streamOverlay, uploadAsset } = vi.hoisted(() => ({
   asset: vi.fn(),
   getUserId: vi.fn(),
+  logError: vi.fn(),
   streamOverlay: vi.fn(),
   uploadAsset: vi.fn(),
 }));
 
-vi.mock("@streambrew/packages/server-logger.js", () => ({ logError: vi.fn() }));
+vi.mock("@streambrew/packages/server-logger.js", () => ({ logError }));
 vi.mock("../api/_util.js", () => ({ getUserId }));
 vi.mock("../env.js", () => ({ env: { APP_DOMAIN: "https://streambrew.test" } }));
 vi.mock("./client.js", () => ({
@@ -321,5 +322,48 @@ describe("donation alert HTTP boundary", () => {
     );
 
     expect(response.status).toBe(503);
+    expect(logError).toHaveBeenCalledOnce();
+  });
+
+  it.each([413, 415, 422, 429])(
+    "returns an upload rejected with %i without logging an operational error",
+    async (status) => {
+      getUserId.mockResolvedValue(42);
+      uploadAsset.mockRejectedValue(new DonationAlertServiceError("http error", { status }));
+      const form = new FormData();
+      form.set("kind", "image");
+      form.set("file", new File(["png"], "alert.png", { type: "image/png" }));
+
+      const response = await handleAlertUpload(
+        new Request("https://streambrew.test/api/alerts/upload", {
+          method: "POST",
+          headers: {
+            "Content-Length": "512",
+            Origin: "https://streambrew.test",
+            "X-StreamBrew-Upload": "1",
+          },
+          body: form,
+        }),
+      );
+
+      expect(response.status).toBe(status);
+      expect(logError).not.toHaveBeenCalled();
+    },
+  );
+
+  it("passes an unsatisfiable media range through without logging", async () => {
+    const assetId = "64fb569a-95bb-4d1a-a6ad-765b0f2d5702";
+    getUserId.mockResolvedValue(42);
+    asset.mockRejectedValue(new DonationAlertServiceError("http error", { status: 416 }));
+
+    const response = await handleAlertMedia(
+      new Request(`https://streambrew.test/api/alerts/media/${assetId}`, {
+        headers: { Range: "bytes=999999-" },
+      }),
+    );
+
+    expect(response.status).toBe(416);
+    expect(asset).toHaveBeenCalledWith(assetId, { userId: 42 }, "bytes=999999-", expect.anything());
+    expect(logError).not.toHaveBeenCalled();
   });
 });

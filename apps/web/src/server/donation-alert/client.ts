@@ -12,7 +12,7 @@ import {
   type AlertRendererDiagnosticCode,
   type AlertSettings,
 } from "@streambrew/packages/alerts.js";
-import { parseJson, RequestError, requestJson } from "@streambrew/packages/http.js";
+import { discardBody, parseJson, RequestError, requestJson } from "@streambrew/packages/http.js";
 import { readNdjsonLines } from "@web/lib/ndjson";
 import { z } from "zod";
 
@@ -74,6 +74,11 @@ async function request<Output>(
   } catch (cause) {
     throw toServiceError(cause);
   }
+}
+
+async function rejectResponse(response: Response): Promise<never> {
+  await discardBody(response);
+  throw new DonationAlertServiceError("http error", { status: response.status });
 }
 
 function parseStreamEvent(line: string): AlertOverlayEvent {
@@ -251,9 +256,7 @@ export const donationAlertService = {
     } catch (cause) {
       throw new DonationAlertServiceError("fetch error", { cause });
     }
-    if (!response.ok) {
-      throw new DonationAlertServiceError("http error", { status: response.status });
-    }
+    if (!response.ok) await rejectResponse(response);
     return response;
   },
 
@@ -275,9 +278,7 @@ export const donationAlertService = {
       if (signal.aborted) return;
       throw new DonationAlertServiceError("fetch error", { cause });
     }
-    if (!response.ok) {
-      throw new DonationAlertServiceError("http error", { status: response.status });
-    }
+    if (!response.ok) await rejectResponse(response);
     if (response.body === null) {
       throw new DonationAlertServiceError("missing response body");
     }

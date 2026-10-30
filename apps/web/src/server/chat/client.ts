@@ -11,7 +11,7 @@ import {
   type ChatProvider,
   type ChatStreamEvent,
 } from "@streambrew/packages/chat.js";
-import { parseJson, RequestError, requestJson } from "@streambrew/packages/http.js";
+import { discardBody, parseJson, RequestError, requestJson } from "@streambrew/packages/http.js";
 import { z } from "zod";
 
 import { env } from "../env.js";
@@ -160,6 +160,7 @@ export const chatService = {
       throw new ChatServiceError("fetch error", { cause });
     }
     if (!response.ok) {
+      await discardBody(response);
       throw new ChatServiceError("http error", { status: response.status });
     }
     if (response.body === null) {

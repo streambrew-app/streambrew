@@ -20,6 +20,11 @@ export class RequestError extends Error {
   }
 }
 
+/** Releases an unread response body, which otherwise keeps its connection busy until collected. */
+export async function discardBody(response: Response): Promise<void> {
+  await response.body?.cancel().catch(() => undefined);
+}
+
 export async function requestText(input: RequestInfo | URL, init?: RequestInit): Promise<string> {
   let response: Response;
   try {
