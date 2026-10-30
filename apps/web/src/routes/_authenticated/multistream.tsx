@@ -17,7 +17,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@web/components/ui/tool
 import { useRestreamConfigQ, useRestreamMutations } from "@web/hooks/restream";
 import { preloadRouteQuery } from "@web/lib/trpc";
 import { cn } from "@web/lib/utils";
-import { useState, type FormEvent } from "react";
+import { useId, useState, type FormEvent } from "react";
 
 import { createTranslations, createTranslator, useI18n } from "../../lib/i18n";
 
@@ -67,8 +67,9 @@ const translations = createTranslations({
   },
   addDestination: { en: "Add destination", ru: "Добавить площадку" },
   destinationLimit: {
-    en: "All three destination slots are in use.",
-    ru: "Все три места для площадок заняты.",
+    en: ({ count }: { count: number }) =>
+      `All destination slots are in use (${count} of ${count}).`,
+    ru: ({ count }: { count: number }) => `Все места для площадок заняты (${count} из ${count}).`,
   },
   noDestinations: { en: "No destinations yet", ru: "Площадок пока нет" },
   noDestinationsDescription: {
@@ -282,6 +283,7 @@ function IngestValueField({
   value: string;
 }) {
   const { t } = useI18n(translations);
+  const inputId = useId();
   const [visible, setVisible] = useState(false);
   const [copied, setCopied] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
@@ -298,11 +300,11 @@ function IngestValueField({
 
   return (
     <Field>
-      <FieldLabel>{label}</FieldLabel>
+      <FieldLabel htmlFor={inputId}>{label}</FieldLabel>
       <div className="flex items-center rounded-xl border border-input bg-muted/45 px-2 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/30">
         <input
-          aria-label={secret ? label : undefined}
           className="h-10 min-w-0 grow bg-transparent px-1 font-mono text-xs outline-none sm:text-sm"
+          id={inputId}
           readOnly
           type={secret && !visible ? "password" : "text"}
           value={value}
@@ -464,12 +466,14 @@ function getDestinationState(
 function DestinationRowActions({
   destination,
   disabled,
+  editDisabled,
   onDelete,
   onEdit,
   onToggle,
 }: {
   destination: RestreamDestination;
   disabled: boolean;
+  editDisabled: boolean;
   onDelete: () => void;
   onEdit: () => void;
   onToggle: (enabled: boolean) => void;
@@ -499,7 +503,7 @@ function DestinationRowActions({
           render={
             <Button
               aria-label={t("editDestination")}
-              disabled={disabled}
+              disabled={disabled || editDisabled}
               onClick={onEdit}
               size="icon-sm"
               type="button"
@@ -535,6 +539,7 @@ function DestinationRowActions({
 
 function DestinationRow({
   destination,
+  editDisabled,
   isLive,
   liveState,
   mutationBusy,
@@ -544,6 +549,8 @@ function DestinationRow({
   onToggle,
 }: {
   destination: RestreamDestination;
+  /** A destination form is open; switching would discard its unsaved changes. */
+  editDisabled: boolean;
   isLive: boolean;
   liveState?: RestreamSession["destinations"][number];
   mutationBusy: boolean;
@@ -580,6 +587,7 @@ function DestinationRow({
       <DestinationRowActions
         destination={destination}
         disabled={mutationBusy || isLive}
+        editDisabled={editDisabled}
         onDelete={onDelete}
         onEdit={onEdit}
         onToggle={onToggle}
@@ -751,16 +759,18 @@ function DestinationForm({ draft, onClose }: { draft: DestinationDraft; onClose:
 function DestinationList({
   destinations,
   isLive,
+  maxDestinations,
   sessionDestinations,
 }: {
   destinations: RestreamDestination[];
   isLive: boolean;
+  maxDestinations: number;
   sessionDestinations: RestreamSession["destinations"];
 }) {
   const { t } = useI18n(translations);
   const { deleteDestination, setDestinationEnabled } = useRestreamMutations();
   const [draft, setDraft] = useState<DestinationDraft | null>(null);
-  const limitReached = destinations.length >= 3;
+  const limitReached = destinations.length >= maxDestinations;
   const mutationBusy = deleteDestination.isPending || setDestinationEnabled.isPending;
   const mutationError = deleteDestination.isError || setDestinationEnabled.isError;
 
@@ -789,7 +799,9 @@ function DestinationList({
               </Button>
             }
           />
-          {limitReached && <TooltipContent>{t("destinationLimit")}</TooltipContent>}
+          {limitReached && (
+            <TooltipContent>{t("destinationLimit", { count: maxDestinations })}</TooltipContent>
+          )}
         </Tooltip>
       </div>
       {destinations.length === 0 && draft === null ? (
@@ -809,6 +821,7 @@ function DestinationList({
           {destinations.map((destination) => (
             <DestinationRow
               destination={destination}
+              editDisabled={draft !== null}
               isLive={isLive}
               key={destination.destinationId}
               liveState={sessionDestinations.find(
@@ -839,7 +852,13 @@ function DestinationList({
           ))}
         </div>
       )}
-      {draft && <DestinationForm draft={draft} onClose={() => setDraft(null)} />}
+      {draft && (
+        <DestinationForm
+          draft={draft}
+          key={draft.destinationId ?? "new"}
+          onClose={() => setDraft(null)}
+        />
+      )}
     </section>
   );
 }
@@ -926,6 +945,7 @@ function MultistreamPage() {
             <DestinationList
               destinations={config.destinations}
               isLive={isLive}
+              maxDestinations={config.plan.maxDestinations}
               sessionDestinations={config.session?.destinations ?? []}
             />
           </div>
