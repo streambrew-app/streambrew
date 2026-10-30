@@ -1,5 +1,5 @@
 import { getRoundedWatchDurationParts } from "@streambrew/packages/video-timing.js";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute, notFound } from "@tanstack/react-router";
 import { Icons } from "@web/components/icons";
 import { VideoListSkeleton } from "@web/components/loading-skeletons";
 import QueryErrorState from "@web/components/query-error-state";
@@ -49,6 +49,10 @@ const translations = createTranslations({
   durationRemaining: {
     en: ({ hours, minutes }: HourMinuteParts) => `${hours > 0 ? `${hours} hr ` : ""}${minutes} min`,
     ru: ({ hours, minutes }: HourMinuteParts) => `${hours > 0 ? `${hours} ч ` : ""}${minutes} мин`,
+  },
+  pageNotFound: {
+    en: "Page not found",
+    ru: "Страница не найдена",
   },
   videoQueueBy: {
     en: ({ slug }: { slug: string }) => `Video queue: ${slug}`,
@@ -170,14 +174,26 @@ function SharedVideoGroups({
 
 export const Route = createFileRoute("/$slug/videos")({
   component: SharedVideoQueue,
-  head: ({ match, params }) => ({
-    meta: [
-      {
-        title: `${createTranslator(match.context.locale, translations)("videoQueueBy", { slug: `@${params.slug}` })} · StreamBrew`,
-      },
-    ],
-  }),
-  params: slugParams,
+  head: ({ match, params }) => {
+    const t = createTranslator(match.context.locale, translations);
+    const title =
+      match.status === "notFound"
+        ? t("pageNotFound")
+        : t("videoQueueBy", { slug: `@${params.slug}` });
+    return { meta: [{ title: `${title} · StreamBrew` }] };
+  },
+  params: {
+    ...slugParams,
+    // An address without a valid @slug cannot name a public queue.
+    parse: (params: { slug: string }) => {
+      try {
+        return slugParams.parse(params);
+      } catch (error) {
+        if (error instanceof z.ZodError) throw notFound();
+        throw error;
+      }
+    },
+  },
   validateSearch: z.object({
     videoQueueId: z.coerce.number().int().positive().optional().catch(undefined),
     page: z.coerce.number().int().positive().default(1).catch(1),
