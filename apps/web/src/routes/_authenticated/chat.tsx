@@ -1,6 +1,8 @@
 import type {
   ChatBroadcastResult,
+  ChatCommandResult,
   ChatConfig,
+  ChatConnectionErrorCode,
   ChatProvider,
   ChatProviderAvailability,
   ChatProviderConnection,
@@ -10,7 +12,7 @@ import { MAX_CHAT_MESSAGE_LENGTH } from "@streambrew/packages/chat.js";
 import { createFileRoute } from "@tanstack/react-router";
 import { BoostyConnectionForm } from "@web/components/boosty-connection-form";
 import { ChatFeed } from "@web/components/chat-feed";
-import { Icons, PlatformIcons } from "@web/components/icons";
+import { ChatProviderMeta, Icons } from "@web/components/icons";
 import { Button } from "@web/components/ui/button";
 import { CosmicPageHeader } from "@web/components/ui/cosmic-page-header";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@web/components/ui/dialog";
@@ -19,6 +21,7 @@ import { Switch } from "@web/components/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@web/components/ui/tooltip";
 import { useChatServiceMutations, useChatServiceQueries } from "@web/hooks/chat-service";
 import { useChatServiceStream } from "@web/hooks/use-chat-service-stream";
+import { useApiErrorMessage } from "@web/lib/api-error";
 import { withChatOverlayBackground, type ChatOverlayBackground } from "@web/lib/chat-overlay";
 import { createTranslations, createTranslator, useI18n, type TranslationKey } from "@web/lib/i18n";
 import { cn } from "@web/lib/utils";
@@ -117,14 +120,6 @@ export const Route = createFileRoute("/_authenticated/chat")({
     ],
   }),
 });
-
-const providerMeta = {
-  youtube: { label: "YouTube", logo: PlatformIcons.youtube },
-  twitch: { label: "Twitch", logo: PlatformIcons.twitch },
-  kick: { label: "Kick", logo: PlatformIcons.kick },
-  boosty: { label: "Boosty", logo: PlatformIcons.boosty },
-  vk_video: { label: "VK Video", logo: PlatformIcons.vk_video },
-} as const;
 
 const chatTranslations = createTranslations({
   connections: {
@@ -235,14 +230,87 @@ const chatTranslations = createTranslations({
     en: "Copy",
     ru: "Копировать",
   },
+  copyFailed: {
+    en: "Couldn't copy the link. Allow clipboard access and try again.",
+    ru: "Не удалось скопировать ссылку. Разрешите доступ к буферу обмена и попробуйте снова.",
+  },
   loading: {
     en: "Loading chat…",
     ru: "Загружаем чат…",
   },
+  retry: {
+    en: "Try again",
+    ru: "Повторить",
+  },
+  chatServiceUnavailable: {
+    en: "The chat service is unavailable. Try again.",
+    ru: "Сервис чатов недоступен. Попробуйте снова.",
+  },
+  chatConflict: {
+    en: "The chat settings changed. Refresh the page and try again.",
+    ru: "Настройки чата изменились. Обновите страницу и попробуйте снова.",
+  },
+  broadcastSucceeded: {
+    en: ({ source }: { source: string }) => `${source}: sent`,
+    ru: ({ source }: { source: string }) => `${source}: отправлено`,
+  },
+  broadcastFailed: {
+    en: ({ source }: { source: string }) => `${source}: not sent`,
+    ru: ({ source }: { source: string }) => `${source}: не отправлено`,
+  },
+  broadcastUnsupported: {
+    en: ({ source }: { source: string }) => `${source}: sending isn't supported`,
+    ru: ({ source }: { source: string }) => `${source}: отправка не поддерживается`,
+  },
+  configurationUnavailable: {
+    en: "Chat settings are unavailable right now. Messages may be delayed.",
+    ru: "Настройки чата сейчас недоступны. Сообщения могут приходить с задержкой.",
+  },
+  overlayNotFound: {
+    en: "This chat overlay link is no longer valid.",
+    ru: "Эта ссылка на оверлей чата больше не действует.",
+  },
+  streamUnavailable: {
+    en: "The chat stream is unavailable. Reconnecting…",
+    ru: "Поток чата недоступен. Переподключаемся…",
+  },
+  transportUnavailable: {
+    en: "Connection to chat lost. Reconnecting…",
+    ru: "Соединение с чатом прервано. Переподключаемся…",
+  },
+  unauthorized: {
+    en: "Your session has expired. Sign in again to see new messages.",
+    ru: "Сессия истекла. Войдите снова, чтобы видеть новые сообщения.",
+  },
 });
 
+const connectionErrorMessages = {
+  configuration_unavailable: "configurationUnavailable",
+  overlay_not_found: "overlayNotFound",
+  stream_unavailable: "streamUnavailable",
+  transport_unavailable: "transportUnavailable",
+  unauthorized: "unauthorized",
+} as const satisfies Record<ChatConnectionErrorCode, TranslationKey<typeof chatTranslations>>;
+
+const broadcastStatusMessages = {
+  succeeded: "broadcastSucceeded",
+  failed: "broadcastFailed",
+  unsupported: "broadcastUnsupported",
+} as const satisfies Record<ChatCommandResult["status"], TranslationKey<typeof chatTranslations>>;
+
+/** Localizes a failed chat request by its tRPC code; server text is never displayed. */
+function useChatErrorMessage() {
+  const { t } = useI18n(chatTranslations);
+  const apiErrorMessage = useApiErrorMessage();
+  return (error: unknown) =>
+    apiErrorMessage(error, {
+      CONFLICT: t("chatConflict"),
+      fallback: t("chatServiceUnavailable"),
+    });
+}
+
 function ProviderMark({ className, provider }: { className?: string; provider: ChatProvider }) {
-  const meta = providerMeta[provider];
+  const meta = ChatProviderMeta[provider];
   return (
     <span
       aria-hidden="true"
@@ -297,7 +365,7 @@ function useChatPageState() {
   const [broadcastResult, setBroadcastResult] = useState<ChatBroadcastResult | null>(null);
   const [overlayUrl, setOverlayUrl] = useState<string | null>(null);
   const [overlayBackground, setOverlayBackground] = useState<ChatOverlayBackground>("transparent");
-  const [overlayCopied, setOverlayCopied] = useState(false);
+  const [overlayCopy, setOverlayCopy] = useState<"idle" | "copied" | "failed">("idle");
 
   return {
     boostyFormOpen,
@@ -305,14 +373,14 @@ function useChatPageState() {
     connectionToDisconnect,
     message,
     overlayBackground,
-    overlayCopied,
+    overlayCopy,
     overlayUrl,
     setBoostyFormOpen,
     setBroadcastResult,
     setConnectionToDisconnect,
     setMessage,
     setOverlayBackground,
-    setOverlayCopied,
+    setOverlayCopy,
     setOverlayUrl,
   };
 }
@@ -334,16 +402,11 @@ function useChatPageModel() {
   const stream = useChatServiceStream();
   const state = useChatPageState();
   const mutations = useChatServiceMutations({
-    onBroadcastSuccess: (result) => {
-      state.setBroadcastResult(result);
-      if (result.results.some(({ status }) => status === "succeeded")) {
-        state.setMessage("");
-      }
-    },
+    onBroadcastSuccess: (result) => state.setBroadcastResult(result),
     onMessageDeleted: (sourceId, messageId) => stream.removeMessage(sourceId, messageId),
     onOverlayUrlChanged: (nextOverlayUrl) => {
       state.setOverlayUrl(nextOverlayUrl);
-      state.setOverlayCopied(false);
+      state.setOverlayCopy("idle");
     },
   });
   const config = configQuery.data;
@@ -389,14 +452,22 @@ type ChatSource = ChatConfig["sources"][number];
 
 function ChatLoadingState({ page }: { page: ChatPageModel }) {
   const { t } = useI18n(chatTranslations);
+  const chatErrorMessage = useChatErrorMessage();
   return (
     <section className="cosmic-panel grid min-h-0 place-items-center overflow-hidden p-6 text-center">
       {page.configQuery.isError ? (
-        <div className="flex flex-col items-center gap-3">
-          <p className="text-sm text-destructive">{page.configQuery.error?.message}</p>
-          <Button onClick={() => void page.configQuery.refetch()} variant="outline">
-            <Icons.retry aria-hidden="true" />
-            Retry
+        <div className="flex flex-col items-center gap-3" role="alert">
+          <p className="text-sm text-destructive">{chatErrorMessage(page.configQuery.error)}</p>
+          <Button
+            disabled={page.configQuery.isFetching}
+            onClick={() => void page.configQuery.refetch()}
+            variant="outline"
+          >
+            <Icons.retry
+              aria-hidden="true"
+              className={page.configQuery.isFetching ? "animate-spin" : undefined}
+            />
+            {t("retry")}
           </Button>
         </div>
       ) : (
@@ -451,6 +522,7 @@ function ChatOauthNotice({ page }: { page: ChatPageModel }) {
 }
 
 function BroadcastResults({ page }: { page: ChatPageModel }) {
+  const { t } = useI18n(chatTranslations);
   const result = page.state.broadcastResult;
   if (!result) return null;
   return (
@@ -470,7 +542,9 @@ function BroadcastResults({ page }: { page: ChatPageModel }) {
             key={item.sourceId}
             title={item.detail}
           >
-            {source?.displayName ?? item.sourceId}: {item.status}
+            {t(broadcastStatusMessages[item.status], {
+              source: source?.displayName ?? item.sourceId,
+            })}
           </span>
         );
       })}
@@ -480,12 +554,23 @@ function BroadcastResults({ page }: { page: ChatPageModel }) {
 
 function ChatComposer({ page }: { page: ChatPageModel }) {
   const { t } = useI18n(chatTranslations);
+  const chatErrorMessage = useChatErrorMessage();
   const { broadcast, moderate, startOauth } = page.mutations;
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (!page.state.message.trim() || broadcast.isPending) return;
+    const text = page.state.message;
+    if (!text.trim() || broadcast.isPending) return;
     page.state.setBroadcastResult(null);
-    broadcast.mutate({ text: page.state.message });
+    broadcast.mutate(
+      { text },
+      {
+        onSuccess: (result) => {
+          if (!result.results.some(({ status }) => status === "succeeded")) return;
+          // The field stays editable while sending; keep a draft typed in the meantime.
+          page.state.setMessage((current) => (current === text ? "" : current));
+        },
+      },
+    );
   };
   const error = broadcast.error ?? moderate.error ?? startOauth.error;
   return (
@@ -517,8 +602,29 @@ function ChatComposer({ page }: { page: ChatPageModel }) {
         </Button>
       </div>
       <BroadcastResults page={page} />
-      {error && <p className="text-xs text-destructive">{error.message}</p>}
+      {error && (
+        <p className="text-xs text-destructive" role="alert">
+          {chatErrorMessage(error)}
+        </p>
+      )}
     </form>
+  );
+}
+
+function ChatStreamStatus({ code }: { code: ChatConnectionErrorCode | null }) {
+  const { t } = useI18n(chatTranslations);
+  return (
+    <div aria-live="polite" className="shrink-0" role="status">
+      {code !== null && (
+        <div className="flex items-center gap-2 border-b border-status-warning-border bg-status-warning-surface px-4 py-2 text-compact text-status-warning-deep dark:border-status-warning-dark-surface/25 dark:bg-status-warning-dark-surface/10 dark:text-status-warning-on-deep">
+          <Icons.warn
+            aria-hidden="true"
+            className="size-4 shrink-0 text-status-warning-text dark:text-status-warning-dark-text"
+          />
+          <p className="min-w-0 grow">{t(connectionErrorMessages[code])}</p>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -544,9 +650,10 @@ function ChatFeedPanel({ className, page }: { className?: string; page: ChatPage
         title={t("feed")}
         variant="signal"
       />
+      <ChatStreamStatus code={page.stream.connectionError} />
       <ChatFeed
         capabilitiesForSource={page.capabilitiesForSource}
-        emptyLabel={page.stream.connectionError?.detail ?? t("empty")}
+        emptyLabel={t("empty")}
         messages={page.stream.messages}
         onModerate={(command) => page.mutations.moderate.mutate(command)}
       />
@@ -568,7 +675,7 @@ function ConnectionIdentity({
   source?: ChatSource;
   sourceState?: "connecting" | "error" | "live" | "offline";
 }) {
-  const provider = providerMeta[connection.provider];
+  const provider = ChatProviderMeta[connection.provider];
   return (
     <div className={cn("flex min-w-0 items-center gap-2", className)}>
       <Tooltip>
@@ -688,16 +795,19 @@ function ConnectionActions({
 }
 
 function ConnectionErrors({ page, source }: { page: ChatPageModel; source?: ChatSource }) {
+  const chatErrorMessage = useChatErrorMessage();
   if (!source) return null;
   const { refreshSource, setSourceEnabled } = page.mutations;
   return (
     <>
       {refreshSource.isError && refreshSource.variables?.sourceId === source.sourceId && (
-        <p className="text-caption text-destructive">{refreshSource.error.message}</p>
+        <p role="alert" className="text-caption text-destructive">
+          {chatErrorMessage(refreshSource.error)}
+        </p>
       )}
       {setSourceEnabled.isError && setSourceEnabled.variables?.sourceId === source.sourceId && (
         <p role="alert" className="text-caption text-destructive">
-          {setSourceEnabled.error.message}
+          {chatErrorMessage(setSourceEnabled.error)}
         </p>
       )}
     </>
@@ -751,7 +861,7 @@ function AvailableProviderButton({
   provider: ChatProviderAvailability;
 }) {
   const { t } = useI18n(chatTranslations);
-  const meta = providerMeta[provider.provider];
+  const meta = ChatProviderMeta[provider.provider];
   const oauthProvider =
     provider.provider === "youtube" ||
     provider.provider === "twitch" ||
@@ -824,7 +934,7 @@ function OverlayBackgroundPicker({ page }: { page: ChatPageModel }) {
             key={value}
             onClick={() => {
               page.state.setOverlayBackground(value);
-              page.state.setOverlayCopied(false);
+              page.state.setOverlayCopy("idle");
             }}
             size="xs"
             type="button"
@@ -841,6 +951,14 @@ function OverlayBackgroundPicker({ page }: { page: ChatPageModel }) {
 function OverlayFooter({ page }: { page: ChatPageModel }) {
   const { t } = useI18n(chatTranslations);
   if (!page.config) return null;
+  const copyOverlayUrl = async (overlayUrl: string) => {
+    try {
+      await navigator.clipboard.writeText(overlayUrl);
+      page.state.setOverlayCopy("copied");
+    } catch {
+      page.state.setOverlayCopy("failed");
+    }
+  };
   return (
     <footer className="flex flex-col gap-2 border-t border-border p-3">
       <div className="flex items-center justify-between gap-2">
@@ -859,15 +977,19 @@ function OverlayFooter({ page }: { page: ChatPageModel }) {
       {page.configuredOverlayUrl !== null && (
         <Button
           onClick={() => {
-            void navigator.clipboard.writeText(page.configuredOverlayUrl ?? "");
-            page.state.setOverlayCopied(true);
+            if (page.configuredOverlayUrl !== null) void copyOverlayUrl(page.configuredOverlayUrl);
           }}
           size="xs"
           variant="outline"
         >
           <Icons.copy aria-hidden="true" />
-          {page.state.overlayCopied ? t("copied") : t("copy")}
+          {page.state.overlayCopy === "copied" ? t("copied") : t("copy")}
         </Button>
+      )}
+      {page.state.overlayCopy === "failed" && (
+        <p className="text-caption text-destructive" role="alert">
+          {t("copyFailed")}
+        </p>
       )}
     </footer>
   );
@@ -901,6 +1023,7 @@ function ConnectionsPanel({ page }: { page: ChatPageModel }) {
 function DisconnectDialog({ page }: { page: ChatPageModel }) {
   const { t } = useI18n(translations);
   const { t: copyT } = useI18n(chatTranslations);
+  const chatErrorMessage = useChatErrorMessage();
   const connection = page.state.connectionToDisconnect;
   const disconnect = page.mutations.disconnect;
   return (
@@ -916,13 +1039,13 @@ function DisconnectDialog({ page }: { page: ChatPageModel }) {
           <DialogDescription>
             {t("chatDisconnectDescription", {
               name: connection.displayName,
-              provider: providerMeta[connection.provider].label,
+              provider: ChatProviderMeta[connection.provider].label,
             })}
           </DialogDescription>
         )}
         {disconnect.error && (
           <p role="alert" className="text-sm text-destructive">
-            {disconnect.error.message}
+            {chatErrorMessage(disconnect.error)}
           </p>
         )}
         <div className="flex justify-end gap-2">

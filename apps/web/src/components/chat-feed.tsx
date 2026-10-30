@@ -192,12 +192,11 @@ function useChatFeedScroll(messages: ChatMessage[], overlay: boolean) {
   const nearBottomRef = useRef(true);
   const [unread, setUnread] = useState(0);
 
+  // Programmatic scrolls are instant: a smooth scroll emits intermediate scroll events far from
+  // the bottom, which would turn following off while a burst of messages arrives.
   const scrollToBottom = useCallback(() => {
     nearBottomRef.current = true;
-    viewportRef.current?.scrollTo({
-      top: viewportRef.current.scrollHeight,
-      behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
-    });
+    viewportRef.current?.scrollTo({ top: viewportRef.current.scrollHeight, behavior: "instant" });
     setUnread(0);
   }, []);
 

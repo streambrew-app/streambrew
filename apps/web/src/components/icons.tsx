@@ -23,6 +23,15 @@ export const PlatformIcons = {
   vk_video: vkLogo,
 } as const satisfies Record<ChatProvider, string>;
 
+/** The name and official logo shown wherever a chat provider appears. */
+export const ChatProviderMeta = {
+  youtube: { label: "YouTube", logo: PlatformIcons.youtube },
+  twitch: { label: "Twitch", logo: PlatformIcons.twitch },
+  kick: { label: "Kick", logo: PlatformIcons.kick },
+  boosty: { label: "Boosty", logo: PlatformIcons.boosty },
+  vk_video: { label: "VK Video", logo: PlatformIcons.vk_video },
+} as const satisfies Record<ChatProvider, { label: string; logo: string }>;
+
 export const DonationSourceIcons = {
   donationalerts: donationAlertsLogo,
   donate_stream: donateStreamLogo,

@@ -79,6 +79,19 @@ describe("ChatFeed live updates", () => {
     },
   );
 
+  it("follows arrivals and jumps without smooth scrolling, whose intermediate positions stop following", async () => {
+    await render(messages(0, 1));
+    scrollTo.mockClear();
+    await render(messages(0, 2));
+    expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ behavior: "instant" }));
+
+    await scrollAway();
+    await render(messages(0, 3));
+    scrollTo.mockClear();
+    act(() => container.querySelector("button")?.click());
+    expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ behavior: "instant" }));
+  });
+
   it("does not invent unread messages when scrolling away", async () => {
     await render(messages(0));
     await scrollAway();

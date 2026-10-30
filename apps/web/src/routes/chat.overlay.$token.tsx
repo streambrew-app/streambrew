@@ -2,7 +2,19 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ChatFeed } from "@web/components/chat-feed";
 import { useChatServiceStream } from "@web/hooks/use-chat-service-stream";
 import { ChatOverlaySearchSchema } from "@web/lib/chat-overlay";
+import { createTranslations, createTranslator, useI18n } from "@web/lib/i18n";
 import { cn } from "@web/lib/utils";
+
+const translations = createTranslations({
+  chatOverlay: {
+    en: "Chat overlay",
+    ru: "Оверлей чата",
+  },
+  waitingForChat: {
+    en: "Waiting for chat…",
+    ru: "Ждём сообщений чата…",
+  },
+});
 
 export const Route = createFileRoute("/chat/overlay/$token")({
   component: () => (
@@ -11,8 +23,20 @@ export const Route = createFileRoute("/chat/overlay/$token")({
     </div>
   ),
   validateSearch: ChatOverlaySearchSchema,
-  head: () => ({
-    meta: [{ title: "Chat overlay · StreamBrew" }],
+  // The overlay token is a credential in the path: keep it out of caches, indexes, and referrers.
+  headers: () => ({
+    "Cache-Control": "no-store",
+    "Referrer-Policy": "no-referrer",
+    "X-Robots-Tag": "noindex, nofollow",
+  }),
+  head: ({ match }) => ({
+    meta: [
+      {
+        title: `${createTranslator(match.context.locale, translations)("chatOverlay")} · StreamBrew`,
+      },
+      { content: "no-referrer", name: "referrer" },
+      { content: "noindex, nofollow", name: "robots" },
+    ],
     styles: [
       {
         children:
@@ -25,6 +49,8 @@ export const Route = createFileRoute("/chat/overlay/$token")({
 function ChatOverlay() {
   const { token } = Route.useParams();
   const { background } = Route.useSearch();
+  const { t } = useI18n(translations);
+  // Connection problems are not drawn: the overlay is composited onto the broadcast.
   const { messages } = useChatServiceStream("overlay", token);
 
   return (
@@ -39,7 +65,7 @@ function ChatOverlay() {
       )}
     >
       <ChatFeed
-        emptyLabel="Waiting for chat…"
+        emptyLabel={t("waitingForChat")}
         messages={messages}
         overlay
         overlayMessageSurface={background === "black" ? "transparent" : "card"}
