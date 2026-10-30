@@ -8,7 +8,7 @@ import {
   type AlertSettings,
 } from "@streambrew/packages/alerts.js";
 import { DonationSourceSchema, type DonationSource } from "@streambrew/packages/schemas.js";
-import { createFileRoute, useHydrated } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { AlertPlayer } from "@web/components/alert-player";
 import {
   donationSourceDetails,
@@ -16,6 +16,7 @@ import {
   DonationSourceMark,
 } from "@web/components/donation-source";
 import { Icons } from "@web/components/icons";
+import { LocalTime } from "@web/components/local-time";
 import QueryErrorState from "@web/components/query-error-state";
 import { Button } from "@web/components/ui/button";
 import { CosmicPageHeader } from "@web/components/ui/cosmic-page-header";
@@ -24,7 +25,7 @@ import { Input } from "@web/components/ui/input";
 import { Skeleton } from "@web/components/ui/skeleton";
 import { Switch } from "@web/components/ui/switch";
 import { useAlertDashboard, useAlertMutations } from "@web/hooks/alerts";
-import { fmtAmount, fmtListDate } from "@web/lib/fmt";
+import { fmtAmount } from "@web/lib/fmt";
 import { createTranslations, createTranslator, useI18n } from "@web/lib/i18n";
 import { preloadRouteQuery } from "@web/lib/trpc";
 import { cn } from "@web/lib/utils";
@@ -1425,28 +1426,12 @@ function PlaybackRow({
   );
 }
 
-function LocalTime({
-  className,
-  locale,
-  value,
-}: {
-  className?: string;
-  locale: "en" | "ru";
-  value: Date;
-}) {
-  const hydrated = useHydrated();
-  return (
-    <time className={className} dateTime={value.toISOString()}>
-      {hydrated ? fmtListDate(value, locale) : "—"}
-    </time>
-  );
-}
-
 function LastHeartbeat({ locale, t, value }: { locale: "en" | "ru"; t: Translator; value: Date }) {
-  const hydrated = useHydrated();
   return (
     <p className="text-xs text-muted-foreground">
-      {t("lastHeartbeat", { value: hydrated ? fmtListDate(value, locale) : "—" })}
+      <LocalTime locale={locale} value={value}>
+        {(time) => t("lastHeartbeat", { value: time })}
+      </LocalTime>
     </p>
   );
 }

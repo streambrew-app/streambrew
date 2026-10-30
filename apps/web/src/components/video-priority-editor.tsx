@@ -1,8 +1,13 @@
-import { MoneyAmountSchema, type VideoPriority } from "@streambrew/packages/schemas.js";
+import {
+  CurrencyCodeSchema,
+  MoneyAmountSchema,
+  type VideoPriority,
+} from "@streambrew/packages/schemas.js";
 import { getRoundedWatchDurationParts } from "@streambrew/packages/video-timing.js";
 import { Link } from "@tanstack/react-router";
 import { useUpdateVideoPriorityM, useUserInfo } from "@web/hooks/api";
-import { formatMoneyInputValue } from "@web/lib/fmt";
+import { useApiErrorMessage } from "@web/lib/api-error";
+import { fmtAmount, formatMoneyInputValue } from "@web/lib/fmt";
 import { cn } from "@web/lib/utils";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -43,6 +48,10 @@ const translations = createTranslations({
     en: "Enter a priority name.",
     ru: "Укажите название приоритета.",
   },
+  priorityNameTaken: {
+    en: "A priority with this name already exists.",
+    ru: "Приоритет с таким названием уже есть.",
+  },
   enterMinimumAmount: {
     en: "Enter a minimum amount.",
     ru: "Укажите минимальную сумму.",
@@ -63,9 +72,9 @@ const translations = createTranslations({
     en: ({ hours, minutes }: HourMinuteParts) => `${hours > 0 ? `${hours} hr ` : ""}${minutes} min`,
     ru: ({ hours, minutes }: HourMinuteParts) => `${hours > 0 ? `${hours} ч ` : ""}${minutes} мин`,
   },
-  perMinute: {
-    en: "min",
-    ru: "мин",
+  amountPerMinute: {
+    en: ({ amount }: { amount: string }) => `${amount}/min`,
+    ru: ({ amount }: { amount: string }) => `${amount}/мин`,
   },
 });
 
@@ -90,7 +99,8 @@ function priorityFormValues(priority: VideoPriority): VideoPriorityFormValues {
 }
 
 function useVideoPriorityEditor(priority: VideoPriority) {
-  const { t } = useI18n(translations);
+  const { locale, t } = useI18n(translations);
+  const apiErrorMessage = useApiErrorMessage();
   const userInfo = useUserInfo();
   const [isEditing, setIsEditing] = useState(false);
   const updateVideoPriorityM = useUpdateVideoPriorityM();
@@ -99,22 +109,30 @@ function useVideoPriorityEditor(priority: VideoPriority) {
     mode: "onChange",
   });
 
-  const savePriority = async (values: VideoPriorityFormValues) => {
-    const updatedPriority = await updateVideoPriorityM.mutateAsync({
-      videoPriorityId: priority.videoPriorityId,
-      ...values,
-    });
-    reset(priorityFormValues(updatedPriority));
-    setIsEditing(false);
+  const savePriority = (values: VideoPriorityFormValues) => {
+    updateVideoPriorityM.mutate(
+      { videoPriorityId: priority.videoPriorityId, ...values },
+      {
+        onSuccess: (updatedPriority) => {
+          reset(priorityFormValues(updatedPriority));
+          setIsEditing(false);
+        },
+      },
+    );
   };
+  const saveError = apiErrorMessage(updateVideoPriorityM.error, {
+    CONFLICT: t("priorityNameTaken"),
+  });
 
   const startEditing = () => {
     reset(priorityFormValues(priority));
+    updateVideoPriorityM.reset();
     setIsEditing(true);
   };
 
   const cancelEditing = () => {
     reset(priorityFormValues(priority));
+    updateVideoPriorityM.reset();
     setIsEditing(false);
   };
 
@@ -123,8 +141,13 @@ function useVideoPriorityEditor(priority: VideoPriority) {
     formState,
     handleSubmit,
     isEditing,
-    queueCurrency: userInfo.queueCurrency,
+    minimumAmount: fmtAmount(
+      priority.minPricePerMinute,
+      CurrencyCodeSchema.parse(userInfo.queueCurrency),
+      locale,
+    ),
     register,
+    saveError,
     savePriority,
     startEditing,
     t,
@@ -136,7 +159,7 @@ type VideoPriorityEditorModel = ReturnType<typeof useVideoPriorityEditor>;
 
 function PrioritySummary({ editor, props }: { editor: VideoPriorityEditorModel; props: Props }) {
   const { isSelected, priority, remainingSeconds, videoCount, videoQueueId } = props;
-  const { queueCurrency, startEditing, t } = editor;
+  const { minimumAmount, startEditing, t } = editor;
 
   return (
     <div
@@ -174,9 +197,7 @@ function PrioritySummary({ editor, props }: { editor: VideoPriorityEditorModel; 
           <span className="shrink-0 text-micro font-bold">{videoCount}</span>
         </div>
         <div className="flex min-w-0 items-center justify-between gap-2 text-micro text-muted-foreground">
-          <span className="truncate">
-            {priority.minPricePerMinute} {queueCurrency}/{t("perMinute")}
-          </span>
+          <span className="truncate">{t("amountPerMinute", { amount: minimumAmount })}</span>
           <span className="shrink-0 font-semibold text-primary">
             {t("durationRemaining", getRoundedWatchDurationParts(remainingSeconds))}
           </span>
@@ -198,6 +219,7 @@ function PriorityForm({
     formState,
     handleSubmit,
     register,
+    saveError,
     savePriority,
     t,
     updateVideoPriorityM,
@@ -232,7 +254,10 @@ function PriorityForm({
             density="compact"
             id={`priority-label-${priority.videoPriorityId}`}
             maxLength={64}
-            {...register("label", { required: t("enterQueueName") })}
+            {...register("label", {
+              required: t("enterQueueName"),
+              validate: (value) => value.trim() !== "" || t("enterQueueName"),
+            })}
           />
         </Field>
         <Field className="w-20 shrink-0" data-invalid={Boolean(formState.errors.minPricePerMinute)}>
@@ -271,7 +296,7 @@ function PriorityForm({
           id={errorId}
         />
       )}
-      {updateVideoPriorityM.error && <FieldError>{updateVideoPriorityM.error.message}</FieldError>}
+      {saveError && <FieldError>{saveError}</FieldError>}
     </form>
   );
 }

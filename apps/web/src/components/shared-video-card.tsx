@@ -3,11 +3,12 @@ import {
   getRoundedWatchDurationParts,
   getWatchDurationSeconds,
 } from "@streambrew/packages/video-timing.js";
-import { fmtAmount, fmtDate, fmtListDate } from "@web/lib/fmt";
+import { fmtAmount } from "@web/lib/fmt";
 import { getSharedVideoTimingParts } from "@web/lib/shared-video-timing";
 import type { SharedVideo } from "@web/server/exports";
 
 import { createTranslations, useI18n } from "../lib/i18n";
+import { LocalTime } from "./local-time";
 
 type HourMinuteParts = {
   hours: number;
@@ -133,13 +134,12 @@ export function SharedVideoCard({ showPriorityLabel = true, video }: Props) {
                   {video.priorityLabel}
                 </span>
               )}
-              <time
+              <LocalTime
                 className="text-xs text-muted-foreground"
-                dateTime={video.createdAt.toISOString()}
-                title={fmtDate(video.createdAt, locale)}
-              >
-                {fmtListDate(video.createdAt, locale)}
-              </time>
+                locale={locale}
+                showFullDate
+                value={video.createdAt}
+              />
             </div>
             <div className="flex shrink-0 flex-col items-end gap-0.5">
               {video.displayAmount !== null && video.displayCurrency !== null && (
@@ -160,13 +160,14 @@ export function SharedVideoCard({ showPriorityLabel = true, video }: Props) {
           </div>
 
           {video.watchedAt && (
-            <time
+            <LocalTime
               className="text-xs text-muted-foreground"
-              dateTime={video.watchedAt.toISOString()}
-              title={fmtDate(video.watchedAt, locale)}
+              locale={locale}
+              showFullDate
+              value={video.watchedAt}
             >
-              {t("watchedOn", { date: fmtListDate(video.watchedAt, locale) })}
-            </time>
+              {(date) => t("watchedOn", { date })}
+            </LocalTime>
           )}
         </div>
       </div>

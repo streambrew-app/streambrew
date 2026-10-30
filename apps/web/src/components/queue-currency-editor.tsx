@@ -5,6 +5,7 @@ import {
   type QueueCurrency,
 } from "@streambrew/packages/schemas.js";
 import { useUpdateQueueCurrencyM, useUserInfo } from "@web/hooks/api";
+import { useApiErrorMessage } from "@web/lib/api-error";
 import { formatMoneyInputValue } from "@web/lib/fmt";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -94,6 +95,13 @@ function QueueCurrencyHeading() {
   );
 }
 
+function SaveError({ error }: { error: unknown }) {
+  const { t } = useI18n(translations);
+  const apiErrorMessage = useApiErrorMessage();
+  const message = apiErrorMessage(error, { BAD_REQUEST: t("enterExchangeRate") });
+  return message === null ? null : <FieldError>{message}</FieldError>;
+}
+
 export function QueueCurrencyEditor() {
   const { t } = useI18n(translations);
   const userInfo = useUserInfo();
@@ -125,13 +133,12 @@ export function QueueCurrencyEditor() {
         defaultCurrencyChangeRate(userInfo.queueCurrency, userInfo.queueCurrency),
       ),
     });
+    updateQueueCurrencyM.reset();
     setIsEditing(true);
   };
-  const cancelEditing = () => setIsEditing(false);
-  const save = async (input: FormValues) => {
-    await updateQueueCurrencyM.mutateAsync(input);
-    setIsEditing(false);
-  };
+  const closeEditor = () => setIsEditing(false);
+  const save = (input: FormValues) =>
+    updateQueueCurrencyM.mutate(input, { onSuccess: closeEditor });
 
   return (
     <section className="cosmic-panel relative shrink-0 overflow-hidden p-4 sm:p-5">
@@ -202,7 +209,7 @@ export function QueueCurrencyEditor() {
             <div className="flex gap-2 lg:ml-auto">
               <Button
                 disabled={updateQueueCurrencyM.isPending}
-                onClick={cancelEditing}
+                onClick={closeEditor}
                 size="sm"
                 type="button"
                 variant="outline"
@@ -222,9 +229,7 @@ export function QueueCurrencyEditor() {
             {t("queueCurrencyWarning")}
           </p>
           <FieldError errors={[formState.errors.rate]} id="queue-currency-rate-error" />
-          {updateQueueCurrencyM.error && (
-            <FieldError>{updateQueueCurrencyM.error.message}</FieldError>
-          )}
+          <SaveError error={updateQueueCurrencyM.error} />
         </form>
       )}
     </section>

@@ -3,6 +3,7 @@ import { buttonVariants, Button } from "@web/components/ui/button";
 import { FieldError } from "@web/components/ui/field";
 import { Switch } from "@web/components/ui/switch";
 import { useUpdatePublicQueueSettingsM, useUserInfo } from "@web/hooks/api";
+import { useApiErrorMessage } from "@web/lib/api-error";
 import { createTranslations, useI18n } from "@web/lib/i18n";
 import { Controller, useForm } from "react-hook-form";
 
@@ -100,6 +101,7 @@ function SettingRow({
 export function PublicQueueSettingsEditor() {
   const userInfo = useUserInfo();
   const { t } = useI18n(translations);
+  const apiErrorMessage = useApiErrorMessage();
   const updateSettingsM = useUpdatePublicQueueSettingsM();
   const { control, formState, handleSubmit, reset, watch } = useForm<PublicQueueSettings>({
     defaultValues: userInfo.publicQueueSettings,
@@ -107,9 +109,8 @@ export function PublicQueueSettingsEditor() {
   const enabled = watch("enabled");
   const savedEnabled = userInfo.publicQueueSettings.enabled;
 
-  const save = async (settings: PublicQueueSettings) => {
-    const savedSettings = await updateSettingsM.mutateAsync(settings);
-    reset(savedSettings);
+  const save = (settings: PublicQueueSettings) => {
+    updateSettingsM.mutate(settings, { onSuccess: (savedSettings) => reset(savedSettings) });
   };
 
   return (
@@ -201,7 +202,7 @@ export function PublicQueueSettingsEditor() {
         </footer>
         {updateSettingsM.error && (
           <div className="border-t border-border px-4 py-3 sm:px-5">
-            <FieldError>{updateSettingsM.error.message}</FieldError>
+            <FieldError>{apiErrorMessage(updateSettingsM.error)}</FieldError>
           </div>
         )}
       </form>

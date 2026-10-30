@@ -174,8 +174,7 @@ export function BoostyConnectionForm({ onClose }: { onClose: () => void }) {
       return;
     }
     setAuthInvalid(false);
-    setAuth("");
-    setDeviceId("");
+    // A successful connect closes the dialog; a failure keeps both values for another attempt.
     connect.mutate({ ...credentials, dedicatedSession, deviceId: deviceId.trim() });
   };
   return (

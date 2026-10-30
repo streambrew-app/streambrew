@@ -2,13 +2,13 @@ import type { ChatDeadLetter } from "@streambrew/packages/chat.js";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import { AdminTabs } from "@web/components/admin-tabs";
 import { Icons } from "@web/components/icons";
+import { LocalTime } from "@web/components/local-time";
 import QueryErrorState from "@web/components/query-error-state";
 import { Button } from "@web/components/ui/button";
 import { CosmicPageHeader } from "@web/components/ui/cosmic-page-header";
 import { EmptyState } from "@web/components/ui/empty-state";
 import { Skeleton } from "@web/components/ui/skeleton";
 import { useChatDeadLettersQ } from "@web/hooks/api";
-import { fmtListDate } from "@web/lib/fmt";
 import { createTranslations, createTranslator, useI18n } from "@web/lib/i18n";
 import { preloadRouteQuery } from "@web/lib/trpc";
 import { z } from "zod";
@@ -159,7 +159,6 @@ function DeadLettersPage() {
 function DeadLetterRow({ deadLetter }: { deadLetter: ChatDeadLetter }) {
   const { locale, t } = useI18n(translations);
   const payload = decodeBase64(deadLetter.payload);
-  const failedAt = fmtListDate(deadLetter.failedAt, locale);
 
   return (
     <details className="group px-4 py-4 open:bg-muted/30 sm:px-5">
@@ -181,7 +180,7 @@ function DeadLetterRow({ deadLetter }: { deadLetter: ChatDeadLetter }) {
           </span>
         </span>
         <span className="col-start-2 flex shrink-0 items-center gap-2 text-caption text-muted-foreground tabular-nums sm:col-start-3 sm:row-start-1">
-          <time dateTime={deadLetter.failedAt.toISOString()}>{failedAt}</time>
+          <LocalTime locale={locale} value={deadLetter.failedAt} />
           <Icons.chevronDown
             aria-hidden="true"
             className="transition-transform group-open:rotate-180"

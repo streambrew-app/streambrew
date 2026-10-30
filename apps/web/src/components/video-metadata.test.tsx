@@ -45,7 +45,7 @@ describe("videos awaiting metadata", () => {
       queueCurrency: "RUB",
       metadataRetryAt: "2026-09-08T09:02:00Z",
     });
-    const html = renderToStaticMarkup(<VideoCard video={video} onRetryMetadata={() => {}} />);
+    const html = renderToStaticMarkup(<VideoCard video={video} onRetryMetadata={async () => {}} />);
     expect(html).toContain("Длительность уточняется");
     expect(html).toContain("Без приоритета");
     expect(html).toContain("Повторить получение данных");
@@ -136,7 +136,7 @@ describe("video card actions", () => {
       metadataRetryAt: null,
     });
 
-    const html = renderToStaticMarkup(<VideoCard video={video} onStatusChange={() => {}} />);
+    const html = renderToStaticMarkup(<VideoCard video={video} onStatusChange={async () => {}} />);
 
     expect(html).toContain(`>${label}</button>`);
   });
