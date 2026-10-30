@@ -9,6 +9,12 @@ export function parseJsonb(value: string) {
   return parsed;
 }
 
+/** Returns the constraint a PostgreSQL error reports as violated, if any. */
+export function violatedConstraint(error: unknown): string | undefined {
+  if (!(error instanceof Error) || !("constraint_name" in error)) return undefined;
+  return typeof error.constraint_name === "string" ? error.constraint_name : undefined;
+}
+
 export function createSql(url: string, options: { readonly searchPath?: string } = {}) {
   return postgres(url, {
     max: 10,

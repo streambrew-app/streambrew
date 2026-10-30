@@ -17,8 +17,11 @@ type Context = Omit<Awaited<ReturnType<typeof createContext>>, "viewer"> & {
 const t = initTRPC.context<Context>().create({
   transformer: SuperJSON,
   errorFormatter({ shape, error }) {
-    logError("tRPC request failed", error, { code: error.code });
-    return shape;
+    // Client errors are part of the API contract; only server failures are operational events.
+    if (shape.data.httpStatus < 500) return shape;
+    logError("tRPC request failed", error, { code: error.code, path: shape.data.path });
+    // Unexpected failures, such as database errors, must not expose their details to the browser.
+    return { ...shape, message: "Internal server error." };
   },
 });
 

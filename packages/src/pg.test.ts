@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
-import { createSql, parseJsonb } from "./pg.js";
+import { createSql, parseJsonb, violatedConstraint } from "./pg.js";
 import { MoneyAmountSchema } from "./schemas.js";
 
 describe("parseJsonb", () => {
@@ -12,6 +12,22 @@ describe("parseJsonb", () => {
 
     expect(value.amount).toBe("999999999999999999.99");
     expect(MoneyAmountSchema.parse(value.amount)).toBe("999999999999999999.99");
+  });
+});
+
+describe("violatedConstraint", () => {
+  it("reads the constraint reported by a PostgreSQL error", () => {
+    const error = Object.assign(new Error("duplicate key"), {
+      code: "23505",
+      constraint_name: "user_slug_key",
+    });
+
+    expect(violatedConstraint(error)).toBe("user_slug_key");
+  });
+
+  it("ignores errors without a reported constraint", () => {
+    expect(violatedConstraint(new Error("integer out of range"))).toBeUndefined();
+    expect(violatedConstraint({ constraint_name: "user_slug_key" })).toBeUndefined();
   });
 });
 

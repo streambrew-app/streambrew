@@ -1,4 +1,5 @@
 import { conversionFactorForCurrencyChange } from "@streambrew/packages/currency.js";
+import { violatedConstraint } from "@streambrew/packages/pg.js";
 import {
   QueueCurrencySchema,
   SharedVideoSchema,
@@ -18,8 +19,22 @@ import type { Sql, TransactionSql } from "postgres";
 import { z } from "zod";
 
 import { getPaginationWindow } from "../pagination.js";
-import { VideoQueueError } from "./errors.js";
+import { VideoQueueError, type VideoQueueErrorType } from "./errors.js";
 import type { SharedVideoStatus, VideoStatus } from "./types.js";
+
+const constraintErrorTypes = new Map<string, VideoQueueErrorType>([
+  ["video_check1", "invalid video timing"],
+  ["video_priority_check", "invalid video priority threshold"],
+  ["video_priority_user_id_label_key", "video priority label taken"],
+  ["video_queue_user_id_label_key", "video queue name taken"],
+]);
+
+function translateConstraintViolation(error: unknown): never {
+  const constraint = violatedConstraint(error);
+  const type = constraint === undefined ? undefined : constraintErrorTypes.get(constraint);
+  if (type !== undefined) throw new VideoQueueError(type, { cause: error });
+  throw error;
+}
 
 function ownershipPredicate(sql: Sql | TransactionSql, userId: UserId) {
   return sql`
@@ -83,7 +98,7 @@ class PostgresVideoQueue {
         SET label = ${input.label}, is_default = ${input.isDefault || queue.isDefault}
         WHERE user_id = ${userId} AND video_queue_id = ${input.videoQueueId}
         RETURNING video_queue_id, label, is_default
-      `;
+      `.catch(translateConstraintViolation);
       return VideoQueueSchema.parse(rows[0]);
     });
   }
@@ -384,7 +399,7 @@ class PostgresVideoQueue {
       WHERE user_id = ${userId}
         AND video_priority_id = ${input.videoPriorityId}
       RETURNING video_priority_id, label, is_default, min_price_per_minute
-    `;
+    `.catch(translateConstraintViolation);
     const priority = VideoPrioritySchema.optional().parse(rows[0]);
     if (priority === undefined) {
       throw new VideoQueueError("video priority not found");
@@ -445,7 +460,7 @@ class PostgresVideoQueue {
       WHERE video.video_id = ${String(videoId)}
         AND (${ownsVideo})
       RETURNING video.video_id
-    `;
+    `.catch(translateConstraintViolation);
     if (rows.length === 0) {
       throw new VideoQueueError("video not found");
     }
@@ -476,10 +491,14 @@ class PostgresVideoQueue {
       const denominatorText = denominator.toString();
       const ownsVideo = ownershipPredicate(sql, userId);
 
+      // A non-default threshold must stay positive, so one that rounds to zero becomes 0.01.
       await sql`
         UPDATE video_priority
         SET
-          min_price_per_minute = round(min_price_per_minute * ${numeratorText} / ${denominatorText}, 2)
+          min_price_per_minute = CASE
+            WHEN is_default THEN 0::money_amount
+            ELSE greatest(round(min_price_per_minute * ${numeratorText} / ${denominatorText}, 2), 0.01)
+          END
         WHERE user_id = ${userId}
       `;
       await sql`
