@@ -1,6 +1,13 @@
 package main
 
-import "testing"
+import (
+	"context"
+	"errors"
+	"net"
+	"net/http"
+	"testing"
+	"time"
+)
 
 func TestLoadConfigUsesDocumentedDefaults(t *testing.T) {
 	t.Setenv("DATABASE_URL", "postgresql://localhost/streambrew")
@@ -64,5 +71,56 @@ func TestLoadConfigRequiresStreamElementsCredentials(t *testing.T) {
 	t.Setenv("DONATIONS_SERVICE_SECRET", "donations-service-secret-with-32-characters")
 	if _, err := loadConfig(); err == nil {
 		t.Fatal("expected missing StreamElements credentials to fail")
+	}
+}
+
+func TestHTTPServerShutdownEndsOpenStreams(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	streamStarted := make(chan struct{})
+	streamClosed := make(chan struct{})
+	server := newHTTPServer(ctx, "127.0.0.1:0", http.HandlerFunc(func(response http.ResponseWriter, request *http.Request) {
+		flusher, ok := response.(http.Flusher)
+		if !ok {
+			t.Error("response does not support streaming")
+			return
+		}
+		response.WriteHeader(http.StatusOK)
+		flusher.Flush()
+		close(streamStarted)
+		<-request.Context().Done()
+		close(streamClosed)
+	}))
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	served := make(chan error, 1)
+	go func() { served <- server.Serve(listener) }()
+
+	request, err := http.NewRequestWithContext(context.Background(), http.MethodPost, "http://"+listener.Addr().String()+"/internal/alerts/stream", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() { _ = response.Body.Close() }()
+	<-streamStarted
+
+	cancel()
+	shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancelShutdown()
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		t.Fatalf("shutdown with an open stream: %v", err)
+	}
+	select {
+	case <-streamClosed:
+	default:
+		t.Fatal("open stream did not observe shutdown")
+	}
+	if err := <-served; !errors.Is(err, http.ErrServerClosed) {
+		t.Fatalf("serve error = %v", err)
 	}
 }

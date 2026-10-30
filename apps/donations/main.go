@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -93,12 +94,11 @@ func run() error {
 	alertApplication := donationalert.NewApplication(alertStore, donationalert.NewFFmpegMediaProcessor())
 	alertWorker := donationalert.NewWorker(alertStore, donationalert.NewESpeakSynthesizer())
 	alertRetentionWorker := donationalert.NewRetentionWorker(alertStore)
-	server := &http.Server{
-		Addr:              ":" + strconv.Itoa(config.port),
-		Handler:           donations.NewHTTPHandler(oauthApplication, donateStreamApplication, tourniquetApplication, config.serviceSecret, donationalert.NewHTTPHandler(alertApplication)),
-		ReadTimeout:       30 * time.Second,
-		ReadHeaderTimeout: 10 * time.Second,
-	}
+	server := newHTTPServer(
+		ctx,
+		":"+strconv.Itoa(config.port),
+		donations.NewHTTPHandler(oauthApplication, donateStreamApplication, tourniquetApplication, config.serviceSecret, donationalert.NewHTTPHandler(alertApplication)),
+	)
 	workerErrors := make(chan error, 5)
 	go func() { workerErrors <- oauthApplication.Run(ctx) }()
 	go func() { workerErrors <- donateStreamApplication.Run(ctx) }()
@@ -125,6 +125,8 @@ func run() error {
 			runErr = fmt.Errorf("serve donations HTTP: %w", err)
 		}
 	}
+	// stop also cancels every request context, which ends open alert streams
+	// so Shutdown does not wait for them until its deadline.
 	stop()
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -139,6 +141,20 @@ func run() error {
 		workersFinished++
 	}
 	return errors.Join(runErr, shutdownErr)
+}
+
+// newHTTPServer derives request contexts from the service context. Donation
+// alert streams stay open until their request context ends, so cancelling the
+// service context lets them close their players before Shutdown waits for idle
+// connections.
+func newHTTPServer(ctx context.Context, address string, handler http.Handler) *http.Server {
+	return &http.Server{
+		Addr:              address,
+		Handler:           handler,
+		ReadTimeout:       30 * time.Second,
+		ReadHeaderTimeout: 10 * time.Second,
+		BaseContext:       func(net.Listener) context.Context { return ctx },
+	}
 }
 
 type serviceConfig struct {
