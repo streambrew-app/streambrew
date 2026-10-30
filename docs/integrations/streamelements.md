@@ -26,7 +26,8 @@ response triggers one refresh attempt. If the rotated token is rejected before a
 confirmed, or the refresh grant itself is rejected, only that connection is moved to
 `reauthorization_required`; the integrations page asks the streamer to connect it again. A later
 expiry after a confirmed subscription is allowed its own refresh attempt. Permanent protocol and
-request failures move the connection to `error` instead of starting an invisible retry loop.
+request failures move the connection to `error` instead of starting an invisible retry loop. A single
+history tip that fails validation is not such a failure; see below.
 
 StreamElements requires PKCE for public clients. Its public contract does not document combining a
 confidential client secret with `code_verifier`, so StreamBrew uses the documented confidential flow
@@ -58,12 +59,17 @@ Map each tip as follows:
 | StreamElements           | StreamBrew         | Notes                                                        |
 | ------------------------ | ------------------ | ------------------------------------------------------------ |
 | `_id`                    | `sourceDonationId` | Preserve the source string.                                  |
-| `donation.user.username` | `author`           | Accept `null`.                                               |
-| `donation.message`       | `message`          | Accept `null` and an empty string.                           |
+| `donation.user.username` | `author`           | Accept `null`; remove NUL characters.                        |
+| `donation.message`       | `message`          | Accept `null` and an empty string; remove NUL characters.    |
 | `donation.amount`        | `amount`           | Decode losslessly, then normalize once at the source seam.   |
 | `donation.currency`      | `currency`         | Uppercase a valid three-letter original currency code.       |
 | `createdAt`              | `sourceCreatedAt`  | Preserve the exact source string.                            |
 | parsed `createdAt`       | `occurredAt`       | Parse RFC 3339 with fractional seconds and normalize to UTC. |
+
+History tips are validated individually. A tip that fails validation, including one for another
+channel, is skipped and logged once per service process at error level with the source, user ID, and
+tip ID; the rest of the page is still imported and the connection stays `connected`. NUL characters,
+which PostgreSQL text cannot store, are removed from the author and message.
 
 Do not filter history or live events by `status`, `approved`, or `deleted`. StreamElements does not
 offer those as history filters, its dashboard reuses the fields during moderation, and the current

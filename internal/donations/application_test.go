@@ -1,12 +1,21 @@
 package donations
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"net/http"
+	"net/http/httptest"
+	"reflect"
+	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/streambrew-app/streambrew/internal/streamlabs"
 )
 
 type applicationTestStore struct {
@@ -15,11 +24,11 @@ type applicationTestStore struct {
 	savedBatch             DonationBatch
 	savedOrigin            IngestionOrigin
 	savedAcceptedAt        time.Time
+	savedVersion           connectionVersion
 	disconnectedUser       int
-	reauthorizationUser    int
-	reauthorizationVersion int
-	connectionErrorUser    int
-	connectionErrorVersion int
+	reauthorizationVersion connectionVersion
+	connectionErrorVersion connectionVersion
+	setTokensVersion       connectionVersion
 	setTokensUpdated       bool
 }
 
@@ -31,28 +40,36 @@ func (store *applicationTestStore) SaveConnectionWithDonations(_ context.Context
 	store.savedBatch = batch
 	return nil
 }
-func (store *applicationTestStore) SaveDonations(_ context.Context, _ int, _ int, batch DonationBatch, origin IngestionOrigin, acceptedAt time.Time) error {
+func (store *applicationTestStore) SaveDonations(_ context.Context, version connectionVersion, batch DonationBatch, origin IngestionOrigin, acceptedAt time.Time) error {
+	store.savedVersion = version
 	store.savedBatch = batch
 	store.savedOrigin = origin
 	store.savedAcceptedAt = acceptedAt
 	return nil
 }
-func (store *applicationTestStore) SetTokensIfVersion(context.Context, int, int, Tokens) (bool, error) {
+func (store *applicationTestStore) SetTokensIfVersion(_ context.Context, version connectionVersion, _ Tokens) (bool, error) {
+	store.setTokensVersion = version
 	return store.setTokensUpdated, nil
 }
 func (store *applicationTestStore) Disconnect(_ context.Context, userID int) error {
 	store.disconnectedUser = userID
 	return nil
 }
-func (store *applicationTestStore) RequireReauthorizationIfVersion(_ context.Context, userID, tokenVersion int) (bool, error) {
-	store.reauthorizationUser = userID
-	store.reauthorizationVersion = tokenVersion
+func (store *applicationTestStore) RequireReauthorizationIfVersion(_ context.Context, version connectionVersion) (bool, error) {
+	store.reauthorizationVersion = version
 	return true, nil
 }
-func (store *applicationTestStore) MarkConnectionErrorIfVersion(_ context.Context, userID, tokenVersion int) (bool, error) {
-	store.connectionErrorUser = userID
-	store.connectionErrorVersion = tokenVersion
+func (store *applicationTestStore) MarkConnectionErrorIfVersion(_ context.Context, version connectionVersion) (bool, error) {
+	store.connectionErrorVersion = version
 	return true, nil
+}
+
+var testConnectedAt = time.Date(2026, 9, 10, 12, 0, 0, 0, time.UTC)
+
+func listenerVersion(connection Connection) *atomic.Int64 {
+	version := new(atomic.Int64)
+	version.Store(int64(connection.TokenVersion))
+	return version
 }
 
 type unauthorizedTestError struct{ hadAuthorizedSession bool }
@@ -181,8 +198,137 @@ func TestRefreshListenersReplacesListenerAfterReconnect(t *testing.T) {
 	if token := <-cancelled; token != "first" {
 		t.Fatalf("cancelled token = %q", token)
 	}
-	if token := <-started; token != "second" || running[42].tokenVersion != 2 {
+	if token := <-started; token != "second" || running[42].tokenVersion.Load() != 2 {
 		t.Fatalf("replacement token=%q listener=%#v", token, running[42])
+	}
+}
+
+func TestRefreshListenersReplacesListenerForAnotherAccountWithReusedVersion(t *testing.T) {
+	store := &applicationTestStore{connections: []Connection{{
+		UserID: 42, SourceUserID: "account-a", ConnectedAt: testConnectedAt, AccessToken: "account-a", TokenVersion: 1,
+	}}}
+	started := make(chan string, 2)
+	cancelled := make(chan string, 2)
+	provider := testProvider()
+	provider.run = func(ctx context.Context, token, _ string, _ *string, _ func(DonationBatch) error) error {
+		started <- token
+		<-ctx.Done()
+		cancelled <- token
+		return nil
+	}
+	integration := newIntegration(store, provider)
+	running := make(map[int]runningListener)
+	completed := make(chan listenerCompletion, 2)
+	var listeners sync.WaitGroup
+	ctx, cancel := context.WithCancel(context.Background())
+	defer func() { cancel(); listeners.Wait() }()
+	if err := integration.refreshListeners(ctx, running, completed, &listeners); err != nil {
+		t.Fatal(err)
+	}
+	if token := <-started; token != "account-a" {
+		t.Fatalf("first token = %q", token)
+	}
+
+	// Disconnecting and connecting another account recreates the row, which
+	// restarts its token version at the schema default.
+	store.connections = []Connection{{
+		UserID: 42, SourceUserID: "account-b", ConnectedAt: testConnectedAt.Add(time.Second), AccessToken: "account-b", TokenVersion: 1,
+	}}
+	if err := integration.refreshListeners(ctx, running, completed, &listeners); err != nil {
+		t.Fatal(err)
+	}
+	if token := <-cancelled; token != "account-a" {
+		t.Fatalf("cancelled token = %q", token)
+	}
+	if token := <-started; token != "account-b" || running[42].sourceUserID != "account-b" {
+		t.Fatalf("replacement token=%q listener=%#v", token, running[42])
+	}
+}
+
+type refreshingTestStore struct {
+	applicationTestStore
+	mu         sync.Mutex
+	connection Connection
+}
+
+func (store *refreshingTestStore) Connections(context.Context) ([]Connection, error) {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	return []Connection{store.connection}, nil
+}
+
+func (store *refreshingTestStore) SetTokensIfVersion(_ context.Context, version connectionVersion, tokens Tokens) (bool, error) {
+	store.mu.Lock()
+	defer store.mu.Unlock()
+	if version != store.connection.version() {
+		return false, nil
+	}
+	store.connection.AccessToken = tokens.AccessToken
+	store.connection.RefreshToken = tokens.RefreshToken
+	store.connection.TokenVersion++
+	return true, nil
+}
+
+func TestRefreshListenersKeepsListenerAfterItsOwnTokenRefresh(t *testing.T) {
+	store := &refreshingTestStore{connection: Connection{
+		UserID: 42, SourceUserID: "account", ConnectedAt: testConnectedAt, AccessToken: "expired", RefreshToken: "refresh-1", TokenVersion: 1,
+	}}
+	started := make(chan string, 2)
+	cancelled := make(chan string, 2)
+	provider := testProvider()
+	provider.run = func(ctx context.Context, token, _ string, _ *string, _ func(DonationBatch) error) error {
+		if token == "expired" {
+			return &unauthorizedTestError{hadAuthorizedSession: true}
+		}
+		started <- token
+		<-ctx.Done()
+		cancelled <- token
+		return nil
+	}
+	provider.refresh = func(context.Context, string) (Tokens, error) {
+		return Tokens{AccessToken: "fresh", RefreshToken: "refresh-2"}, nil
+	}
+	integration := newIntegration(store, provider)
+	running := make(map[int]runningListener)
+	completed := make(chan listenerCompletion, 2)
+	var listeners sync.WaitGroup
+	ctx, cancel := context.WithCancel(context.Background())
+	defer func() { cancel(); listeners.Wait() }()
+	if err := integration.refreshListeners(ctx, running, completed, &listeners); err != nil {
+		t.Fatal(err)
+	}
+	if token := <-started; token != "fresh" {
+		t.Fatalf("token after refresh = %q", token)
+	}
+	listener := running[42]
+	if err := integration.refreshListeners(ctx, running, completed, &listeners); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case token := <-cancelled:
+		t.Fatalf("listener %q was restarted after its own token refresh", token)
+	case <-time.After(50 * time.Millisecond):
+	}
+	if running[42].tokenVersion != listener.tokenVersion || listener.tokenVersion.Load() != 2 {
+		t.Fatalf("listener = %#v; want the original listener at version 2", running[42])
+	}
+}
+
+func TestRunningListenerReplacementIgnoresSnapshotOlderThanItsRefresh(t *testing.T) {
+	connection := Connection{UserID: 42, SourceUserID: "account", ConnectedAt: testConnectedAt, TokenVersion: 3}
+	listener := runningListener{sourceUserID: "account", connectedAt: testConnectedAt, tokenVersion: listenerVersion(connection)}
+	listener.tokenVersion.Store(4)
+	if listener.replacedBy(connection) {
+		t.Fatal("a snapshot read before the listener's refresh was treated as a replacement")
+	}
+	connection.TokenVersion = 5
+	if !listener.replacedBy(connection) {
+		t.Fatal("a newer external version was not treated as a replacement")
+	}
+	connection.TokenVersion = 4
+	connection.ConnectedAt = testConnectedAt.Add(time.Millisecond)
+	if !listener.replacedBy(connection) {
+		t.Fatal("a recreated connection was not treated as a replacement")
 	}
 }
 
@@ -196,9 +342,13 @@ func TestListenerRejectsStaleRefresh(t *testing.T) {
 		return Tokens{AccessToken: "new-access", RefreshToken: "new-refresh"}, nil
 	}
 	integration := newIntegration(store, provider)
-	err := integration.listen(context.Background(), Connection{UserID: 42, AccessToken: "old", RefreshToken: "old-refresh", TokenVersion: 3})
+	connection := Connection{UserID: 42, SourceUserID: "account", ConnectedAt: testConnectedAt, AccessToken: "old", RefreshToken: "old-refresh", TokenVersion: 3}
+	err := integration.listen(context.Background(), connection, listenerVersion(connection))
 	if !errors.Is(err, ErrStaleCredentials) {
 		t.Fatalf("error = %v", err)
+	}
+	if store.setTokensVersion != connection.version() {
+		t.Fatalf("conditional token save version = %#v; want %#v", store.setTokensVersion, connection.version())
 	}
 }
 
@@ -212,11 +362,12 @@ func TestUnauthorizedRefreshRequiresReauthorizationForOnlyMatchingVersion(t *tes
 		return Tokens{}, &unauthorizedTestError{}
 	}
 	integration := newIntegration(store, provider)
-	if err := integration.listen(context.Background(), Connection{UserID: 42, AccessToken: "old", RefreshToken: "old-refresh", TokenVersion: 7}); err == nil {
+	connection := Connection{UserID: 42, SourceUserID: "account", ConnectedAt: testConnectedAt, AccessToken: "old", RefreshToken: "old-refresh", TokenVersion: 7}
+	if err := integration.listen(context.Background(), connection, listenerVersion(connection)); err == nil {
 		t.Fatal("expected refresh failure")
 	}
-	if store.reauthorizationUser != 42 || store.reauthorizationVersion != 7 {
-		t.Fatalf("conditional reauthorization user=%d version=%d", store.reauthorizationUser, store.reauthorizationVersion)
+	if store.reauthorizationVersion != connection.version() {
+		t.Fatalf("conditional reauthorization version = %#v", store.reauthorizationVersion)
 	}
 }
 
@@ -238,14 +389,18 @@ func TestRefreshedCredentialsRejectedBeforeAuthorizationRequireReauthorization(t
 	}
 	integration := newIntegration(store, provider)
 
-	err := integration.listen(context.Background(), Connection{
-		UserID: 42, AccessToken: "old", RefreshToken: "old-refresh", TokenVersion: 7,
-	})
+	connection := Connection{
+		UserID: 42, SourceUserID: "account", ConnectedAt: testConnectedAt, AccessToken: "old", RefreshToken: "old-refresh", TokenVersion: 7,
+	}
+	published := listenerVersion(connection)
+	err := integration.listen(context.Background(), connection, published)
 	if err == nil || refreshes != 1 || runs != 2 {
 		t.Fatalf("error=%v refreshes=%d runs=%d", err, refreshes, runs)
 	}
-	if store.reauthorizationUser != 42 || store.reauthorizationVersion != 8 {
-		t.Fatalf("conditional reauthorization user=%d version=%d", store.reauthorizationUser, store.reauthorizationVersion)
+	refreshed := connection.version()
+	refreshed.tokenVersion = 8
+	if store.reauthorizationVersion != refreshed || published.Load() != 8 {
+		t.Fatalf("conditional reauthorization version=%#v published=%d", store.reauthorizationVersion, published.Load())
 	}
 }
 
@@ -274,14 +429,13 @@ func TestAuthorizationAfterRefreshAllowsLaterTokenRefresh(t *testing.T) {
 	}
 	integration := newIntegration(store, provider)
 
-	err := integration.listen(context.Background(), Connection{
-		UserID: 42, AccessToken: "old", RefreshToken: "old-refresh", TokenVersion: 7,
-	})
+	connection := Connection{UserID: 42, AccessToken: "old", RefreshToken: "old-refresh", TokenVersion: 7}
+	err := integration.listen(context.Background(), connection, listenerVersion(connection))
 	if !errors.Is(err, context.Canceled) || refreshes != 2 || runs != 3 {
 		t.Fatalf("error=%v refreshes=%d runs=%d", err, refreshes, runs)
 	}
-	if store.reauthorizationUser != 0 {
-		t.Fatalf("unexpected reauthorization for user %d", store.reauthorizationUser)
+	if store.reauthorizationVersion != (connectionVersion{}) {
+		t.Fatalf("unexpected reauthorization for %#v", store.reauthorizationVersion)
 	}
 }
 
@@ -294,13 +448,14 @@ func TestPermanentListenerFailureMarksOnlyMatchingConnectionVersion(t *testing.T
 	provider.refresh = func(context.Context, string) (Tokens, error) { return Tokens{}, nil }
 	integration := newIntegration(store, provider)
 
-	err := integration.listen(context.Background(), Connection{UserID: 42, AccessToken: "access", TokenVersion: 9})
+	connection := Connection{UserID: 42, SourceUserID: "account", ConnectedAt: testConnectedAt, AccessToken: "access", TokenVersion: 9}
+	err := integration.listen(context.Background(), connection, listenerVersion(connection))
 	var permanent *permanentTestError
 	if !errors.As(err, &permanent) {
 		t.Fatalf("error = %v", err)
 	}
-	if store.connectionErrorUser != 42 || store.connectionErrorVersion != 9 {
-		t.Fatalf("conditional error user=%d version=%d", store.connectionErrorUser, store.connectionErrorVersion)
+	if store.connectionErrorVersion != connection.version() {
+		t.Fatalf("conditional error version = %#v", store.connectionErrorVersion)
 	}
 }
 
@@ -325,8 +480,12 @@ func TestListenerAdvancesHistoryCheckpointAfterPersist(t *testing.T) {
 	integration := newIntegration(store, provider)
 	acceptedAt := time.Date(2026, 9, 13, 12, 0, 0, 0, time.UTC)
 	integration.now = func() time.Time { return acceptedAt }
-	if err := integration.listen(context.Background(), Connection{UserID: 42, SourceUserID: "source-user", AccessToken: "access", TokenVersion: 1, HistoryCheckpoint: &checkpoint}); !errors.Is(err, context.Canceled) {
+	connection := Connection{UserID: 42, SourceUserID: "source-user", ConnectedAt: testConnectedAt, AccessToken: "access", TokenVersion: 1, HistoryCheckpoint: &checkpoint}
+	if err := integration.listen(context.Background(), connection, listenerVersion(connection)); !errors.Is(err, context.Canceled) {
 		t.Fatalf("error = %v", err)
+	}
+	if store.savedVersion != connection.version() {
+		t.Fatalf("saved version = %#v", store.savedVersion)
 	}
 	if store.savedBatch.Checkpoint == nil || *store.savedBatch.Checkpoint != next {
 		t.Fatalf("saved checkpoint = %v", store.savedBatch.Checkpoint)
@@ -363,8 +522,41 @@ func TestPermanentHistoryFailureMarksOnlyMatchingConnectionVersion(t *testing.T)
 
 	integration.syncHistory(context.Background(), false)
 
-	if store.connectionErrorUser != 42 || store.connectionErrorVersion != 3 {
-		t.Fatalf("conditional error user=%d version=%d", store.connectionErrorUser, store.connectionErrorVersion)
+	if store.connectionErrorVersion != store.connections[0].version() {
+		t.Fatalf("conditional error version = %#v", store.connectionErrorVersion)
+	}
+}
+
+func TestHistorySyncReportsEachRejectedDonationOnce(t *testing.T) {
+	var logs bytes.Buffer
+	previousLogger := slog.Default()
+	slog.SetDefault(slog.New(slog.NewJSONHandler(&logs, nil)))
+	defer slog.SetDefault(previousLogger)
+
+	store := &applicationTestStore{connections: []Connection{{UserID: 42, AccessToken: "secret-access-token", TokenVersion: 1}}}
+	provider := testProvider()
+	provider.batch = DonationBatch{
+		Donations: []Donation{{SourceDonationID: "valid"}},
+		Rejected:  []RejectedDonation{{SourceDonationID: "invalid", Err: errors.New("invalid donation amount")}},
+	}
+	integration := newIntegration(store, provider)
+	integration.syncHistory(context.Background(), false)
+	integration.syncHistory(context.Background(), false)
+
+	if len(store.savedBatch.Donations) != 1 || store.savedBatch.Donations[0].SourceDonationID != "valid" {
+		t.Fatalf("saved batch = %#v", store.savedBatch)
+	}
+	output := logs.String()
+	if count := strings.Count(output, `"msg":"Streamlabs donation skipped"`); count != 1 {
+		t.Fatalf("skipped donation logged %d times: %s", count, output)
+	}
+	for _, field := range []string{`"level":"ERROR"`, `"source":"streamlabs"`, `"userId":42`, `"sourceDonationId":"invalid"`, "invalid donation amount"} {
+		if !strings.Contains(output, field) {
+			t.Fatalf("log lacks %s: %s", field, output)
+		}
+	}
+	if strings.Contains(output, "secret-access-token") {
+		t.Fatalf("log leaked access token: %s", output)
 	}
 }
 
@@ -373,8 +565,8 @@ type recoveryIsolationStore struct {
 	saved chan<- int
 }
 
-func (store *recoveryIsolationStore) SaveDonations(_ context.Context, userID, _ int, _ DonationBatch, _ IngestionOrigin, _ time.Time) error {
-	store.saved <- userID
+func (store *recoveryIsolationStore) SaveDonations(_ context.Context, version connectionVersion, _ DonationBatch, _ IngestionOrigin, _ time.Time) error {
+	store.saved <- version.userID
 	return nil
 }
 
@@ -427,4 +619,88 @@ func TestRecentHistorySyncDoesNotLetBlockedAccountDelayHealthyAccount(t *testing
 	case <-time.After(time.Second):
 		t.Fatal("bounded recovery did not stop blocked account")
 	}
+}
+
+func TestStreamlabsReconciliationRetriesWithBackoffAndRetryHint(t *testing.T) {
+	responses := []func(http.ResponseWriter){
+		func(writer http.ResponseWriter) {
+			writer.Header().Set("Retry-After", "17")
+			writer.WriteHeader(http.StatusTooManyRequests)
+		},
+		func(writer http.ResponseWriter) { writer.WriteHeader(http.StatusBadGateway) },
+		func(writer http.ResponseWriter) { writer.WriteHeader(http.StatusServiceUnavailable) },
+		func(writer http.ResponseWriter) {
+			_, _ = writer.Write([]byte(`{"data":[` +
+				`{"donation_id":"20","created_at":"1438576556","currency":"USD","amount":"5","name":null,"message":null},` +
+				`{"donation_id":"10","created_at":"1438576500","currency":"USD","amount":"1","name":null,"message":null}]}`))
+		},
+	}
+	requests := 0
+	adapter := testStreamlabsAdapter(func(writer http.ResponseWriter, _ *http.Request) {
+		responses[requests](writer)
+		requests++
+	})
+	var waits []time.Duration
+	adapter.wait = func(_ context.Context, duration time.Duration) error {
+		waits = append(waits, duration)
+		return nil
+	}
+
+	checkpoint := "10"
+	batch, err := adapter.reconcile(context.Background(), "access-token", &checkpoint)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(batch.Donations) != 1 || batch.Donations[0].SourceDonationID != "20" || batch.Checkpoint == nil || *batch.Checkpoint != "20" {
+		t.Fatalf("batch = %#v", batch)
+	}
+	expected := []time.Duration{17 * time.Second, 10 * time.Second, 20 * time.Second}
+	if !reflect.DeepEqual(waits, expected) {
+		t.Fatalf("retry waits = %v; want %v", waits, expected)
+	}
+}
+
+func TestStreamlabsReconciliationReturnsUnauthorizedWithoutRetry(t *testing.T) {
+	adapter := testStreamlabsAdapter(func(writer http.ResponseWriter, _ *http.Request) {
+		writer.WriteHeader(http.StatusUnauthorized)
+	})
+	adapter.wait = func(context.Context, time.Duration) error {
+		t.Fatal("unauthorized reconciliation was retried")
+		return nil
+	}
+	_, err := adapter.reconcile(context.Background(), "expired", nil)
+	if !adapter.Unauthorized(err) {
+		t.Fatalf("error = %v; want unauthorized", err)
+	}
+}
+
+func TestStreamlabsReconciliationStopsRetryingWhenCancelled(t *testing.T) {
+	adapter := testStreamlabsAdapter(func(writer http.ResponseWriter, _ *http.Request) {
+		writer.WriteHeader(http.StatusInternalServerError)
+	})
+	ctx, cancel := context.WithCancel(context.Background())
+	adapter.wait = func(context.Context, time.Duration) error {
+		cancel()
+		return context.Canceled
+	}
+	if _, err := adapter.reconcile(ctx, "access-token", nil); !errors.Is(err, context.Canceled) {
+		t.Fatalf("error = %v; want cancellation", err)
+	}
+}
+
+func testStreamlabsAdapter(handler http.HandlerFunc) *StreamlabsAdapter {
+	client := streamlabs.NewClient(&http.Client{Transport: roundTripFunc(func(request *http.Request) (*http.Response, error) {
+		recorder := httptest.NewRecorder()
+		handler.ServeHTTP(recorder, request)
+		return recorder.Result(), nil
+	})})
+	client.BaseURL = "https://streamlabs.test"
+	client.PageDelay = 0
+	return NewStreamlabsAdapter(client, streamlabs.NewSource(client), streamlabs.Config{})
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (function roundTripFunc) RoundTrip(request *http.Request) (*http.Response, error) {
+	return function(request)
 }

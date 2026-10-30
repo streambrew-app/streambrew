@@ -52,7 +52,7 @@ func (store *providerStore) Connections(ctx context.Context) ([]Connection, erro
 		statusFilter = "WHERE status = 'connected'"
 	}
 	rows, err := store.pool.Query(ctx, fmt.Sprintf(`
-		SELECT user_id, source_user_id, access_token, refresh_token, token_version, history_checkpoint
+		SELECT user_id, source_user_id, connected_at, access_token, refresh_token, token_version, history_checkpoint
 		FROM %s
 		%s
 		ORDER BY user_id
@@ -64,7 +64,7 @@ func (store *providerStore) Connections(ctx context.Context) ([]Connection, erro
 	connections := make([]Connection, 0)
 	for rows.Next() {
 		var connection Connection
-		if err := rows.Scan(&connection.UserID, &connection.SourceUserID, &connection.AccessToken, &connection.RefreshToken, &connection.TokenVersion, &connection.HistoryCheckpoint); err != nil {
+		if err := rows.Scan(&connection.UserID, &connection.SourceUserID, &connection.ConnectedAt, &connection.AccessToken, &connection.RefreshToken, &connection.TokenVersion, &connection.HistoryCheckpoint); err != nil {
 			return nil, err
 		}
 		connections = append(connections, connection)
@@ -98,7 +98,15 @@ func (store *providerStore) SaveConnectionWithDonations(ctx context.Context, use
 	})
 }
 
-func (store *providerStore) SaveDonations(ctx context.Context, userID, tokenVersion int, batch DonationBatch, origin IngestionOrigin, acceptedAt time.Time) error {
+// connectionVersionCondition matches one connection generation. Parameters
+// $1 through $4 are the connectionVersionArguments.
+const connectionVersionCondition = "user_id = $1 AND source_user_id = $2 AND connected_at = $3::timestamptz AND token_version = $4"
+
+func connectionVersionArguments(version connectionVersion, arguments ...any) []any {
+	return append([]any{version.userID, version.sourceUserID, version.connectedAt, version.tokenVersion}, arguments...)
+}
+
+func (store *providerStore) SaveDonations(ctx context.Context, version connectionVersion, batch DonationBatch, origin IngestionOrigin, acceptedAt time.Time) error {
 	statusFilter := ""
 	if store.source == StreamElementsSource {
 		statusFilter = " AND status = 'connected'"
@@ -107,17 +115,17 @@ func (store *providerStore) SaveDonations(ctx context.Context, userID, tokenVers
 		command, err := tx.Exec(ctx, fmt.Sprintf(`
 			UPDATE %s
 			SET
-				history_checkpoint = coalesce($1, history_checkpoint),
-				updated_at = CASE WHEN $1::text IS NULL THEN updated_at ELSE now() END
-			WHERE user_id = $2 AND token_version = $3%s
-		`, store.connectionTable, statusFilter), batch.Checkpoint, userID, tokenVersion)
+				history_checkpoint = coalesce($5, history_checkpoint),
+				updated_at = CASE WHEN $5::text IS NULL THEN updated_at ELSE now() END
+			WHERE %s%s
+		`, store.connectionTable, connectionVersionCondition, statusFilter), connectionVersionArguments(version, batch.Checkpoint)...)
 		if err != nil {
 			return err
 		}
 		if command.RowsAffected() != 1 {
 			return ErrStaleCredentials
 		}
-		return insertDonations(ctx, tx, store.source, userID, batch.Donations, origin, acceptedAt)
+		return insertDonations(ctx, tx, store.source, version.userID, batch.Donations, origin, acceptedAt)
 	})
 }
 
@@ -169,7 +177,7 @@ func orderedDonations(donations []Donation) []Donation {
 	return ordered
 }
 
-func (store *providerStore) SetTokensIfVersion(ctx context.Context, userID, tokenVersion int, tokens Tokens) (bool, error) {
+func (store *providerStore) SetTokensIfVersion(ctx context.Context, version connectionVersion, tokens Tokens) (bool, error) {
 	statusFilter := ""
 	if store.source == StreamElementsSource {
 		statusFilter = " AND status = 'connected'"
@@ -177,12 +185,12 @@ func (store *providerStore) SetTokensIfVersion(ctx context.Context, userID, toke
 	command, err := store.pool.Exec(ctx, fmt.Sprintf(`
 		UPDATE %s
 		SET
-			refresh_token = $1,
-			access_token = $2,
+			refresh_token = $5,
+			access_token = $6,
 			token_version = token_version + 1,
 			updated_at = now()
-		WHERE user_id = $3 AND token_version = $4%s
-	`, store.connectionTable, statusFilter), tokens.RefreshToken, tokens.AccessToken, userID, tokenVersion)
+		WHERE %s%s
+	`, store.connectionTable, connectionVersionCondition, statusFilter), connectionVersionArguments(version, tokens.RefreshToken, tokens.AccessToken)...)
 	if err != nil {
 		return false, err
 	}
@@ -197,35 +205,35 @@ func (store *providerStore) Disconnect(ctx context.Context, userID int) error {
 	return err
 }
 
-func (store *providerStore) DisconnectIfVersion(ctx context.Context, userID, tokenVersion int) (bool, error) {
+func (store *providerStore) DisconnectIfVersion(ctx context.Context, version connectionVersion) (bool, error) {
 	command, err := store.pool.Exec(ctx, fmt.Sprintf(`
 		DELETE FROM %s
-		WHERE user_id = $1 AND token_version = $2
-	`, store.connectionTable), userID, tokenVersion)
+		WHERE %s
+	`, store.connectionTable, connectionVersionCondition), connectionVersionArguments(version)...)
 	if err != nil {
 		return false, err
 	}
 	return command.RowsAffected() == 1, nil
 }
 
-func (store *providerStore) RequireReauthorizationIfVersion(ctx context.Context, userID, tokenVersion int) (bool, error) {
+func (store *providerStore) RequireReauthorizationIfVersion(ctx context.Context, version connectionVersion) (bool, error) {
 	if store.source != StreamElementsSource {
-		return store.DisconnectIfVersion(ctx, userID, tokenVersion)
+		return store.DisconnectIfVersion(ctx, version)
 	}
 	command, err := store.pool.Exec(ctx, `
 		UPDATE streamelements_connection
 		SET
 			status = 'reauthorization_required',
 			updated_at = now()
-		WHERE user_id = $1 AND token_version = $2 AND status = 'connected'
-	`, userID, tokenVersion)
+		WHERE `+connectionVersionCondition+` AND status = 'connected'
+	`, connectionVersionArguments(version)...)
 	if err != nil {
 		return false, err
 	}
 	return command.RowsAffected() == 1, nil
 }
 
-func (store *providerStore) MarkConnectionErrorIfVersion(ctx context.Context, userID, tokenVersion int) (bool, error) {
+func (store *providerStore) MarkConnectionErrorIfVersion(ctx context.Context, version connectionVersion) (bool, error) {
 	if store.source != StreamElementsSource {
 		return false, nil
 	}
@@ -234,8 +242,8 @@ func (store *providerStore) MarkConnectionErrorIfVersion(ctx context.Context, us
 		SET
 			status = 'error',
 			updated_at = now()
-		WHERE user_id = $1 AND token_version = $2 AND status = 'connected'
-	`, userID, tokenVersion)
+		WHERE `+connectionVersionCondition+` AND status = 'connected'
+	`, connectionVersionArguments(version)...)
 	if err != nil {
 		return false, err
 	}

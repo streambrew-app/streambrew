@@ -97,7 +97,7 @@ func TestSourceRefreshesExpiringConnectionAndSubscription(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if received.SourceDonationID != "1" || received.Amount != "10.00" {
+	if received.SourceDonationID != "1" || received.Amount != "10" {
 		t.Fatalf("unexpected donation: %#v", received)
 	}
 	if profileRequests.Load() < 2 || channelRequests.Load() < 2 {

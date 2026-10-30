@@ -21,6 +21,9 @@ const (
 	defaultBaseURL     = "https://streamlabs.com/api/v2.0"
 	historyPageSize    = 100
 	maximumHistoryPage = 1000
+	// maximumRetryAfter bounds a provider retry hint so a malformed or extreme
+	// value cannot stall reconciliation indefinitely.
+	maximumRetryAfter = 5 * time.Minute
 )
 
 var scopes = []string{"donations.read", "socket.token"}
@@ -74,16 +77,26 @@ type Donation struct {
 	OccurredAt       time.Time
 }
 
+// RejectedDonation is a history row that failed validation. It is skipped so
+// one malformed row cannot block the rest of the account's history.
+type RejectedDonation struct {
+	SourceDonationID string
+	Err              error
+}
+
 type History struct {
 	Donations  []Donation
+	Rejected   []RejectedDonation
 	Checkpoint *string
 }
 
 type RequestError struct {
 	Unauthorized bool
 	Status       int
-	Operation    string
-	Cause        error
+	// RetryAfter is the provider's bounded Retry-After hint, or zero.
+	RetryAfter time.Duration
+	Operation  string
+	Cause      error
 }
 
 func (e *RequestError) Error() string {
@@ -153,6 +166,7 @@ func (client *Client) RefreshTokens(ctx context.Context, config Config, refreshT
 
 func (client *Client) GetDonations(ctx context.Context, accessToken string, checkpoint *string) (History, error) {
 	donations := make([]Donation, 0)
+	var rejected []RejectedDonation
 	seenCursors := make(map[string]struct{})
 	var before string
 	var newCheckpoint *string
@@ -168,33 +182,39 @@ func (client *Client) GetDonations(ctx context.Context, accessToken string, chec
 			parameters.Set("before", before)
 		}
 		var page struct {
-			Data []rawDonation `json:"data"`
+			// Rows are decoded individually so one malformed row is skipped
+			// instead of rejecting its whole page.
+			Data []json.RawMessage `json:"data"`
 		}
 		path := "/donations?" + parameters.Encode()
 		if err := client.doJSON(ctx, http.MethodGet, path, nil, accessToken, &page); err != nil {
 			return History{}, err
 		}
 		if len(page.Data) == 0 {
-			return History{Donations: donations, Checkpoint: checkpointOrNew(checkpoint, newCheckpoint)}, nil
+			return History{Donations: donations, Rejected: rejected, Checkpoint: checkpointOrNew(checkpoint, newCheckpoint)}, nil
+		}
+		rows := make([]decodedDonation, len(page.Data))
+		for index, body := range page.Data {
+			rows[index] = decodeDonation(body)
 		}
 		if newCheckpoint == nil {
-			head := string(page.Data[0].DonationID)
+			head := rows[0].id
 			if head == "" {
 				return History{}, requestValidationError("read donations", errors.New("missing donation id"))
 			}
 			newCheckpoint = &head
 		}
-		for _, raw := range page.Data {
-			if checkpoint != nil && string(raw.DonationID) == *checkpoint {
-				return History{Donations: donations, Checkpoint: newCheckpoint}, nil
+		for _, row := range rows {
+			if checkpoint != nil && row.id == *checkpoint {
+				return History{Donations: donations, Rejected: rejected, Checkpoint: newCheckpoint}, nil
 			}
-			donation, err := raw.donation()
-			if err != nil {
-				return History{}, requestValidationError("read donations", err)
+			if row.err != nil {
+				rejected = append(rejected, RejectedDonation{SourceDonationID: row.id, Err: row.err})
+				continue
 			}
-			donations = append(donations, donation)
+			donations = append(donations, row.donation)
 		}
-		before = string(page.Data[len(page.Data)-1].DonationID)
+		before = rows[len(rows)-1].id
 		if before == "" {
 			return History{}, requestValidationError("read donations", errors.New("missing pagination cursor"))
 		}
@@ -235,11 +255,36 @@ type rawDonation struct {
 	Message    *string        `json:"message"`
 }
 
+type decodedDonation struct {
+	id       string
+	donation Donation
+	err      error
+}
+
+// decodeDonation keeps the row identifier even when other fields are invalid
+// because pagination and checkpoints depend on it.
+func decodeDonation(body []byte) decodedDonation {
+	var identity struct {
+		DonationID stringOrNumber `json:"donation_id"`
+	}
+	if err := json.Unmarshal(body, &identity); err != nil {
+		return decodedDonation{err: fmt.Errorf("invalid donation: %w", err)}
+	}
+	row := decodedDonation{id: string(identity.DonationID)}
+	var raw rawDonation
+	if err := json.Unmarshal(body, &raw); err != nil {
+		row.err = fmt.Errorf("invalid donation: %w", err)
+		return row
+	}
+	row.donation, row.err = raw.donation()
+	return row
+}
+
 func (raw rawDonation) donation() (Donation, error) {
 	if raw.DonationID == "" || !currencyPattern.MatchString(raw.Currency) {
 		return Donation{}, errors.New("invalid donation identity or currency")
 	}
-	amount, err := money.Normalize(string(raw.Amount))
+	amount, err := money.NormalizeDonationAmount(string(raw.Amount))
 	if err != nil {
 		return Donation{}, err
 	}
@@ -249,8 +294,8 @@ func (raw rawDonation) donation() (Donation, error) {
 	}
 	return Donation{
 		SourceDonationID: string(raw.DonationID),
-		Author:           raw.Name,
-		Message:          raw.Message,
+		Author:           donorText(raw.Name),
+		Message:          donorText(raw.Message),
 		Amount:           amount,
 		Currency:         raw.Currency,
 		SourceCreatedAt:  string(raw.CreatedAt),
@@ -294,9 +339,15 @@ func (client *Client) doJSON(ctx context.Context, method, path string, body io.R
 	}
 	defer func() { _ = response.Body.Close() }()
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
+		unauthorized := response.StatusCode == http.StatusUnauthorized
+		if response.StatusCode == http.StatusBadRequest && path == "/token" {
+			// OAuth reports a revoked or expired refresh token as 400 invalid_grant.
+			unauthorized = tokenGrantInvalid(response.Body)
+		}
 		return &RequestError{
-			Unauthorized: response.StatusCode == http.StatusUnauthorized,
+			Unauthorized: unauthorized,
 			Status:       response.StatusCode,
+			RetryAfter:   retryAfter(response.Header.Get("Retry-After"), time.Now()),
 			Operation:    method + " " + path,
 		}
 	}
@@ -306,6 +357,43 @@ func (client *Client) doJSON(ctx context.Context, method, path string, body io.R
 		return requestValidationError(method+" "+path, err)
 	}
 	return nil
+}
+
+// donorText removes NUL characters from donor-controlled text because
+// PostgreSQL text values cannot store them.
+func donorText(value *string) *string {
+	if value == nil || !strings.ContainsRune(*value, 0) {
+		return value
+	}
+	cleaned := strings.ReplaceAll(*value, "\x00", "")
+	return &cleaned
+}
+
+func tokenGrantInvalid(body io.Reader) bool {
+	var oauthError struct {
+		Error string `json:"error"`
+	}
+	// OAuth error bodies are small; the bound also prevents an unexpected response from being buffered.
+	decoder := json.NewDecoder(io.LimitReader(body, 4096))
+	return decoder.Decode(&oauthError) == nil && oauthError.Error == "invalid_grant"
+}
+
+// retryAfter parses an HTTP Retry-After value as delay seconds or an HTTP date.
+func retryAfter(value string, now time.Time) time.Duration {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return 0
+	}
+	if seconds, err := strconv.ParseInt(value, 10, 64); err == nil {
+		if seconds <= 0 {
+			return 0
+		}
+		return time.Duration(min(seconds, int64(maximumRetryAfter/time.Second))) * time.Second
+	}
+	if at, err := http.ParseTime(value); err == nil {
+		return min(max(at.Sub(now), 0), maximumRetryAfter)
+	}
+	return 0
 }
 
 func requestValidationError(operation string, cause error) error {

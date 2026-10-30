@@ -25,6 +25,9 @@ Connecting loads the provider profile and complete available donation history
 before atomically saving the connection and donations. A history failure leaves
 the existing database state unchanged and causes the callback to report failure.
 Reconnecting replaces the streamer's connection and increments its token version.
+Disconnecting deletes the connection, so a later connection starts again at token
+version 1; listeners and their conditional writes therefore identify a connection
+by its provider account, connection time, and token version together.
 
 ## OAuth contract in the implementation
 
@@ -58,11 +61,17 @@ The provider boundary normalizes donation data once:
 
 - Numeric `id` becomes the string `source_donation_id`; string IDs are rejected
   by the current parser.
-- `amount` accepts a JSON number or string and is normalized as decimal text.
+- `amount` accepts a JSON number or string and is normalized as decimal text
+  with the original-amount precision from the [currency rules](../features/currencies.md).
 - `currency` must be three uppercase letters in this provider adapter.
 - `created_at` is parsed as `YYYY-MM-DD HH:mm:ss` in UTC; the original text is
   preserved as `source_created_at`.
 - Nullable `username` and `message` become the donation's author and message.
+  NUL characters, which PostgreSQL text cannot store, are removed.
+
+History rows are validated individually. A row that fails validation is skipped
+and logged once per service process at error level with the source, user ID, and
+source donation ID; the rest of the page is still imported.
 
 Persistence deduplicates by `(user_id, source, source_donation_id)`. Initial
 history never enqueues incoming alerts. New donations accepted from realtime or
@@ -100,10 +109,14 @@ including provider HTTP failures such as 504, are debug-level diagnostics and do
 not produce operational Telegram notifications with the default logger.
 An unauthorized provider response returns control to the shared application,
 which refreshes OAuth tokens
-and stores them only if the token version still matches. Reconciliation cancels
-listeners when their connection disappears or its version changes. For
-DonationAlerts, an unauthorized refresh removes only the matching connection
-version; existing donations remain stored.
+and stores them only if the connection version still matches. Reconciliation
+cancels listeners when their connection disappears, belongs to another provider
+account or connection time, or has a newer token version than the listener
+wrote. A listener's own token refresh does not restart it, so its in-memory
+recovery position survives the refresh. For DonationAlerts, an unauthorized
+refresh (HTTP 401, or HTTP 400 with OAuth `invalid_grant` from the token
+endpoint) removes only the matching connection version; existing donations
+remain stored.
 
 ## Implementation evidence and checks
 

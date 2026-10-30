@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 )
@@ -115,7 +116,7 @@ func TestGetDonationsWalksHistoryWithoutCurrencyConversion(t *testing.T) {
 		t.Fatalf("history = %#v after %d requests", history, requests)
 	}
 	first := history.Donations[0]
-	if first.SourceDonationID != "20" || first.Amount != "50.00" || first.SourceCreatedAt != "1438576556" || !first.OccurredAt.Equal(time.Unix(1438576556, 0).UTC()) {
+	if first.SourceDonationID != "20" || first.Amount != "50" || first.SourceCreatedAt != "1438576556" || !first.OccurredAt.Equal(time.Unix(1438576556, 0).UTC()) {
 		t.Fatalf("first donation = %#v", first)
 	}
 }
@@ -135,15 +136,95 @@ func TestGetDonationsStopsAtCheckpoint(t *testing.T) {
 	}
 }
 
-func TestGetDonationsRejectsInvalidSourceValues(t *testing.T) {
+func TestGetDonationsSkipsInvalidRowsAndKeepsCheckpoint(t *testing.T) {
+	requests := 0
 	client := testClient(t, func(writer http.ResponseWriter, _ *http.Request) {
-		_, _ = writer.Write([]byte(`{"data":[{"donation_id":"20","created_at":"not-a-time","currency":"usd","amount":"2","name":"New","message":null}]}`))
+		requests++
+		if requests > 1 {
+			_, _ = writer.Write([]byte(`{"data":[]}`))
+			return
+		}
+		_, _ = writer.Write([]byte(`{"data":[` +
+			`{"donation_id":"40","created_at":"not-a-time","currency":"usd","amount":"2","name":"New","message":null},` +
+			`{"donation_id":"30","created_at":"1438576556","currency":"USD","amount":"2","name":{"unexpected":true},"message":null},` +
+			`{"donation_id":"20","created_at":"1438576556","currency":"USD","amount":"1.005","name":"Sup\u0000porter","message":"hi\u0000"}` +
+			`]}`))
 	})
 	client.PageDelay = 0
+	history, err := client.GetDonations(context.Background(), "access-token", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if history.Checkpoint == nil || *history.Checkpoint != "40" || len(history.Donations) != 1 || len(history.Rejected) != 2 {
+		t.Fatalf("history = %#v", history)
+	}
+	accepted := history.Donations[0]
+	if accepted.SourceDonationID != "20" || accepted.Amount != "1.005" || accepted.Author == nil || *accepted.Author != "Supporter" ||
+		accepted.Message == nil || *accepted.Message != "hi" {
+		t.Fatalf("accepted donation = %#v", accepted)
+	}
+	if history.Rejected[0].SourceDonationID != "40" || history.Rejected[1].SourceDonationID != "30" ||
+		history.Rejected[0].Err == nil || history.Rejected[1].Err == nil {
+		t.Fatalf("rejected = %#v", history.Rejected)
+	}
+}
+
+func TestRefreshInvalidGrantIsUnauthorized(t *testing.T) {
+	client := testClient(t, func(writer http.ResponseWriter, _ *http.Request) {
+		writer.WriteHeader(http.StatusBadRequest)
+		_, _ = writer.Write([]byte(`{"error":"invalid_grant","error_description":"The refresh token is invalid."}`))
+	})
+	_, err := client.RefreshTokens(context.Background(), Config{}, "secret-refresh-token")
+	var requestError *RequestError
+	if !errors.As(err, &requestError) || !requestError.Unauthorized || requestError.Status != http.StatusBadRequest {
+		t.Fatalf("error = %v; want unauthorized invalid_grant RequestError", err)
+	}
+	if strings.Contains(err.Error(), "secret-refresh-token") || strings.Contains(err.Error(), "refresh token is invalid") {
+		t.Fatalf("error leaked response detail: %v", err)
+	}
+}
+
+func TestOtherTokenHTTP400IsNotUnauthorized(t *testing.T) {
+	client := testClient(t, func(writer http.ResponseWriter, _ *http.Request) {
+		writer.WriteHeader(http.StatusBadRequest)
+		_, _ = writer.Write([]byte(`{"error":"invalid_client"}`))
+	})
+	_, err := client.RefreshTokens(context.Background(), Config{}, "refresh-token")
+	var requestError *RequestError
+	if !errors.As(err, &requestError) || requestError.Unauthorized || requestError.Status != http.StatusBadRequest {
+		t.Fatalf("error = %v; want non-authorization HTTP 400 RequestError", err)
+	}
+}
+
+func TestRequestErrorCarriesBoundedRetryAfterHint(t *testing.T) {
+	now := time.Date(2026, 9, 10, 12, 0, 0, 0, time.UTC)
+	tests := []struct {
+		header string
+		want   time.Duration
+	}{
+		{header: "", want: 0},
+		{header: "17", want: 17 * time.Second},
+		{header: "-3", want: 0},
+		{header: "999999999999", want: maximumRetryAfter},
+		{header: now.Add(30 * time.Second).Format(http.TimeFormat), want: 30 * time.Second},
+		{header: now.Add(-time.Minute).Format(http.TimeFormat), want: 0},
+		{header: "soon", want: 0},
+	}
+	for _, test := range tests {
+		if got := retryAfter(test.header, now); got != test.want {
+			t.Fatalf("retryAfter(%q) = %s; want %s", test.header, got, test.want)
+		}
+	}
+
+	client := testClient(t, func(writer http.ResponseWriter, _ *http.Request) {
+		writer.Header().Set("Retry-After", "12")
+		writer.WriteHeader(http.StatusTooManyRequests)
+	})
 	_, err := client.GetDonations(context.Background(), "access-token", nil)
 	var requestError *RequestError
-	if !errors.As(err, &requestError) || requestError.Unauthorized {
-		t.Fatalf("expected validation request error, got %v", err)
+	if !errors.As(err, &requestError) || requestError.Unauthorized || requestError.Status != http.StatusTooManyRequests ||
+		requestError.RetryAfter != 12*time.Second {
+		t.Fatalf("error = %#v; want HTTP 429 with a 12s retry hint", err)
 	}
 }
 

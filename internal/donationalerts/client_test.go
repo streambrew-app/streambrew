@@ -78,12 +78,13 @@ func TestGetDonations(t *testing.T) {
 		_, _ = writer.Write([]byte(`{"data":[{"id":1,"username":"Streamer","message":"Thank you","amount":"10.00","currency":"USD","created_at":"2026-08-22 12:00:00"}],"meta":{"last_page":1}}`))
 	})
 	defer closeServer()
-	donations, err := client.GetDonations(context.Background(), "access-token")
+	history, err := client.GetDonations(context.Background(), "access-token")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(donations) != 1 || donations[0].SourceDonationID != "1" || donations[0].SourceCreatedAt != "2026-08-22 12:00:00" || !donations[0].OccurredAt.Equal(time.Date(2026, 8, 22, 12, 0, 0, 0, time.UTC)) {
-		t.Fatalf("unexpected donations: %#v", donations)
+	donations := history.Donations
+	if len(donations) != 1 || donations[0].SourceDonationID != "1" || donations[0].SourceCreatedAt != "2026-08-22 12:00:00" || !donations[0].OccurredAt.Equal(time.Date(2026, 8, 22, 12, 0, 0, 0, time.UTC)) || len(history.Rejected) != 0 {
+		t.Fatalf("unexpected history: %#v", history)
 	}
 }
 
@@ -103,10 +104,11 @@ func TestGetDonationsAfterFiltersEveryBoundedPageWithoutAssumingOrder(t *testing
 	defer closeServer()
 
 	cutoff := time.Date(2026, 9, 13, 11, 50, 0, 0, time.UTC)
-	donations, err := client.GetDonationsAfter(context.Background(), "access-token", cutoff)
+	history, err := client.GetDonationsAfter(context.Background(), "access-token", cutoff)
 	if err != nil {
 		t.Fatal(err)
 	}
+	donations := history.Donations
 	if requests != 2 {
 		t.Fatalf("recovery requests = %d, want 2", requests)
 	}
@@ -140,34 +142,78 @@ func TestGetDonationsAcceptsNumericAmount(t *testing.T) {
 		_, _ = writer.Write([]byte(`{"data":[{"id":1,"username":null,"message":null,"amount":10,"currency":"USD","created_at":"2026-08-22 12:00:00"}],"meta":{"last_page":1}}`))
 	})
 	defer closeServer()
-	donations, err := client.GetDonations(context.Background(), "access-token")
+	history, err := client.GetDonations(context.Background(), "access-token")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(donations) != 1 || donations[0].Amount != "10.00" {
-		t.Fatalf("unexpected numeric amount: %#v", donations)
+	if len(history.Donations) != 1 || history.Donations[0].Amount != "10" {
+		t.Fatalf("unexpected numeric amount: %#v", history)
 	}
 }
 
-func TestGetDonationsRejectsStringDonationID(t *testing.T) {
+func TestGetDonationsSkipsInvalidRowsAndKeepsValidHistory(t *testing.T) {
 	client, closeServer := testClient(t, func(writer http.ResponseWriter, _ *http.Request) {
-		_, _ = writer.Write([]byte(`{"data":[{"id":"1","username":null,"message":null,"amount":"10.00","currency":"USD","created_at":"2026-08-22 12:00:00"}],"meta":{"last_page":1}}`))
+		_, _ = writer.Write([]byte(`{"data":[` +
+			`{"id":"1","username":null,"message":null,"amount":"10.00","currency":"USD","created_at":"2026-08-22 12:00:00"},` +
+			`{"id":2,"username":null,"message":null,"amount":"10.00","currency":"USD","created_at":"not-a-date"},` +
+			`{"id":3,"username":null,"message":null,"amount":"10.00","currency":"USDT","created_at":"2026-08-22 12:00:00"},` +
+			`{"id":4,"username":"Sup\u0000porter","message":"hi\u0000","amount":"0.125","currency":"EUR","created_at":"2026-08-22 12:00:00"}` +
+			`],"meta":{"last_page":1}}`))
 	})
 	defer closeServer()
-	if _, err := client.GetDonations(context.Background(), "access-token"); err == nil {
-		t.Fatal("expected a string donation id to be rejected")
+	history, err := client.GetDonations(context.Background(), "access-token")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(history.Donations) != 1 {
+		t.Fatalf("donations = %#v", history.Donations)
+	}
+	accepted := history.Donations[0]
+	if accepted.SourceDonationID != "4" || accepted.Amount != "0.125" || accepted.Author == nil || *accepted.Author != "Supporter" ||
+		accepted.Message == nil || *accepted.Message != "hi" {
+		t.Fatalf("accepted donation = %#v", accepted)
+	}
+	rejectedIDs := make([]string, 0, len(history.Rejected))
+	for _, rejected := range history.Rejected {
+		if rejected.Err == nil {
+			t.Fatalf("rejected row %q has no reason", rejected.SourceDonationID)
+		}
+		rejectedIDs = append(rejectedIDs, rejected.SourceDonationID)
+	}
+	if !reflect.DeepEqual(rejectedIDs, []string{"1", "2", "3"}) {
+		t.Fatalf("rejected ids = %#v", rejectedIDs)
+	}
+	if !strings.Contains(history.Rejected[1].Err.Error(), "invalid donation date") {
+		t.Fatalf("invalid date reason = %v", history.Rejected[1].Err)
 	}
 }
 
-func TestGetDonationsRejectsInvalidDate(t *testing.T) {
+func TestRefreshInvalidGrantIsUnauthorized(t *testing.T) {
 	client, closeServer := testClient(t, func(writer http.ResponseWriter, _ *http.Request) {
-		_, _ = writer.Write([]byte(`{"data":[{"id":1,"username":null,"message":null,"amount":"10.00","currency":"USD","created_at":"not-a-date"}],"meta":{"last_page":1}}`))
+		writer.WriteHeader(http.StatusBadRequest)
+		_, _ = writer.Write([]byte(`{"error":"invalid_grant","error_description":"The refresh token is invalid."}`))
 	})
 	defer closeServer()
-	_, err := client.GetDonations(context.Background(), "access-token")
+	_, err := client.RefreshTokens(context.Background(), Config{ClientID: "client-id", ClientSecret: "secret"}, "secret-refresh-token")
 	var requestError *RequestError
-	if !errors.As(err, &requestError) || requestError.Unauthorized || !strings.Contains(err.Error(), "invalid donation date") {
-		t.Fatalf("expected request validation error, got %v", err)
+	if !errors.As(err, &requestError) || !requestError.Unauthorized || requestError.Status != http.StatusBadRequest {
+		t.Fatalf("error = %v; want unauthorized invalid_grant RequestError", err)
+	}
+	if strings.Contains(err.Error(), "secret-refresh-token") || strings.Contains(err.Error(), "refresh token is invalid") {
+		t.Fatalf("error leaked response detail: %v", err)
+	}
+}
+
+func TestOtherTokenHTTP400IsNotUnauthorized(t *testing.T) {
+	client, closeServer := testClient(t, func(writer http.ResponseWriter, _ *http.Request) {
+		writer.WriteHeader(http.StatusBadRequest)
+		_, _ = writer.Write([]byte(`{"error":"invalid_client"}`))
+	})
+	defer closeServer()
+	_, err := client.RefreshTokens(context.Background(), Config{ClientID: "client-id", ClientSecret: "secret"}, "refresh-token")
+	var requestError *RequestError
+	if !errors.As(err, &requestError) || requestError.Unauthorized || requestError.Status != http.StatusBadRequest {
+		t.Fatalf("error = %v; want non-authorization HTTP 400 RequestError", err)
 	}
 }
 

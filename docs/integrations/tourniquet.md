@@ -84,7 +84,9 @@ After `pusher:connection_established`, StreamBrew sends:
 Pusher channel-event `data` is a JSON-encoded string, so it is decoded once
 before the Tourniquet payload. StreamBrew responds to `pusher:ping` with
 `pusher:pong`, reconnects with bounded exponential backoff after transport
-failure, and resubscribes after every reconnect. These connection, subscription,
+failure, and resubscribes after every reconnect. A session that received
+`pusher_internal:subscription_succeeded` for `donation_channel` resets the
+backoff, so routine disconnects reconnect promptly. These connection, subscription,
 double-encoding, and heartbeat rules come from the
 [Pusher Channels protocol](https://pusher.com/docs/channels/library_auth_reference/pusher-websockets-protocol/).
 
@@ -96,8 +98,8 @@ the [current bundle](https://tourniquet.app/build/assets/app-5e4c1750.js):
 | Tourniquet field         | StreamBrew field       | Handling                                                                                                             |
 | ------------------------ | ---------------------- | -------------------------------------------------------------------------------------------------------------------- |
 | `order_id`               | `sourceDonationId`     | Required. Preserve a string value; normalize a numeric JSON scalar without passing it through a fixed-width integer. |
-| `username`               | `author`               | Preserve the donor name; accept an absent or null value.                                                             |
-| `text`                   | `message`              | Preserve the message; accept an absent or null value.                                                                |
+| `username`               | `author`               | Preserve the donor name without NUL characters; accept an absent or null value.                                      |
+| `text`                   | `message`              | Preserve the message without NUL characters; accept an absent or null value.                                         |
 | `updated_at`             | `sourceCreatedAt`      | Preserve Tourniquet's exact source text.                                                                             |
 | `updated_at`             | `occurredAt`           | Parse the `YYYY-MM-DD HH:mm:ss` value as UTC, matching Tourniquet's own donation-list conversion.                    |
 | `amount`                 | original fiat amount   | Normalize the decimal value when no crypto amount is present.                                                        |

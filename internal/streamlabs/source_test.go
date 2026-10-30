@@ -1,11 +1,14 @@
 package streamlabs
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -142,5 +145,35 @@ func TestSourceReturnsUnauthorizedWithoutDialling(t *testing.T) {
 	var requestError *RequestError
 	if !errors.As(err, &requestError) || !requestError.Unauthorized {
 		t.Fatalf("error = %v", err)
+	}
+}
+
+func TestSourceKeepsSocketTokenOutOfDialErrorsAndLogs(t *testing.T) {
+	const socketToken = "secret-socket-token"
+	client := testClient(t, func(writer http.ResponseWriter, _ *http.Request) {
+		_, _ = writer.Write([]byte(`{"socket_token":"` + socketToken + `"}`))
+	})
+	var logs bytes.Buffer
+	previousLogger := slog.Default()
+	slog.SetDefault(slog.New(slog.NewTextHandler(&logs, nil)))
+	defer slog.SetDefault(previousLogger)
+
+	source := NewSource(client)
+	source.dial = func(_ context.Context, rawURL string) (Socket, error) {
+		return nil, &url.Error{Op: "Get", URL: rawURL, Err: errors.New("connection refused")}
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	source.wait = func(context.Context, time.Duration) error {
+		cancel()
+		return context.Canceled
+	}
+	if err := source.Run(ctx, "access-token", func() error { return nil }); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(logs.String(), "Streamlabs listener will reconnect") {
+		t.Fatalf("reconnect was not logged: %s", logs.String())
+	}
+	if strings.Contains(logs.String(), socketToken) {
+		t.Fatalf("log leaked socket token: %s", logs.String())
 	}
 }

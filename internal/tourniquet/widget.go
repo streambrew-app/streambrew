@@ -128,8 +128,8 @@ func (raw rawDonation) donation() (Donation, bool, error) {
 	}
 	return Donation{
 		SourceDonationID: string(raw.OrderID),
-		Author:           raw.Username,
-		Message:          raw.Text,
+		Author:           donorText(raw.Username),
+		Message:          donorText(raw.Text),
 		Amount:           amount,
 		Currency:         currency,
 		SourceCreatedAt:  raw.UpdatedAt,
@@ -146,6 +146,16 @@ func parseSourceTime(value string) (time.Time, error) {
 		}
 	}
 	return time.Time{}, errors.New("invalid donation timestamp")
+}
+
+// donorText removes NUL characters from donor-controlled text because
+// PostgreSQL text values cannot store them.
+func donorText(value *string) *string {
+	if value == nil || !strings.ContainsRune(*value, 0) {
+		return value
+	}
+	cleaned := strings.ReplaceAll(*value, "\x00", "")
+	return &cleaned
 }
 
 func invalidWidgetURL(cause error) error {

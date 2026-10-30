@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/streambrew-app/streambrew/internal/donationalert"
@@ -14,25 +15,49 @@ import (
 type persistence interface {
 	Connections(context.Context) ([]Connection, error)
 	SaveConnectionWithDonations(context.Context, int, ProviderConnection, DonationBatch) error
-	SaveDonations(context.Context, int, int, DonationBatch, IngestionOrigin, time.Time) error
-	SetTokensIfVersion(context.Context, int, int, Tokens) (bool, error)
+	SaveDonations(context.Context, connectionVersion, DonationBatch, IngestionOrigin, time.Time) error
+	SetTokensIfVersion(context.Context, connectionVersion, Tokens) (bool, error)
 	Disconnect(context.Context, int) error
-	RequireReauthorizationIfVersion(context.Context, int, int) (bool, error)
-	MarkConnectionErrorIfVersion(context.Context, int, int) (bool, error)
+	RequireReauthorizationIfVersion(context.Context, connectionVersion) (bool, error)
+	MarkConnectionErrorIfVersion(context.Context, connectionVersion) (bool, error)
 }
 
 type Connection struct {
 	UserID            int
 	SourceUserID      string
+	ConnectedAt       time.Time
 	AccessToken       string
 	RefreshToken      string
 	TokenVersion      int
 	HistoryCheckpoint *string
 }
 
+// connectionVersion identifies the saved connection generation that a
+// listener or history worker read. Deleting a connection and saving it again
+// restarts token_version at 1, so version-guarded writes also match the
+// immutable provider account and connection time of that generation.
+type connectionVersion struct {
+	userID       int
+	sourceUserID string
+	connectedAt  time.Time
+	tokenVersion int
+}
+
+func (connection Connection) version() connectionVersion {
+	return connectionVersion{
+		userID:       connection.UserID,
+		sourceUserID: connection.SourceUserID,
+		connectedAt:  connection.ConnectedAt,
+		tokenVersion: connection.TokenVersion,
+	}
+}
+
 const (
 	recentRecoveryConcurrency = 4
 	recentRecoveryTimeout     = 45 * time.Second
+	// maxReportedRejections bounds the memory used to report each skipped
+	// provider row once.
+	maxReportedRejections = 10_000
 )
 
 type integration struct {
@@ -44,6 +69,33 @@ type integration struct {
 	recoveryTimeout time.Duration
 	historyEvery    time.Duration
 	now             func() time.Time
+	rejections      rejectionLog
+}
+
+// rejectionLog remembers which skipped provider rows were already reported.
+// Periodic history passes read the same rows again; repeating the error each
+// pass would only add noise.
+type rejectionLog struct {
+	mu       sync.Mutex
+	reported map[rejectionKey]struct{}
+}
+
+type rejectionKey struct {
+	userID           int
+	sourceDonationID string
+}
+
+func (rejections *rejectionLog) firstReport(key rejectionKey) bool {
+	rejections.mu.Lock()
+	defer rejections.mu.Unlock()
+	if _, reported := rejections.reported[key]; reported {
+		return false
+	}
+	if rejections.reported == nil || len(rejections.reported) >= maxReportedRejections {
+		rejections.reported = make(map[rejectionKey]struct{})
+	}
+	rejections.reported[key] = struct{}{}
+	return true
 }
 
 func newIntegration(store persistence, provider provider) *integration {
@@ -148,20 +200,37 @@ func (integration *integration) connect(ctx context.Context, userID int, authCod
 	if err != nil {
 		return fmt.Errorf("import initial %s history: %w", name, err)
 	}
+	integration.reportRejected(userID, batch.Rejected)
 	if err := integration.store.SaveConnectionWithDonations(ctx, userID, connection, batch); err != nil {
 		return fmt.Errorf("save %s connection and history: %w", name, err)
 	}
 	return nil
 }
 
+// runningListener is the supervisor's view of one listener. The listener
+// publishes each refreshed token version to tokenVersion before saving it, so
+// the supervisor can tell the listener's own refresh from a replacement.
 type runningListener struct {
 	cancel       context.CancelFunc
-	tokenVersion int
+	sourceUserID string
+	connectedAt  time.Time
+	tokenVersion *atomic.Int64
+}
+
+// replacedBy reports whether the saved connection is no longer the one this
+// listener serves: another provider account, a deleted and recreated
+// connection, or a version newer than any the listener wrote. A snapshot read
+// before the listener's own refresh can be older, which is not a replacement.
+func (listener runningListener) replacedBy(connection Connection) bool {
+	return connection.SourceUserID != listener.sourceUserID ||
+		!connection.ConnectedAt.Equal(listener.connectedAt) ||
+		int64(connection.TokenVersion) > listener.tokenVersion.Load()
 }
 
 type listenerCompletion struct {
-	userID       int
-	tokenVersion int
+	userID int
+	// tokenVersion identifies the completed listener's shared state.
+	tokenVersion *atomic.Int64
 	err          error
 }
 
@@ -246,7 +315,7 @@ func (integration *integration) refreshListeners(ctx context.Context, running ma
 	}
 	for userID, listener := range running {
 		connection, exists := byUserID[userID]
-		if !exists || connection.TokenVersion != listener.tokenVersion {
+		if !exists || listener.replacedBy(connection) {
 			listener.cancel()
 			delete(running, userID)
 		}
@@ -256,13 +325,20 @@ func (integration *integration) refreshListeners(ctx context.Context, running ma
 			continue
 		}
 		listenerCtx, cancel := context.WithCancel(ctx)
-		running[connection.UserID] = runningListener{cancel: cancel, tokenVersion: connection.TokenVersion}
+		tokenVersion := new(atomic.Int64)
+		tokenVersion.Store(int64(connection.TokenVersion))
+		running[connection.UserID] = runningListener{
+			cancel:       cancel,
+			sourceUserID: connection.SourceUserID,
+			connectedAt:  connection.ConnectedAt,
+			tokenVersion: tokenVersion,
+		}
 		listeners.Add(1)
 		go func(connection Connection) {
 			defer listeners.Done()
-			err := integration.listen(listenerCtx, connection)
+			err := integration.listen(listenerCtx, connection, tokenVersion)
 			select {
-			case completed <- listenerCompletion{userID: connection.UserID, tokenVersion: connection.TokenVersion, err: err}:
+			case completed <- listenerCompletion{userID: connection.UserID, tokenVersion: tokenVersion, err: err}:
 			case <-ctx.Done():
 			}
 		}(connection)
@@ -272,15 +348,18 @@ func (integration *integration) refreshListeners(ctx context.Context, running ma
 
 var ErrStaleCredentials = errors.New("donations: stale credentials")
 
-func (integration *integration) listen(ctx context.Context, connection Connection) error {
+// listen runs one connection's provider listener. It publishes refreshed token
+// versions to tokenVersion, which the supervisor shares.
+func (integration *integration) listen(ctx context.Context, connection Connection, tokenVersion *atomic.Int64) error {
 	accessToken := connection.AccessToken
 	refreshToken := connection.RefreshToken
-	tokenVersion := connection.TokenVersion
+	version := connection.version()
 	checkpoint := connection.HistoryCheckpoint
 	refreshedBeforeAuthorization := false
 	for ctx.Err() == nil {
 		err := integration.provider.Run(ctx, accessToken, connection.SourceUserID, checkpoint, func(batch DonationBatch) error {
-			if err := integration.store.SaveDonations(ctx, connection.UserID, tokenVersion, batch, LiveOrigin, integration.now()); err != nil {
+			integration.reportRejected(connection.UserID, batch.Rejected)
+			if err := integration.store.SaveDonations(ctx, version, batch, LiveOrigin, integration.now()); err != nil {
 				return err
 			}
 			checkpoint = batch.Checkpoint
@@ -293,11 +372,11 @@ func (integration *integration) listen(ctx context.Context, connection Connectio
 			return nil
 		}
 		if !integration.provider.Unauthorized(err) {
-			return integration.recordPermanentConnectionError(ctx, connection.UserID, tokenVersion, err)
+			return integration.recordPermanentConnectionError(ctx, version, err)
 		}
 		if hadAuthorizedSession, supported := failureHadAuthorizedSession(err); supported {
 			if refreshedBeforeAuthorization && !hadAuthorizedSession {
-				updated, statusErr := integration.store.RequireReauthorizationIfVersion(ctx, connection.UserID, tokenVersion)
+				updated, statusErr := integration.store.RequireReauthorizationIfVersion(ctx, version)
 				if statusErr != nil {
 					return errors.Join(err, statusErr)
 				}
@@ -310,7 +389,7 @@ func (integration *integration) listen(ctx context.Context, connection Connectio
 		tokens, refreshErr := integration.provider.RefreshTokens(ctx, refreshToken)
 		if refreshErr != nil {
 			if integration.provider.Unauthorized(refreshErr) {
-				updated, statusErr := integration.store.RequireReauthorizationIfVersion(ctx, connection.UserID, tokenVersion)
+				updated, statusErr := integration.store.RequireReauthorizationIfVersion(ctx, version)
 				if statusErr != nil {
 					return errors.Join(refreshErr, statusErr)
 				}
@@ -319,9 +398,14 @@ func (integration *integration) listen(ctx context.Context, connection Connectio
 				}
 			}
 			wrapped := fmt.Errorf("refresh %s tokens: %w", integration.provider.Source().displayName(), refreshErr)
-			return integration.recordPermanentConnectionError(ctx, connection.UserID, tokenVersion, wrapped)
+			return integration.recordPermanentConnectionError(ctx, version, wrapped)
 		}
-		updated, err := integration.store.SetTokensIfVersion(ctx, connection.UserID, tokenVersion, tokens)
+		nextVersion := version.tokenVersion + 1
+		// Publish before saving so a supervisor snapshot read during the save
+		// does not mistake this refresh for a replacement. Every failed save
+		// ends the listener, so the published version is never used for writes.
+		tokenVersion.Store(int64(nextVersion))
+		updated, err := integration.store.SetTokensIfVersion(ctx, version, tokens)
 		if err != nil {
 			return fmt.Errorf("save refreshed %s tokens: %w", integration.provider.Source().displayName(), err)
 		}
@@ -330,7 +414,7 @@ func (integration *integration) listen(ctx context.Context, connection Connectio
 		}
 		accessToken = tokens.AccessToken
 		refreshToken = tokens.RefreshToken
-		tokenVersion++
+		version.tokenVersion = nextVersion
 		refreshedBeforeAuthorization = true
 	}
 	return nil
@@ -348,14 +432,31 @@ func failureHadAuthorizedSession(err error) (bool, bool) {
 	return failure.HadAuthorizedSession(), true
 }
 
-func (integration *integration) recordPermanentConnectionError(ctx context.Context, userID, tokenVersion int, failure error) error {
+func (integration *integration) recordPermanentConnectionError(ctx context.Context, version connectionVersion, failure error) error {
 	if !integration.provider.Permanent(failure) {
 		return failure
 	}
-	if _, err := integration.store.MarkConnectionErrorIfVersion(ctx, userID, tokenVersion); err != nil {
+	if _, err := integration.store.MarkConnectionErrorIfVersion(ctx, version); err != nil {
 		return errors.Join(failure, fmt.Errorf("record %s connection error: %w", integration.provider.Source().displayName(), err))
 	}
 	return failure
+}
+
+// reportRejected logs provider rows skipped at the validation seam once per
+// process. The log carries identifiers and the validation reason only.
+func (integration *integration) reportRejected(userID int, rejected []RejectedDonation) {
+	source := integration.provider.Source()
+	for _, donation := range rejected {
+		if !integration.rejections.firstReport(rejectionKey{userID: userID, sourceDonationID: donation.SourceDonationID}) {
+			continue
+		}
+		slog.Error(source.displayName()+" donation skipped",
+			"source", source,
+			"userId", userID,
+			"sourceDonationId", donation.SourceDonationID,
+			"error", donation.Err,
+		)
+	}
 }
 
 func contextDone(ctx context.Context) bool { return ctx.Err() != nil }
@@ -424,7 +525,7 @@ func (integration *integration) syncConnectionHistory(ctx context.Context, name 
 	)
 	if err != nil {
 		if integration.provider.Permanent(err) {
-			if _, statusErr := integration.store.MarkConnectionErrorIfVersion(ctx, connection.UserID, connection.TokenVersion); statusErr != nil && ctx.Err() == nil {
+			if _, statusErr := integration.store.MarkConnectionErrorIfVersion(ctx, connection.version()); statusErr != nil && ctx.Err() == nil {
 				slog.Error("record "+name+" history error", "userId", connection.UserID, "error", statusErr)
 			}
 		}
@@ -433,7 +534,8 @@ func (integration *integration) syncConnectionHistory(ctx context.Context, name 
 		}
 		return
 	}
-	if err := integration.store.SaveDonations(accountCtx, connection.UserID, connection.TokenVersion, batch, RecoveryOrigin, integration.now()); err != nil && ctx.Err() == nil {
+	integration.reportRejected(connection.UserID, batch.Rejected)
+	if err := integration.store.SaveDonations(accountCtx, connection.version(), batch, RecoveryOrigin, integration.now()); err != nil && ctx.Err() == nil {
 		slog.Error("insert "+name+" history", "userId", connection.UserID, "error", err)
 	}
 }
