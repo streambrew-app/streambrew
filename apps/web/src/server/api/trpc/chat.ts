@@ -31,6 +31,13 @@ function toTRPCError(error: ChatServiceError) {
       cause: error,
     });
   }
+  if (error.status === 409) {
+    return new TRPCError({
+      code: "CONFLICT",
+      message: "Chat state changed.",
+      cause: error,
+    });
+  }
   return new TRPCError({
     code: "INTERNAL_SERVER_ERROR",
     message: "Chat service unavailable.",
@@ -68,6 +75,39 @@ async function* streamForUser(
     }
     throw error;
   }
+}
+
+const overlayTokenCheckIntervalMs = 5_000;
+
+function overlayNotFound() {
+  return new TRPCError({ code: "NOT_FOUND", message: "Chat overlay not found." });
+}
+
+async function* streamForOverlayToken(token: string, signal?: AbortSignal) {
+  const userId = await getUserIdByOverlayToken(token);
+  if (userId === null) throw overlayNotFound();
+
+  // Rotation, possibly handled by another web instance, must also end overlays already open.
+  const revocation = new AbortController();
+  const interval = setInterval(() => {
+    void getUserIdByOverlayToken(token).then(
+      (currentUserId) => {
+        if (currentUserId !== userId) revocation.abort();
+      },
+      // A failed check keeps the overlay open; the next interval checks again.
+      () => undefined,
+    );
+  }, overlayTokenCheckIntervalMs);
+  try {
+    yield* streamForUser(
+      userId,
+      "overlay",
+      signal === undefined ? revocation.signal : AbortSignal.any([signal, revocation.signal]),
+    );
+  } finally {
+    clearInterval(interval);
+  }
+  if (revocation.signal.aborted && !signal?.aborted) throw overlayNotFound();
 }
 
 export const chatRouter = router({
@@ -207,13 +247,7 @@ export const chatRouter = router({
         token: z.string().min(32).max(100),
       }),
     )
-    .subscription(async function* ({ input, signal }) {
-      const userId = await getUserIdByOverlayToken(input.token);
-      if (userId === null) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Chat overlay not found." });
-      }
-      yield* streamForUser(userId, "overlay", signal);
-    }),
+    .subscription(({ input, signal }) => streamForOverlayToken(input.token, signal)),
 
   rotateOverlayToken: authenticatedProcedure
     .output(

@@ -192,7 +192,8 @@ providers continue independently. The UI shows these partial results per source.
 Rotating the overlay URL creates a random 256-bit token. PostgreSQL stores only its SHA-256 hash.
 The public overlay page presents the token to an `apps/web` tRPC subscription. `apps/web` resolves
 the owner and relays only that user's feed from `apps/chat`. Rotation invalidates the previous URL
-immediately.
+immediately. Each open overlay stream rechecks its token every five seconds and ends with
+`NOT_FOUND` once the token has been rotated, on any web instance.
 
 The overlay URL accepts a `background` query parameter with `transparent`, `black`, or `white`.
 Missing and invalid values resolve to `transparent`. The authenticated multichat page adds the

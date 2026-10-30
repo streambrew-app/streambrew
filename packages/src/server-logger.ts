@@ -5,6 +5,7 @@ import {
   StorageType,
   StringCodec,
   type JetStreamClient,
+  type NatsConnection,
 } from "nats";
 
 type Level = "info" | "warn" | "error";
@@ -26,6 +27,7 @@ interface LogEvent {
 const queueCapacity = 256;
 const codec = StringCodec();
 let jetStreamPromise: Promise<JetStreamClient> | undefined;
+let connectionGeneration = 0;
 let pending = 0;
 let dropped = 0;
 
@@ -74,11 +76,7 @@ function streamName(): string {
   return `CB_${namespace.toUpperCase().replaceAll(/[^A-Z0-9_-]/g, "_")}_OPERATIONAL_LOGS`;
 }
 
-async function connectJetStream(): Promise<JetStreamClient> {
-  const servers = (process.env["NATS_SERVERS"] ?? "nats://localhost:4222")
-    .split(",")
-    .map((server) => server.trim());
-  const connection = await connect({ servers, name: "web operational logs", timeout: 2_000 });
+async function ensureStream(connection: NatsConnection): Promise<void> {
   const manager = await connection.jetstreamManager();
   const name = streamName();
   try {
@@ -99,12 +97,36 @@ async function connectJetStream(): Promise<JetStreamClient> {
       await manager.streams.info(name);
     }
   }
+}
+
+async function connectJetStream(onClosed: () => void): Promise<JetStreamClient> {
+  const servers = (process.env["NATS_SERVERS"] ?? "nats://localhost:4222")
+    .split(",")
+    .map((server) => server.trim());
+  const connection = await connect({ servers, name: "web operational logs", timeout: 2_000 });
+  // The client closes the connection after exhausting its reconnect attempts; the next event
+  // then opens a new one instead of reusing the closed client.
+  void connection.closed().then(onClosed);
+  try {
+    await ensureStream(connection);
+  } catch (error) {
+    // Report the setup failure even if closing the unusable connection also fails.
+    await connection.close().catch(() => undefined);
+    throw error;
+  }
   return connection.jetstream();
 }
 
 function getJetStream(): Promise<JetStreamClient> {
-  jetStreamPromise ??= connectJetStream().catch((error) => {
-    jetStreamPromise = undefined;
+  if (jetStreamPromise !== undefined) return jetStreamPromise;
+  connectionGeneration += 1;
+  const generation = connectionGeneration;
+  // Only the connection that is still cached may clear the cache.
+  const reset = () => {
+    if (generation === connectionGeneration) jetStreamPromise = undefined;
+  };
+  jetStreamPromise = connectJetStream(reset).catch((error: unknown) => {
+    reset();
     throw error;
   });
   return jetStreamPromise;
