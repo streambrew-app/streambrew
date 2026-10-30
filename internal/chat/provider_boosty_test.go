@@ -17,6 +17,7 @@ type boostyTestStore struct {
 	source     SaveSource
 	userID     int
 	saves      int
+	saveErr    error
 }
 
 func TestBoostyEndpointRejectsCrossOriginPaths(t *testing.T) {
@@ -35,11 +36,33 @@ func (s *boostyTestStore) HasSourceCapacity(_ context.Context, userID int, provi
 	return s.capacity, nil
 }
 func (s *boostyTestStore) SaveProviderAccount(_ context.Context, userID int, c SaveConnection, source SaveSource) (string, error) {
+	if s.saveErr != nil {
+		return "", s.saveErr
+	}
 	s.connection = c
 	s.source = source
 	s.userID = userID
 	s.saves++
 	return "connection", nil
+}
+
+func TestBoostyConnectReportsAccountConnectedToAnotherUser(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/v1/user/current" {
+			_, _ = w.Write([]byte(`{"id":42,"name":"Streamer","blogUrl":"blog"}`))
+			return
+		}
+		_, _ = w.Write([]byte(`{"owner":{"id":42}}`))
+	}))
+	defer server.Close()
+	provider := NewBoostyProvider(server.Client())
+	provider.apiURL = server.URL
+	store := &boostyTestStore{capacity: true, saveErr: errProviderAccountConnectedElsewhere}
+	err := NewBoostyConnector(provider, store).Connect(context.Background(), 7, BoostyCredentials{AccessToken: "session-token"})
+	var applicationError *ApplicationError
+	if !errors.As(err, &applicationError) || applicationError.Type != "chat account connected to another user" {
+		t.Fatalf("err = %v", err)
+	}
 }
 
 func TestBoostyConnectOwnedAccount(t *testing.T) {
