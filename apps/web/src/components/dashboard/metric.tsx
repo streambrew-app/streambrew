@@ -10,6 +10,8 @@ type MetricProps = {
   subnote?: string;
   icon: IconComponent;
   iconClass: string;
+  /** Optical correction for glyphs whose visual weight is off-centre. */
+  iconOffsetClass?: string;
 };
 
 function Metric({
@@ -20,9 +22,15 @@ function Metric({
   subnote,
   icon: MetricIcon,
   iconClass,
+  iconOffsetClass,
 }: MetricProps) {
   return (
-    <article className={cn("flex min-w-0 items-start justify-between gap-4 px-6 py-4", className)}>
+    <article
+      className={cn(
+        "cosmic-panel flex min-w-0 items-start justify-between gap-4 px-6 py-4",
+        className,
+      )}
+    >
       <div className="flex min-w-0 flex-col gap-1">
         <span className="text-sm font-medium text-muted-foreground">{title}</span>
         <strong className="block font-heading text-3xl leading-tight font-medium tracking-tight wrap-anywhere text-card-foreground tabular-nums">
@@ -36,7 +44,7 @@ function Metric({
         </p>
       </div>
       <span className={cn("grid size-9 shrink-0 place-items-center rounded-full", iconClass)}>
-        <MetricIcon aria-hidden="true" className="size-4.5" />
+        <MetricIcon aria-hidden="true" className={cn("size-4.5", iconOffsetClass)} />
       </span>
     </article>
   );

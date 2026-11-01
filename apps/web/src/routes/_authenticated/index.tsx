@@ -263,10 +263,7 @@ function Overview() {
             />
           ) : (
             <>
-              <section
-                className="cosmic-panel grid divide-y divide-border overflow-hidden md:grid-cols-3 md:divide-x md:divide-y-0"
-                aria-label={t("streamStatistics")}
-              >
+              <section className="grid gap-4 md:grid-cols-3" aria-label={t("streamStatistics")}>
                 <Metric
                   title={t("totalReceived")}
                   value={totalReceived.value}
@@ -287,6 +284,8 @@ function Overview() {
                   note={t("averageDonationNote", { otherAmounts: averageDonation.others })}
                   icon={Icons.platform}
                   iconClass="bg-mint-signal/18 text-status-success-text dark:text-status-success-dark-text"
+                  // Two nodes on the right pull the share glyph's visual centre about 1 px right.
+                  iconOffsetClass="-translate-x-px"
                 />
               </section>
               <section className="grid items-start gap-4 xl:grid-cols-2">

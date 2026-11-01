@@ -114,9 +114,12 @@ export function VideoPrioritiesSkeleton({ className, ...props }: Props) {
 export function DashboardSkeleton({ className, ...props }: Props) {
   return (
     <div className={cn("flex flex-col gap-8", className)} {...props}>
-      <section className="grid divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card md:grid-cols-3 md:divide-x md:divide-y-0">
+      <section className="grid gap-4 md:grid-cols-3">
         {[0, 1, 2].map((index) => (
-          <article className="flex items-start justify-between gap-4 px-6 py-4" key={index}>
+          <article
+            className="flex items-start justify-between gap-4 rounded-2xl border border-border bg-card px-6 py-4"
+            key={index}
+          >
             <div className="flex flex-col gap-2">
               <Skeleton className="h-4 w-24" />
               <Skeleton className="h-8 w-24" />
