@@ -113,7 +113,7 @@ export function AddVideoForm({ onCancel, videoQueueId, queues }: Props) {
   };
 
   return (
-    <div className="border-b border-border bg-secondary/35 p-4 sm:px-5" id="add-video-form">
+    <div className="border-b border-border bg-secondary/35 p-4 sm:px-6" id="add-video-form">
       <FormProvider {...form}>
         <form
           className="flex flex-col gap-3"
@@ -163,7 +163,7 @@ export function AddVideoForm({ onCancel, videoQueueId, queues }: Props) {
                       MoneyAmountSchema.safeParse(amount).success || t("enterAmountZeroOrMore"),
                   })}
                 />
-                <span className="flex shrink-0 items-center border-l border-input px-2.5 text-xs font-semibold text-muted-foreground">
+                <span className="flex shrink-0 items-center border-l border-input px-3 text-xs font-medium text-muted-foreground">
                   {userInfo?.queueCurrency}
                 </span>
               </div>

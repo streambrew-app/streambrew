@@ -1016,39 +1016,31 @@
         "displayName": "Label",
         "purpose": "Standard button labels."
       },
-      "compact": {
-        "displayName": "Compact",
-        "purpose": "Compact control labels."
-      },
       "caption": {
         "displayName": "Caption",
-        "purpose": "Secondary metadata."
-      },
-      "micro": {
-        "displayName": "Micro",
-        "purpose": "Dense metadata and connection badges."
+        "purpose": "Compact metadata, badges, counters, and connection status."
       }
     },
     "shadows": [
       {
-        "name": "restream-rail",
-        "value": "0 12px 32px -24px rgba(37, 24, 32, 0.85)",
-        "purpose": "Separate the restream signal rail."
+        "name": "elevation-1",
+        "value": "0 1px 2px rgb(20 9 17 / 0.16), 0 6px 16px -8px rgb(20 9 17 / 0.5)",
+        "purpose": "Raised surfaces such as the restream signal rail."
+      },
+      {
+        "name": "elevation-2",
+        "value": "0 2px 4px rgb(20 9 17 / 0.18), 0 8px 24px rgb(20 9 17 / 0.28)",
+        "purpose": "Chat overlays floating over video."
+      },
+      {
+        "name": "elevation-3",
+        "value": "0 4px 8px rgb(20 9 17 / 0.22), 0 20px 60px rgb(20 9 17 / 0.4)",
+        "purpose": "Donation alert cards over video."
       },
       {
         "name": "live-signal",
         "value": "0 0 14px rgba(84, 207, 165, 0.7)",
         "purpose": "Glow around the live signal."
-      },
-      {
-        "name": "alert-card",
-        "value": "0 20px 60px rgba(20, 9, 17, 0.4)",
-        "purpose": "Separate donation alerts from video."
-      },
-      {
-        "name": "chat-overlay",
-        "value": "0 8px 24px rgba(15, 8, 14, 0.28)",
-        "purpose": "Separate chat overlays from video."
       },
       {
         "name": "coffee-observatory",
@@ -1120,7 +1112,7 @@
       "refersTo": "button-primary",
       "description": "Default-size primary variant of the shared Button primitive.",
       "html": "<button type=\"button\" class=\"ds-button-primary\">Action</button>",
-      "css": ".ds-button-primary{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.625rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);background:var(--primary, #5844b8);color:var(--primary-foreground, #ffffff);} .ds-button-primary:hover{background:color-mix(in srgb, var(--primary, #5844b8) 80%, transparent);} .ds-button-primary:focus-visible{border-color:var(--ring, #7962cd);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring, #7962cd) 50%, transparent);} .ds-button-primary:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-primary:disabled{opacity:0.5;pointer-events:none;} .ds-button-primary[aria-invalid=\"true\"]{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-primary{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-primary[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
+      "css": ".ds-button-primary{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.75rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);background:var(--primary, #5844b8);color:var(--primary-foreground, #ffffff);} .ds-button-primary:hover{background:var(--primary-hover, #4a389f);} .ds-button-primary:focus-visible{border-color:var(--ring, #7962cd);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring, #7962cd) 50%, transparent);} .ds-button-primary:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-primary:disabled{opacity:0.5;pointer-events:none;} .ds-button-primary[aria-invalid=\"true\"]{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-primary{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-primary[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
     },
     {
       "name": "Outline Button",
@@ -1128,7 +1120,7 @@
       "refersTo": "button-outline",
       "description": "Default-size outline variant of the shared Button primitive.",
       "html": "<button type=\"button\" class=\"ds-button-outline\">Action</button>",
-      "css": ".ds-button-outline{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.625rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);border-color:var(--border, #e7dcd8);background:var(--background, #f6efe4);color:var(--foreground, #251820);} .ds-button-outline:hover{background:var(--muted, #f4eee9);color:var(--foreground, #251820);} .ds-button-outline:focus-visible{border-color:var(--ring, #7962cd);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring, #7962cd) 50%, transparent);} .ds-button-outline:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-outline:disabled{opacity:0.5;pointer-events:none;} .ds-button-outline[aria-invalid=\"true\"]{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-outline{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-outline{background:color-mix(in srgb,var(--input, #a58a9e) 30%,transparent);border-color:var(--input, #a58a9e);} :host-context(.dark) .ds-button-outline:hover{background:color-mix(in srgb,var(--input, #a58a9e) 50%,transparent);} :host-context(.dark) .ds-button-outline[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
+      "css": ".ds-button-outline{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.75rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);border-color:var(--border, #ded1cc);background:var(--background, #f6efe4);color:var(--foreground, #251820);} .ds-button-outline:hover{background:var(--muted, #f4eee9);color:var(--foreground, #251820);} .ds-button-outline:focus-visible{border-color:var(--ring, #7962cd);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring, #7962cd) 50%, transparent);} .ds-button-outline:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-outline:disabled{opacity:0.5;pointer-events:none;} .ds-button-outline[aria-invalid=\"true\"]{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-outline{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-outline{background:color-mix(in srgb,var(--input, #a58a9e) 30%,transparent);border-color:var(--input, #a58a9e);} :host-context(.dark) .ds-button-outline:hover{background:color-mix(in srgb,var(--input, #a58a9e) 50%,transparent);} :host-context(.dark) .ds-button-outline[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
     },
     {
       "name": "Secondary Button",
@@ -1136,7 +1128,7 @@
       "refersTo": "button-secondary",
       "description": "Default-size secondary variant of the shared Button primitive.",
       "html": "<button type=\"button\" class=\"ds-button-secondary\">Action</button>",
-      "css": ".ds-button-secondary{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.625rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);background:var(--secondary, #eee5f3);color:var(--secondary-foreground, #57418a);} .ds-button-secondary:hover{background:var(--accent, #ffe0e5);} .ds-button-secondary:focus-visible{border-color:var(--ring, #7962cd);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring, #7962cd) 50%, transparent);} .ds-button-secondary:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-secondary:disabled{opacity:0.5;pointer-events:none;} .ds-button-secondary[aria-invalid=\"true\"]{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-secondary{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-secondary[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
+      "css": ".ds-button-secondary{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.75rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);background:var(--secondary, #eee5f3);color:var(--secondary-foreground, #57418a);} .ds-button-secondary:hover{background:var(--accent, #ffe0e5);} .ds-button-secondary:focus-visible{border-color:var(--ring, #7962cd);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring, #7962cd) 50%, transparent);} .ds-button-secondary:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-secondary:disabled{opacity:0.5;pointer-events:none;} .ds-button-secondary[aria-invalid=\"true\"]{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-secondary{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-secondary[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
     },
     {
       "name": "Ghost Button",
@@ -1144,7 +1136,7 @@
       "refersTo": "button-ghost",
       "description": "Default-size ghost variant of the shared Button primitive.",
       "html": "<button type=\"button\" class=\"ds-button-ghost\">Action</button>",
-      "css": ".ds-button-ghost{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.625rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);background:transparent;color:var(--muted-foreground, #70616a);} .ds-button-ghost:hover{background:var(--muted, #f4eee9);color:var(--foreground, #251820);} .ds-button-ghost:focus-visible{border-color:var(--ring, #7962cd);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring, #7962cd) 50%, transparent);} .ds-button-ghost:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-ghost:disabled{opacity:0.5;pointer-events:none;} .ds-button-ghost[aria-invalid=\"true\"]{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-ghost{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-ghost[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
+      "css": ".ds-button-ghost{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.75rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);background:transparent;color:var(--muted-foreground, #70616a);} .ds-button-ghost:hover{background:var(--muted, #f4eee9);color:var(--foreground, #251820);} .ds-button-ghost:focus-visible{border-color:var(--ring, #7962cd);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring, #7962cd) 50%, transparent);} .ds-button-ghost:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-ghost:disabled{opacity:0.5;pointer-events:none;} .ds-button-ghost[aria-invalid=\"true\"]{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-ghost{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-ghost[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
     },
     {
       "name": "Sidebar Button",
@@ -1152,7 +1144,7 @@
       "refersTo": "button-sidebar",
       "description": "Default-size sidebar variant of the shared Button primitive.",
       "html": "<button type=\"button\" class=\"ds-button-sidebar\">Action</button>",
-      "css": ".ds-button-sidebar{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.625rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);background:transparent;color:color-mix(in srgb, var(--sidebar-foreground, #fff8ed) 75%, transparent);} .ds-button-sidebar:hover{background:var(--sidebar-accent, #3d2938);color:var(--sidebar-accent-foreground, #ffffff);} .ds-button-sidebar:focus-visible{border-color:var(--sidebar-ring, #ffbd3e);box-shadow:0 0 0 3px color-mix(in srgb, var(--sidebar-ring, #ffbd3e) 50%, transparent);} .ds-button-sidebar:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-sidebar:disabled{opacity:0.5;pointer-events:none;} .ds-button-sidebar[aria-invalid=\"true\"]{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-sidebar{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-sidebar[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
+      "css": ".ds-button-sidebar{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.75rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);background:transparent;color:color-mix(in srgb, var(--sidebar-foreground, #fff8ed) 75%, transparent);} .ds-button-sidebar:hover{background:var(--sidebar-accent, #3d2938);color:var(--sidebar-accent-foreground, #ffffff);} .ds-button-sidebar:focus-visible{border-color:var(--sidebar-ring, #ffbd3e);box-shadow:0 0 0 3px color-mix(in srgb, var(--sidebar-ring, #ffbd3e) 50%, transparent);} .ds-button-sidebar:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-sidebar:disabled{opacity:0.5;pointer-events:none;} .ds-button-sidebar[aria-invalid=\"true\"]{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-sidebar{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-sidebar[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
     },
     {
       "name": "Destructive Button",
@@ -1160,7 +1152,7 @@
       "refersTo": "button-destructive",
       "description": "Default-size destructive variant of the shared Button primitive.",
       "html": "<button type=\"button\" class=\"ds-button-destructive\">Remove</button>",
-      "css": ".ds-button-destructive{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.625rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);background:color-mix(in srgb, var(--destructive, #9d2036) 10%, transparent);color:var(--destructive, #9d2036);} .ds-button-destructive:hover{background:color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} .ds-button-destructive:focus-visible{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} .ds-button-destructive:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-destructive:disabled{opacity:0.5;pointer-events:none;} .ds-button-destructive[aria-invalid=\"true\"]{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-destructive{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-destructive[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);} .ds-button-destructive:focus-visible{border-color:color-mix(in srgb,var(--destructive, #9d2036) 40%,transparent);} :host-context(.dark) .ds-button-destructive:focus-visible{box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
+      "css": ".ds-button-destructive{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.75rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);background:color-mix(in srgb, var(--destructive, #9d2036) 10%, transparent);color:var(--destructive, #9d2036);} .ds-button-destructive:hover{background:color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} .ds-button-destructive:focus-visible{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} .ds-button-destructive:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-destructive:disabled{opacity:0.5;pointer-events:none;} .ds-button-destructive[aria-invalid=\"true\"]{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-destructive{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-destructive[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);} .ds-button-destructive:focus-visible{border-color:color-mix(in srgb,var(--destructive, #9d2036) 40%,transparent);} :host-context(.dark) .ds-button-destructive:focus-visible{box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
     },
     {
       "name": "Link Button",
@@ -1168,7 +1160,7 @@
       "refersTo": "button-link",
       "description": "Default-size link variant of the shared Button primitive.",
       "html": "<button type=\"button\" class=\"ds-button-link\">Action</button>",
-      "css": ".ds-button-link{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.625rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);background:transparent;color:var(--primary, #5844b8);text-underline-offset:4px;} .ds-button-link:hover{text-decoration:underline;} .ds-button-link:focus-visible{border-color:var(--ring, #7962cd);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring, #7962cd) 50%, transparent);} .ds-button-link:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-link:disabled{opacity:0.5;pointer-events:none;} .ds-button-link[aria-invalid=\"true\"]{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-link{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-link[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
+      "css": ".ds-button-link{display:inline-flex;align-items:center;justify-content:center;gap:0.375rem;height:2rem;padding:0 0.75rem;border:1px solid transparent;border-radius:1rem;font:500 0.875rem/1.25rem \"Geist Variable\", sans-serif;white-space:nowrap;cursor:pointer;outline:none;transition:all 150ms cubic-bezier(0.4,0,0.2,1);background:transparent;color:var(--primary, #5844b8);text-underline-offset:4px;} .ds-button-link:hover{text-decoration:underline;} .ds-button-link:focus-visible{border-color:var(--ring, #7962cd);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring, #7962cd) 50%, transparent);} .ds-button-link:active:not([aria-haspopup]){transform:translateY(1px);} .ds-button-link:disabled{opacity:0.5;pointer-events:none;} .ds-button-link[aria-invalid=\"true\"]{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} @media(prefers-reduced-motion:reduce){.ds-button-link{transition-duration:0.01ms;}} :host-context(.dark) .ds-button-link[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
     },
     {
       "name": "Text Field",
@@ -1176,7 +1168,7 @@
       "refersTo": "input",
       "description": "Standard input; desktop type becomes compact at 768 px.",
       "html": "<input class=\"ds-input\" aria-label=\"Video URL\" placeholder=\"Video URL\">",
-      "css": ".ds-input{height:2rem;min-width:0;padding:0.25rem 0.625rem;border:1px solid var(--input, #938087);border-radius:1rem;background:transparent;color:var(--foreground, #251820);font:400 1rem/1.5rem \"Geist Variable\", sans-serif;font-variant-numeric:tabular-nums;outline:none;transition:border-color 150ms,box-shadow 150ms;} .ds-input::placeholder{color:var(--muted-foreground, #70616a);} .ds-input:focus-visible{border-color:var(--ring, #7962cd);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring, #7962cd) 50%, transparent);} .ds-input:disabled{opacity:0.5;pointer-events:none;background:color-mix(in srgb, var(--input, #938087) 50%, transparent);} .ds-input[aria-invalid=\"true\"]{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} :host-context(.dark) .ds-input{background:color-mix(in srgb,var(--input, #a58a9e) 30%,transparent);} @media(min-width:768px){.ds-input{font-size:0.875rem;line-height:1.25rem;}} @media(prefers-reduced-motion:reduce){.ds-input{transition-duration:0.01ms;}} :host-context(.dark) .ds-input:disabled{background:color-mix(in srgb,var(--input, #a58a9e) 80%,transparent);} :host-context(.dark) .ds-input[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
+      "css": ".ds-input{height:2rem;min-width:0;padding:0.25rem 0.75rem;border:1px solid var(--input, #938087);border-radius:1rem;background:transparent;color:var(--foreground, #251820);font:400 1rem/1.5rem \"Geist Variable\", sans-serif;font-variant-numeric:tabular-nums;outline:none;transition:border-color 150ms,box-shadow 150ms;} .ds-input::placeholder{color:var(--muted-foreground, #70616a);} .ds-input:focus-visible{border-color:var(--ring, #7962cd);box-shadow:0 0 0 3px color-mix(in srgb, var(--ring, #7962cd) 50%, transparent);} .ds-input:disabled{opacity:0.5;pointer-events:none;background:color-mix(in srgb, var(--input, #938087) 50%, transparent);} .ds-input[aria-invalid=\"true\"]{border-color:var(--destructive, #9d2036);box-shadow:0 0 0 3px color-mix(in srgb, var(--destructive, #9d2036) 20%, transparent);} :host-context(.dark) .ds-input{background:color-mix(in srgb,var(--input, #a58a9e) 30%,transparent);} @media(min-width:768px){.ds-input{font-size:0.875rem;line-height:1.25rem;}} @media(prefers-reduced-motion:reduce){.ds-input{transition-duration:0.01ms;}} :host-context(.dark) .ds-input:disabled{background:color-mix(in srgb,var(--input, #a58a9e) 80%,transparent);} :host-context(.dark) .ds-input[aria-invalid=\"true\"]{border-color:color-mix(in srgb,var(--destructive, #ff7a88) 50%,transparent);box-shadow:0 0 0 3px color-mix(in srgb,var(--destructive, #ff7a88) 40%,transparent);}"
     },
     {
       "name": "Working Panel",
@@ -1184,7 +1176,7 @@
       "refersTo": "panel",
       "description": "The shared panel surface; content owns padding and layout.",
       "html": "<section class=\"ds-panel\"><div class=\"ds-panel-content\">Video queue</div></section>",
-      "css": ".ds-panel{border:1px solid var(--border, #e7dcd8);border-radius:1.8rem;background:var(--card, #fffdf8);color:var(--foreground, #251820);font-family:\"Geist Variable\", sans-serif;} .ds-panel-content{padding:1rem;}"
+      "css": ".ds-panel{border:1px solid var(--border, #ded1cc);border-radius:1.8rem;background:var(--card, #fffdf8);color:var(--foreground, #251820);font-family:\"Geist Variable\", sans-serif;} .ds-panel-content{padding:1rem;}"
     },
     {
       "name": "Sidebar Navigation",
@@ -1200,7 +1192,7 @@
       "refersTo": "connection-status",
       "description": "Static connection status always carries text alongside color.",
       "html": "<span class=\"ds-status\"><i aria-hidden=\"true\" class=\"ds-status-dot\"></i>Connected</span>",
-      "css": ".ds-status{display:inline-flex;align-items:center;gap:0.25rem;border-radius:9999px;padding:0.125rem 0.5rem;background:var(--color-status-success-surface, oklch(97.9% 0.021 166.113));color:var(--color-status-success-text, oklch(50.8% 0.118 165.612));font:700 0.6875rem/1.5 \"Geist Variable\", sans-serif;white-space:nowrap;} .ds-status-dot{width:0.375rem;height:0.375rem;border-radius:50%;background:currentColor;} :host-context(.dark) .ds-status{background:color-mix(in srgb,var(--color-status-success-dark-surface, oklch(76.5% 0.177 163.223)) 10%,transparent);color:var(--color-status-success-dark-text, oklch(84.5% 0.143 164.978));}"
+      "css": ".ds-status{display:inline-flex;align-items:center;gap:0.25rem;border-radius:9999px;padding:0.125rem 0.5rem;background:var(--color-status-success-surface, oklch(97.9% 0.021 166.113));color:var(--color-status-success-text, oklch(50.8% 0.118 165.612));font:500 0.75rem/1.5 \"Geist Variable\", sans-serif;white-space:nowrap;} .ds-status-dot{width:0.375rem;height:0.375rem;border-radius:50%;background:currentColor;} :host-context(.dark) .ds-status{background:color-mix(in srgb,var(--color-status-success-dark-surface, oklch(76.5% 0.177 163.223)) 10%,transparent);color:var(--color-status-success-dark-text, oklch(84.5% 0.143 164.978));}"
     }
   ],
   "narrative": {

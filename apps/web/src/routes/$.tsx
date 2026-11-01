@@ -39,8 +39,8 @@ function NotFoundPage() {
   const { t } = useI18n(translations);
 
   return (
-    <main className="relative grid min-h-dvh place-items-center overflow-hidden bg-background px-5 py-8 text-foreground sm:px-8">
-      <section className="relative flex w-full max-w-3xl flex-col items-start gap-9 overflow-hidden border-y border-border py-10 sm:gap-12 sm:py-14">
+    <main className="relative grid min-h-dvh place-items-center overflow-hidden bg-background px-6 py-8 text-foreground sm:px-8">
+      <section className="relative flex w-full max-w-3xl flex-col items-start gap-8 overflow-hidden border-y border-border py-12 sm:gap-12 sm:py-16">
         <Link
           className="relative z-10 flex w-fit items-center gap-2 font-heading text-xl font-medium hover:text-primary focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring sm:text-2xl"
           to="/"
@@ -48,7 +48,7 @@ function NotFoundPage() {
           <img alt="" className="size-9 object-contain" src={productMark} />
           StreamBrew
         </Link>
-        <div className="relative z-10 flex max-w-xl flex-col items-start gap-5">
+        <div className="relative z-10 flex max-w-xl flex-col items-start gap-6">
           <h1 className="font-heading text-error-display leading-none font-medium tracking-display text-balance">
             {t("pageTitle")}
           </h1>

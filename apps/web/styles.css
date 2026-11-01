@@ -11,9 +11,6 @@
 @theme inline {
   --font-heading: "Bitter Variable", serif;
   --font-sans: "Geist Variable", sans-serif;
-  --text-caption: 0.75rem;
-  --text-micro: 0.6875rem;
-  --text-compact: 0.8125rem;
   --text-display: clamp(2.75rem, 5.4vw, 4.75rem);
   --text-error-display: clamp(2rem, 7vw, 4rem);
   --text-reading-title: clamp(1.625rem, 4vw, 2.75rem);
@@ -23,10 +20,11 @@
   --animate-cosmic-orbit-dashes: cosmic-orbit-dashes 18s linear infinite;
   --animate-cosmic-orbit-travel: cosmic-orbit-travel 18s linear infinite;
   --animate-live-pulse: pulse 1.4s ease-out infinite;
-  --shadow-restream-rail: 0 12px 32px -24px rgba(37, 24, 32, 0.85);
+  /* Elevation: each step pairs a tight contact shadow with a soft ambient one. */
+  --shadow-elevation-1: 0 1px 2px rgb(20 9 17 / 0.16), 0 6px 16px -8px rgb(20 9 17 / 0.5);
+  --shadow-elevation-2: 0 2px 4px rgb(20 9 17 / 0.18), 0 8px 24px rgb(20 9 17 / 0.28);
+  --shadow-elevation-3: 0 4px 8px rgb(20 9 17 / 0.22), 0 20px 60px rgb(20 9 17 / 0.4);
   --shadow-live-signal: 0 0 14px rgba(84, 207, 165, 0.7);
-  --shadow-alert-card: 0 20px 60px rgba(20, 9, 17, 0.4);
-  --shadow-chat-overlay: 0 8px 24px rgba(15, 8, 14, 0.28);
   --shadow-sidebar-border: 0 0 0 1px var(--sidebar-border);
   --shadow-sidebar-accent: 0 0 0 1px var(--sidebar-accent);
   --text-shadow-overlay: 0 1px 2px rgb(0 0 0 / 0.45);
@@ -113,6 +111,7 @@
   --color-secondary: var(--secondary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
   --color-popover-foreground: var(--popover-foreground);
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
@@ -138,6 +137,7 @@
   --popover: #fffdf8;
   --popover-foreground: #251820;
   --primary: #5844b8;
+  --primary-hover: #4a389f;
   --primary-foreground: #ffffff;
   --secondary: #eee5f3;
   --secondary-foreground: #57418a;
@@ -146,7 +146,7 @@
   --accent: #ffe0e5;
   --accent-foreground: #a82f53;
   --destructive: #9d2036;
-  --border: #e7dcd8;
+  --border: #ded1cc;
   --input: #938087;
   --ring: #7962cd;
   --chart-1: #4056e8;
@@ -178,20 +178,21 @@
 .dark {
   --background: #191418;
   --foreground: #fff8ed;
-  --card: #241d23;
+  --card: #2c232b;
   --card-foreground: #fff8ed;
-  --popover: #2a1d29;
+  --popover: #352a35;
   --popover-foreground: #fff8ed;
   --primary: #bcabf2;
+  --primary-hover: #cbbef6;
   --primary-foreground: #171018;
   --secondary: #393044;
   --secondary-foreground: #dfe3ff;
-  --muted: #30232d;
+  --muted: #372b34;
   --muted-foreground: #bcaeb8;
   --accent: #512b3d;
   --accent-foreground: #ffc8d3;
   --destructive: #ff7a88;
-  --border: #493d46;
+  --border: #54464f;
   --input: #a58a9e;
   --ring: #8c98ff;
   --chart-1: #8c98ff;

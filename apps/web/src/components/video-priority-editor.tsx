@@ -164,7 +164,7 @@ function PrioritySummary({ editor, props }: { editor: VideoPriorityEditorModel; 
   return (
     <div
       className={cn(
-        "relative flex items-center gap-2 rounded-lg border px-2 py-1.5",
+        "relative flex items-center gap-2 rounded-lg border px-2 py-2",
         isSelected
           ? "border-ring/35 bg-secondary hover:bg-accent"
           : "border-border bg-card hover:bg-muted",
@@ -191,14 +191,14 @@ function PrioritySummary({ editor, props }: { editor: VideoPriorityEditorModel; 
       >
         <Icons.edit aria-hidden="true" />
       </Button>
-      <div className="pointer-events-none flex min-w-0 grow flex-col gap-0.5 px-1.5 py-1 text-left">
+      <div className="pointer-events-none flex min-w-0 grow flex-col gap-0.5 px-2 py-1 text-left">
         <div className="flex min-w-0 items-center gap-2 text-xs">
           <span className="min-w-0 grow truncate">{priority.label}</span>
-          <span className="shrink-0 text-micro font-bold">{videoCount}</span>
+          <span className="shrink-0 text-xs font-medium">{videoCount}</span>
         </div>
-        <div className="flex min-w-0 items-center justify-between gap-2 text-micro text-muted-foreground">
+        <div className="flex min-w-0 items-center justify-between gap-2 text-xs text-muted-foreground">
           <span className="truncate">{t("amountPerMinute", { amount: minimumAmount })}</span>
-          <span className="shrink-0 font-semibold text-primary">
+          <span className="shrink-0 font-medium text-primary">
             {t("durationRemaining", getRoundedWatchDurationParts(remainingSeconds))}
           </span>
         </div>
@@ -228,7 +228,7 @@ function PriorityForm({
 
   return (
     <form
-      className="flex flex-col gap-2 rounded-lg border border-border bg-card px-2 py-1.5"
+      className="flex flex-col gap-2 rounded-lg border border-border bg-card px-2 py-2"
       onSubmit={(event) => void handleSubmit(savePriority)(event)}
     >
       <div className="flex items-center gap-2">

@@ -4,15 +4,7 @@ import { extendTailwindMerge } from "tailwind-merge";
 const twMerge = extendTailwindMerge({
   extend: {
     theme: {
-      text: [
-        "caption",
-        "micro",
-        "compact",
-        "display",
-        "error-display",
-        "reading-title",
-        "overlay-message",
-      ],
+      text: ["display", "error-display", "reading-title", "overlay-message"],
     },
   },
 });

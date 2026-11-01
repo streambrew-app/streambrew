@@ -91,7 +91,7 @@ function DeadLettersPage() {
       <CosmicPageHeader
         actions={
           deadLettersQ.data ? (
-            <span className="rounded-full border border-status-warning-border/40 bg-status-warning-deep/60 px-2.5 py-1 text-xs font-semibold text-status-warning-on-deep tabular-nums">
+            <span className="rounded-full border border-status-warning-border/40 bg-status-warning-deep/60 px-3 py-1 text-xs font-medium text-status-warning-on-deep tabular-nums">
               {t("deadLetterCount", { count: deadLettersQ.data.total })}
             </span>
           ) : undefined
@@ -125,9 +125,9 @@ function DeadLettersPage() {
       {deadLettersQ.data && deadLettersQ.data.items.length > 0 && (
         <nav
           aria-label={t("deadLetterPagination")}
-          className="flex shrink-0 flex-col items-stretch justify-between gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:px-5"
+          className="flex shrink-0 flex-col items-stretch justify-between gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:px-6"
         >
-          <span className="text-caption text-muted-foreground">
+          <span className="text-xs text-muted-foreground">
             {t("deadLettersShown", { count: deadLettersQ.data.items.length })}
           </span>
           <div className="flex items-center gap-2">
@@ -161,7 +161,7 @@ function DeadLetterRow({ deadLetter }: { deadLetter: ChatDeadLetter }) {
   const payload = decodeBase64(deadLetter.payload);
 
   return (
-    <details className="group px-4 py-4 open:bg-muted/30 sm:px-5">
+    <details className="group px-4 py-4 open:bg-muted/30 sm:px-6">
       <summary className="grid cursor-pointer list-none grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-2 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-ring sm:grid-cols-[auto_minmax(0,1fr)_auto] [&::-webkit-details-marker]:hidden">
         <span className="row-span-2 grid size-9 shrink-0 place-items-center rounded-lg bg-destructive/10 text-destructive sm:row-span-1">
           <Icons.deadLetter aria-hidden="true" size={17} />
@@ -171,7 +171,7 @@ function DeadLetterRow({ deadLetter }: { deadLetter: ChatDeadLetter }) {
             <code className="break-all text-xs font-semibold text-foreground">
               {deadLetter.sourceSubject}
             </code>
-            <span className="text-caption text-muted-foreground tabular-nums">
+            <span className="text-xs text-muted-foreground tabular-nums">
               #{deadLetter.sequence}
             </span>
           </span>
@@ -179,7 +179,7 @@ function DeadLetterRow({ deadLetter }: { deadLetter: ChatDeadLetter }) {
             {deadLetter.error}
           </span>
         </span>
-        <span className="col-start-2 flex shrink-0 items-center gap-2 text-caption text-muted-foreground tabular-nums sm:col-start-3 sm:row-start-1">
+        <span className="col-start-2 flex shrink-0 items-center gap-2 text-xs text-muted-foreground tabular-nums sm:col-start-3 sm:row-start-1">
           <LocalTime locale={locale} value={deadLetter.failedAt} />
           <Icons.chevronDown
             aria-hidden="true"
@@ -190,9 +190,9 @@ function DeadLetterRow({ deadLetter }: { deadLetter: ChatDeadLetter }) {
       </summary>
       <div className="grid gap-3 pt-4 sm:pl-12">
         <div className="flex items-center justify-between gap-3">
-          <span className="text-xs font-semibold text-foreground">{t("deadLetterPayload")}</span>
+          <span className="text-xs font-medium text-foreground">{t("deadLetterPayload")}</span>
           {deadLetter.payloadTruncated && (
-            <span className="text-caption font-medium text-status-warning-text dark:text-status-warning-dark-text">
+            <span className="text-xs font-medium text-status-warning-text dark:text-status-warning-dark-text">
               {t("deadLetterPayloadTruncated")}
             </span>
           )}
@@ -209,7 +209,7 @@ function DeadLettersSkeleton() {
   return (
     <div aria-busy="true" className="divide-y divide-border">
       {[0, 1, 2].map((index) => (
-        <div className="flex items-start gap-3 px-4 py-4 sm:px-5" key={index}>
+        <div className="flex items-start gap-3 px-4 py-4 sm:px-6" key={index}>
           <Skeleton className="size-9 shrink-0" shape="panel" />
           <div className="flex min-w-0 grow flex-col gap-2">
             <Skeleton className="h-3 w-52 max-w-full" />

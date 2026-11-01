@@ -93,15 +93,10 @@ typography:
     fontSize: "0.875rem"
     fontWeight: 500
     lineHeight: "1.25rem"
-  compact:
-    fontFamily: '"Geist Variable", sans-serif'
-    fontSize: "0.8125rem"
   caption:
     fontFamily: '"Geist Variable", sans-serif'
     fontSize: "0.75rem"
-  micro:
-    fontFamily: '"Geist Variable", sans-serif'
-    fontSize: "0.6875rem"
+    fontWeight: 500
 rounded:
   sm: "0.6rem"
   md: "0.8rem"
@@ -111,64 +106,63 @@ rounded:
   full: "9999px"
 spacing:
   "1": "0.25rem"
-  "1.5": "0.375rem"
   "2": "0.5rem"
-  "2.5": "0.625rem"
   "3": "0.75rem"
   "4": "1rem"
-  "5": "1.25rem"
   "6": "1.5rem"
   "8": "2rem"
+  "12": "3rem"
+  "16": "4rem"
 components:
   button-primary:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.primary-foreground}"
     typography: "{typography.label}"
     rounded: "{rounded.lg}"
-    padding: "0 0.625rem"
+    padding: "0 0.75rem"
     height: "2rem"
   button-outline:
     backgroundColor: "{colors.background}"
     textColor: "{colors.foreground}"
     typography: "{typography.label}"
     rounded: "{rounded.lg}"
-    padding: "0 0.625rem"
+    padding: "0 0.75rem"
     height: "2rem"
   button-secondary:
     backgroundColor: "{colors.secondary}"
     textColor: "{colors.secondary-foreground}"
     typography: "{typography.label}"
     rounded: "{rounded.lg}"
-    padding: "0 0.625rem"
+    padding: "0 0.75rem"
     height: "2rem"
   button-ghost:
     textColor: "{colors.muted-foreground}"
     typography: "{typography.label}"
     rounded: "{rounded.lg}"
-    padding: "0 0.625rem"
+    padding: "0 0.75rem"
     height: "2rem"
   button-sidebar:
     textColor: "{colors.sidebar-foreground}"
     typography: "{typography.label}"
     rounded: "{rounded.lg}"
-    padding: "0 0.625rem"
+    padding: "0 0.75rem"
     height: "2rem"
   button-destructive:
     textColor: "{colors.destructive}"
     typography: "{typography.label}"
     rounded: "{rounded.lg}"
-    padding: "0 0.625rem"
+    padding: "0 0.75rem"
     height: "2rem"
   button-link:
     textColor: "{colors.primary}"
     typography: "{typography.label}"
     rounded: "{rounded.lg}"
-    padding: "0 0.625rem"
+    padding: "0 0.75rem"
     height: "2rem"
   input:
     textColor: "{colors.foreground}"
     rounded: "{rounded.lg}"
-    padding: "0.25rem 0.625rem"
+    padding: "0.25rem 0.75rem"
     height: "2rem"
   panel:
     backgroundColor: "{colors.card}"
@@ -183,7 +177,7 @@ components:
     textColor: "{colors.status-success-text}"
     rounded: "{rounded.full}"
     padding: "0.125rem 0.5rem"
-    typography: "{typography.micro}"
+    typography: "{typography.caption}"
 ---
 
 # Design System: StreamBrew
@@ -261,29 +255,44 @@ titles, and prominent values. Use **Geist Variable** (`font-sans`) for navigatio
 controls, body copy, lists, forms, and numbers. Both Latin and Cyrillic headings
 must use the intended font.
 
-The landing display uses the fluid frontmatter scale. Authenticated panel headings use compact 20 px type; landing section headings use 30–36 px. Body
+The landing display uses the fluid frontmatter scale. Authenticated panel headings use compact 20 px type,
+and section headings inside a panel use 18 px; landing section headings use 30–36 px. Body
 copy is generally 14–18 px with generous leading, while compact controls use
 14 px. Keep tight tracking and leading with display text. Inputs and times use
 tabular numerals. Headings balance their wrapping. Capitalize both words in
 `StreamBrew` in the wordmark, prose, and document titles.
-Compact metadata uses the named `text-compact`, `text-caption`, and `text-micro`
-tokens at 13, 12, and 11 px respectively. Register custom text sizes in
-`apps/web/src/lib/utils.ts` so class merging keeps typography and text colors
-independent. Display titles use the named fluid size, leading, and tracking tokens.
+Text sizes follow Tailwind's 12, 14, 16, 18, 20, 24, 30, and 36 px steps. Compact
+metadata, badges, and counters use 12 px `text-xs`; do not add sizes between these
+steps. Register any custom text size in `apps/web/src/lib/utils.ts` so class merging
+keeps typography and text colors independent. Display titles use the named fluid
+size, leading, and tracking tokens.
+
+Build hierarchy from size, weight, and color, and emphasize content over its labels.
+Chat messages and donation messages use the foreground color; their author and,
+for donations, the amount are equally prominent semibold labels. Reserve semibold
+for headings, values, and names; labels, badges, statuses, counters, and links use
+medium weight.
 
 ## Layout
 
 Use Tailwind CSS for styling and shadcn components for UI primitives.
 
-The landing uses a centered `max-w-6xl` container with 20 px mobile and 32 px
+The landing uses a centered `max-w-6xl` container with 24 px mobile and 32 px
 larger-screen side padding. Its introduction stacks on mobile and becomes two
 equal columns at `lg` (1024 px). The artwork follows the copy in document order.
 Feature rows form two columns from `sm` (640 px), separated by fine horizontal
 rules. Broad section gaps give the entry page a slower rhythm than working pages.
 
 Working surfaces use flex/grid, gap, and padding rather than margins wherever practical.
+Padding, margin, and gap use the 4, 8, 12, 16, 24, 32, 48, and 64 px steps
+(`1`, `2`, `3`, `4`, `6`, `8`, `12`, `16`); 2 px nudges inside pills are the only
+exception. Space between groups exceeds space within them: dashboard groups are
+32 px apart while their cards sit 16 px apart. Prefer content sizing over
+hand-tuned pixel heights, and share column tracks between rows that should align.
+Forms and settings columns stay readable at up to `max-w-2xl` instead of
+stretching across the panel.
 Keep flex children `min-w-0` and allow long names, messages, and URLs to wrap. Shared page headers have 16 px
-horizontal padding, increasing to 20 px at `sm`, with 10 px vertical padding.
+horizontal padding, increasing to 24 px at `sm`, with 12 px vertical padding.
 They reserve room for faint right-side art.
 Reusable components receive external sizing and positioning of their root element
 through `className` instead of hardcoding margins, width, or grow behavior internally.
@@ -317,7 +326,7 @@ restrained cup artwork, and compact video priority group dividers. There is no o
 ### Reading surfaces
 
 Privacy and terms use an unboxed cream reading column capped at `max-w-3xl`,
-with 20 px mobile and 32 px larger-screen side padding. The existing 36 px product
+with 24 px mobile and 32 px larger-screen side padding. The existing 36 px product
 mark and faint orbital art give the header a quiet brand presence. Bitter titles
 scale from 26 to 44 px and allow long words to wrap; Geist body text uses 16 px
 type with 28 px leading. Fine header and footer dividers, understated purple
@@ -325,13 +334,15 @@ cross-links, and visible keyboard focus outlines complete the reading surface.
 
 ## Elevation & Depth
 
-Tonal layering and borders provide most depth. `cosmic-panel` has no shadow.
-The landing observatory uses a diffuse atmospheric shadow. Dialogs use the
-framework's large shadow over a 40% black backdrop; alert cards and chat overlays
-have dedicated shadows to separate them from video. Restream rails and live signals
-use their named shadow tokens. Buttons are flat by default; the explicit `subtle`
-elevation variant adds a small shadow. The landing sign-in action uses the default
-flat treatment. Exact shadow values live in the sidecar. Plum radial gradients,
+Tonal layering and borders provide most depth. `cosmic-panel` has no shadow;
+in dark mode raised surfaces are lighter than the background. Floating elements use
+one elevation scale whose steps pair a tight contact shadow with a soft ambient
+shadow: `shadow-elevation-1` for the restream rail, `shadow-elevation-2` for chat
+overlays, and `shadow-elevation-3` for donation alert cards over video. Dialogs use
+the framework's large shadow over a 40% black backdrop. The live signal glow and the
+landing observatory's diffuse atmospheric shadow are decorative, not elevation.
+Buttons are flat by default; the explicit `subtle` elevation variant adds a small
+shadow. The landing sign-in action uses the default flat treatment. Exact shadow values live in the sidecar. Plum radial gradients,
 sparse starlight, and thin orbital lines establish atmospheric depth without
 decorating list interiors.
 
@@ -360,8 +371,12 @@ project-owned components. Feature-specific components remain in `apps/web/src/co
 - **Buttons:** reuse the existing shadcn/Base UI primitive. Primary is violet,
   secondary is pale violet, and outline/ghost provide quiet actions. The default
   height is 32 px; the landing CTA explicitly grows to 48 px with 24 px horizontal
-  padding. Sidebar, destructive, and link variants also exist. Primary hover
-  reduces the fill to 80% opacity; secondary hover uses the accent surface.
+  padding. Sidebar, destructive, and link variants also exist. Secondary
+  navigation actions inside panels, such as viewing all donations or managing
+  sources, use the small outline variant; style action links through
+  `buttonVariants` rather than by hand. Primary hover
+  uses the `primary-hover` token, darker in light mode and lighter in dark mode, so
+  label contrast increases; secondary hover uses the accent surface.
   Keyboard focus uses a 3 px ring at 50% opacity and a ring-colored border.
   Ordinary actions translate down 1 px when pressed; popup triggers do not.
   Disabled buttons retain 50% opacity. Preserve invalid states and use the
@@ -381,13 +396,13 @@ project-owned components. Feature-specific components remain in `apps/web/src/co
 - **Chat moderation:** show actions without hover on touch devices and let their
   row wrap below the message. Fine pointers retain hover and keyboard-focus reveal.
   Accessible names and tooltips follow the selected Russian or English locale.
-- **Connection badges:** small pill labels use 11 px bold text, 8 px horizontal
+- **Connection badges:** small pill labels use 12 px medium text, 8 px horizontal
   and 2 px vertical padding, and a 6 px dot. Connected and disconnected states
   pair their respective success and warning colors with readable text. Provider
   link badges instead use a neutral border, a service icon, and a focus ring.
 - **Dialogs:** rounded popover surfaces stay within the viewport with 16 px
   clearance on each side and a maximum width of 512 px. Their inner content
-  scrolls, with 20 px padding increasing to 24 px at `sm`. Preserve the Base UI
+  scrolls with 24 px padding. Preserve the Base UI
   focus management and accessible title/description association.
 - **Switches:** the default track is 44 × 24 px with a 20 px thumb; the small
   track is 36 × 20 px with a 16 px thumb. Checked tracks use primary fill,
@@ -411,7 +426,7 @@ project-owned components. Feature-specific components remain in `apps/web/src/co
   a full-height working panel. It places only a 20 px cream Bitter title on the
   shared lighter-plum `cosmic-page-scene`, with restrained orbit or bean art and
   optional actions. Do not add decorative eyebrows or descriptions beneath page
-  titles. Use 10 px vertical padding, without a minimum banner height. The outer
+  titles. Use 12 px vertical padding, without a minimum banner height. The outer
   panel owns rounded corners and clips its internal scrollbar. Multi-panel tools,
   such as Multichat, reuse the same component with level-two headings for each
   independently named panel.

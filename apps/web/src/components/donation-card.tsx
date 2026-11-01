@@ -67,27 +67,27 @@ export default function DonationCard({
   return (
     <div
       className={clsx(
-        "relative grid min-w-0 grid-cols-[36px_minmax(0,1fr)] items-start gap-3 overflow-hidden px-4 py-4 sm:px-5",
+        "relative grid min-w-0 grid-cols-[36px_minmax(0,1fr)] items-start gap-3 overflow-hidden px-4 py-4 sm:px-6",
         props.className,
       )}
     >
-      <div className="relative grid size-9 shrink-0 place-items-center rounded-full border border-primary/15 bg-secondary text-micro font-bold text-secondary-foreground">
+      <div className="relative grid size-9 shrink-0 place-items-center rounded-full border border-primary/15 bg-secondary text-xs font-semibold text-secondary-foreground">
         {getInitials(author)}
       </div>
-      <div className="flex min-w-0 flex-col gap-1.5">
+      <div className="flex min-w-0 flex-col gap-2">
         <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-3 gap-y-2">
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
-            <strong className="min-w-0 text-compact wrap-anywhere text-card-foreground">
+            <strong className="min-w-0 text-sm font-semibold wrap-anywhere text-card-foreground">
               {author}
             </strong>
-            <DonationSourceBadge className="text-micro" source={donation.source} />
+            <DonationSourceBadge className="text-xs" source={donation.source} />
           </div>
           <div className="min-w-0 text-right">
             <strong className="block text-sm font-semibold wrap-anywhere text-card-foreground tabular-nums">
               {fmtAmount(donation.amount, donation.currency, locale)}
             </strong>
             <LocalTime
-              className="mt-1 block text-micro text-muted-foreground"
+              className="mt-1 block text-xs text-muted-foreground"
               locale={locale}
               showFullDate
               value={donation.occurredAt}
@@ -96,7 +96,7 @@ export default function DonationCard({
         </div>
         <p
           className={clsx(
-            "text-sm leading-6 break-words text-muted-foreground [overflow-wrap:anywhere]",
+            "text-sm leading-6 break-words text-card-foreground [overflow-wrap:anywhere]",
             !expandMessage && "line-clamp-3",
           )}
         >
@@ -109,7 +109,7 @@ export default function DonationCard({
                 href={chunk.href}
                 rel="noreferrer"
                 target="_blank"
-                className="rounded-sm font-bold hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                className="rounded-sm font-medium text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
               >
                 {chunk.text}
               </a>

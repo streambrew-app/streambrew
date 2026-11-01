@@ -9,7 +9,7 @@ export function DonationListSkeleton({ className, ...props }: Props) {
   return (
     <div className={cn("divide-y divide-border", className)} {...props}>
       {[0, 1, 2].map((index) => (
-        <div className="flex gap-3 px-4 py-4 sm:items-center sm:px-5" key={index}>
+        <div className="flex gap-3 px-4 py-4 sm:items-center sm:px-6" key={index}>
           <Skeleton className="size-9 shrink-0" shape="panel" />
           <div className="flex min-w-0 grow flex-col gap-2">
             <div className="flex items-center gap-2">
@@ -36,9 +36,9 @@ export function VideoListSkeleton({
   return (
     <div className={cn("divide-y divide-border", className)} {...props}>
       {[0, 1, 2].map((index) => (
-        <article className="@container px-4 py-4 sm:px-5" key={index}>
+        <article className="@container px-4 py-4 sm:px-6" key={index}>
           {withActions ? (
-            <div className="grid min-w-0 items-start gap-5 @3xl:grid-cols-[clamp(19rem,33%,25rem)_minmax(0,1fr)]">
+            <div className="grid min-w-0 items-start gap-6 @3xl:grid-cols-[clamp(19rem,33%,25rem)_minmax(0,1fr)]">
               <div className="flex min-w-0 flex-col gap-2">
                 <Skeleton className="aspect-video w-full" shape="panel" />
                 <div className="flex gap-2">
@@ -113,53 +113,34 @@ export function VideoPrioritiesSkeleton({ className, ...props }: Props) {
 
 export function DashboardSkeleton({ className, ...props }: Props) {
   return (
-    <div className={cn("flex flex-col gap-4", className)} {...props}>
+    <div className={cn("flex flex-col gap-8", className)} {...props}>
       <section className="grid gap-4 md:grid-cols-3">
         {[0, 1, 2].map((index) => (
           <article
-            className="flex h-30 flex-col gap-3 rounded-2xl border border-border bg-card p-5"
+            className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-6"
             key={index}
           >
             <div className="flex items-center justify-between">
               <Skeleton className="h-3 w-24" />
               <Skeleton className="size-8" shape="panel" />
             </div>
-            <Skeleton className="h-6 w-20" />
-            <Skeleton className="h-2.5 w-32" />
+            <Skeleton className="h-8 w-24" />
+            <Skeleton className="h-3 w-32" />
           </article>
         ))}
       </section>
-      <section className="grid gap-4 xl:grid-cols-[1.03fr_.97fr]">
+      <section className="grid items-start gap-4 xl:grid-cols-2">
         <article className="overflow-hidden rounded-2xl border border-border bg-card">
-          <div className="flex items-start justify-between p-5">
-            <div className="flex flex-col gap-2">
-              <Skeleton className="h-4 w-28" />
-              <Skeleton className="h-3 w-44" />
-            </div>
-            <Skeleton className="h-3 w-16" />
+          <div className="flex items-center justify-between p-6">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-7 w-28" />
           </div>
           <DonationListSkeleton />
         </article>
-        <article className="flex min-h-[290px] flex-col gap-5 rounded-2xl border border-border bg-card p-5">
-          <div className="flex items-start justify-between">
-            <div className="flex flex-col gap-2">
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-3 w-48" />
-            </div>
-            <Skeleton className="h-7 w-20" />
-          </div>
-          <Skeleton className="h-40 w-full" />
-          <div className="flex justify-between">
-            <Skeleton className="h-2.5 w-8" />
-            <Skeleton className="h-2.5 w-8" />
-            <Skeleton className="h-2.5 w-8" />
-            <Skeleton className="h-2.5 w-8" />
-          </div>
-        </article>
-      </section>
-      <section className="grid gap-4 xl:grid-cols-2">
-        <Skeleton className="h-30" shape="card" />
-        <Skeleton className="h-30" shape="card" />
+        <div className="flex flex-col gap-4">
+          <Skeleton className="h-64" shape="card" />
+          <Skeleton className="h-24" shape="card" />
+        </div>
       </section>
     </div>
   );

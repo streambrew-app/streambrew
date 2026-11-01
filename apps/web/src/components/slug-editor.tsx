@@ -255,9 +255,9 @@ export function SlugEditor({ className, showAllVideos = false }: Props) {
   const editor = useSlugEditor();
 
   return (
-    <div className={cn("border-b border-border px-3 py-2 sm:px-5", className)}>
+    <div className={cn("border-b border-border px-3 py-2 sm:px-6", className)}>
       <form
-        className="flex flex-col gap-1.5"
+        className="flex flex-col gap-2"
         onSubmit={(event) => void editor.handleSubmit(editor.saveSlug)(event)}
       >
         <div className="flex min-w-0 items-start gap-1">

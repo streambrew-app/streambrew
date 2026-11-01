@@ -158,8 +158,8 @@ function DonationsIndex() {
   return (
     <>
       <CosmicPageHeader title={t("donations")} variant="signal" />
-      <div className="flex shrink-0 flex-col gap-2 border-b border-border bg-card px-4 py-3 sm:flex-row sm:px-5">
-        <label className="flex h-9 min-w-0 grow items-center gap-1.5 rounded-lg border border-input bg-background/70 px-3 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
+      <div className="flex shrink-0 flex-col gap-2 border-b border-border bg-card px-4 py-3 sm:flex-row sm:px-6">
+        <label className="flex h-9 min-w-0 grow items-center gap-2 rounded-lg border border-input bg-background/70 px-3 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
           <Icons.search aria-hidden="true" size={16} className="shrink-0 text-muted-foreground" />
           <span className="sr-only">{t("searchDonations")}</span>
           <Input
@@ -182,7 +182,7 @@ function DonationsIndex() {
           )}
           <select
             className={cn(
-              "h-9 w-full appearance-none rounded-lg border border-input bg-background/70 py-0 pr-8 text-base md:text-xs font-semibold text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-40",
+              "h-9 w-full appearance-none rounded-lg border border-input bg-background/70 py-0 pr-8 text-base md:text-xs font-medium text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-40",
               search.source ? "pl-8" : "pl-3",
             )}
             onChange={(event) =>
@@ -213,7 +213,7 @@ function DonationsIndex() {
         <label className="relative w-full sm:w-auto">
           <span className="sr-only">{t("dateRange")}</span>
           <select
-            className="h-9 w-full appearance-none rounded-lg border border-input bg-background/70 py-0 pr-8 pl-3 text-base md:text-xs font-semibold text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-36"
+            className="h-9 w-full appearance-none rounded-lg border border-input bg-background/70 py-0 pr-8 pl-3 text-base md:text-xs font-medium text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 sm:w-36"
             onChange={(event) =>
               void navigate({
                 search: (previous) => ({

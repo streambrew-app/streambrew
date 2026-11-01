@@ -83,14 +83,14 @@ export function PagePagination({
   return (
     <nav
       aria-label={t("pagination")}
-      className="flex shrink-0 flex-col gap-3 border-t border-border px-4 py-3 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center sm:px-5"
+      className="flex shrink-0 flex-col gap-3 border-t border-border px-4 py-3 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center sm:px-6"
     >
       <div className="flex min-w-0 items-center justify-between gap-3 sm:contents">
-        <span className="truncate text-caption text-muted-foreground sm:col-start-1">
+        <span className="truncate text-xs text-muted-foreground sm:col-start-1">
           {t("showingResults", { first: firstItem, last: lastItem, total })}
         </span>
         {isLoading && (
-          <output className="flex shrink-0 items-center gap-1.5 text-caption font-medium text-muted-foreground sm:col-start-3 sm:justify-self-end">
+          <output className="flex shrink-0 items-center gap-2 text-xs font-medium text-muted-foreground sm:col-start-3 sm:justify-self-end">
             <Icons.loader aria-hidden="true" className="animate-spin" size={14} />
             <span>{loadingLabel}</span>
           </output>
@@ -109,7 +109,7 @@ export function PagePagination({
           >
             <Icons.chevronLeft aria-hidden="true" />
           </Button>
-          <span className="px-2 text-xs font-semibold text-muted-foreground sm:hidden">
+          <span className="px-2 text-xs font-medium text-muted-foreground sm:hidden">
             {t("pageOf", { page, totalPages })}
           </span>
           <div className="hidden items-center gap-1 sm:mx-2 sm:flex">

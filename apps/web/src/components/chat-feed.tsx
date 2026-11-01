@@ -135,10 +135,10 @@ function Message({
         "group/message flex flex-wrap gap-3 border-l-2 py-2 pl-3",
         !overlay && providerBorderClass[message.provider],
         overlay &&
-          "max-w-[min(46rem,calc(100vw-2rem))] border-l-0 rounded-xl px-3.5 py-2.5 text-white motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300",
+          "max-w-[min(46rem,calc(100vw-2rem))] border-l-0 rounded-xl px-4 py-3 text-white motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300",
         overlay &&
           overlayMessageSurface === "card" &&
-          "bg-chat-overlay/88 shadow-chat-overlay backdrop-blur-md",
+          "bg-chat-overlay/88 shadow-elevation-2 backdrop-blur-md",
         className,
       )}
     >
@@ -156,7 +156,7 @@ function Message({
         <strong className={cn("pr-2 font-semibold", overlay && "text-white")}>
           {message.author.displayName}
         </strong>
-        <span className={overlay ? "text-white/90" : "text-muted-foreground"}>
+        <span className={overlay ? "text-white/90" : undefined}>
           {text.map((part, index) =>
             part.type === "url" ? (
               <a

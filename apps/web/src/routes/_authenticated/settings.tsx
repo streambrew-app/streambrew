@@ -27,9 +27,11 @@ function Settings() {
   return (
     <section className="cosmic-panel flex min-h-0 min-w-0 flex-col overflow-hidden">
       <CosmicPageHeader title={t("settings")} variant="beans" />
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain p-4 sm:p-5">
-        <PublicQueueSettingsEditor />
-        <QueueCurrencyEditor />
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-6">
+        <div className="flex max-w-2xl flex-col gap-4">
+          <PublicQueueSettingsEditor />
+          <QueueCurrencyEditor />
+        </div>
       </div>
     </section>
   );

@@ -223,7 +223,7 @@ function SignalRail({ destinationCount, status }: { destinationCount: number; st
   const isLive = status === "live";
   const isConnecting = status === "connecting";
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-restream-rail px-4 py-4 text-milky-paper shadow-restream-rail sm:px-5">
+    <div className="relative overflow-hidden rounded-2xl bg-restream-rail px-4 py-4 text-milky-paper shadow-elevation-1 sm:px-6">
       <div className="relative z-10 grid grid-cols-[auto_1fr_auto_1fr_auto] items-center gap-2 sm:gap-4">
         <div className="flex min-w-0 items-center gap-2">
           <span className="grid size-8 shrink-0 place-items-center rounded-full bg-milky-paper/10 text-roasted-gold">
@@ -240,7 +240,7 @@ function SignalRail({ destinationCount, status }: { destinationCount: number; st
           <span className="grid size-9 shrink-0 place-items-center rounded-full bg-roasted-gold text-restream-rail">
             <Icons.multistream aria-hidden="true" className="size-[18px]" />
           </span>
-          <span className="hidden text-xs font-semibold lg:inline">{t("relay")}</span>
+          <span className="hidden text-xs font-medium lg:inline">{t("relay")}</span>
         </div>
         <div className="relative h-px bg-milky-paper/20">
           {isLive && (
@@ -249,7 +249,7 @@ function SignalRail({ destinationCount, status }: { destinationCount: number; st
         </div>
         <div className="flex min-w-0 items-center gap-2">
           <span className="grid size-8 shrink-0 place-items-center rounded-full bg-milky-paper/10 text-roasted-gold">
-            <span className="text-xs font-bold tabular-nums">{destinationCount}</span>
+            <span className="text-xs font-medium tabular-nums">{destinationCount}</span>
           </span>
           <span className="hidden text-xs font-medium sm:inline">{t("destinations")}</span>
         </div>
@@ -569,16 +569,16 @@ function DestinationRow({
         <div className="flex min-w-0 flex-col gap-0.5">
           <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <h3 className="min-w-0 truncate text-sm font-semibold">{destination.label}</h3>
-            <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
               <span className={`size-1.5 rounded-full ${destinationStateColor[state]}`} />
               {t(state)}
             </span>
           </div>
-          <p className="min-w-0 truncate font-mono text-caption text-muted-foreground sm:text-xs">
+          <p className="min-w-0 truncate font-mono text-xs text-muted-foreground sm:text-xs">
             {destination.serverUrl} · ••••{destination.streamKeyHint}
           </p>
           {liveState && liveState.outboundBytes > 0 && (
-            <p className="text-caption text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               {t("sent", { amount: formatBytes(liveState.outboundBytes, locale) })}
             </p>
           )}
@@ -655,7 +655,7 @@ function DestinationForm({ draft, onClose }: { draft: DestinationDraft; onClose:
         <Field>
           <FieldLabel htmlFor="restream-platform">{t("platform")}</FieldLabel>
           <select
-            className="h-8 w-full rounded-lg border border-input bg-card px-2.5 text-base md:text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            className="h-8 w-full rounded-lg border border-input bg-card px-3 text-base md:text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             id="restream-platform"
             onChange={(event) =>
               setValue((current) => ({
@@ -805,7 +805,7 @@ function DestinationList({
         </Tooltip>
       </div>
       {destinations.length === 0 && draft === null ? (
-        <div className="flex items-center gap-3 rounded-2xl border border-dashed border-border px-4 py-5">
+        <div className="flex items-center gap-3 rounded-2xl border border-dashed border-border px-4 py-6">
           <span className="grid size-10 shrink-0 place-items-center rounded-full bg-secondary text-secondary-foreground">
             <Icons.platform aria-hidden="true" className="size-5" />
           </span>
@@ -870,7 +870,7 @@ function PlanAside({ plan }: { plan: RestreamConfig["plan"] }) {
     currency: "USD",
   }).format(plan.monthlyPriceUsdCents / 100);
   return (
-    <aside className="flex flex-col gap-5 border-t border-border/75 pt-5 xl:border-t-0 xl:border-l xl:pt-0 xl:pl-6">
+    <aside className="flex flex-col gap-6 border-t border-border/75 pt-6 xl:border-t-0 xl:border-l xl:pt-0 xl:pl-6">
       <section className="flex flex-col gap-3 rounded-2xl bg-secondary/55 p-4">
         <div className="flex items-center gap-2 text-secondary-foreground">
           <Icons.multistream aria-hidden="true" className="size-4" />
@@ -924,7 +924,7 @@ function MultistreamPage() {
         className="cosmic-panel flex min-h-0 min-w-0 animate-pulse flex-col overflow-hidden"
       >
         <CosmicPageHeader title={t("multistream")} variant="signal" />
-        <div className="m-5 h-32 rounded-2xl bg-muted/60" />
+        <div className="m-6 h-32 rounded-2xl bg-muted/60" />
       </section>
     );
   }
@@ -934,13 +934,13 @@ function MultistreamPage() {
   return (
     <section className="cosmic-panel flex min-h-0 min-w-0 flex-col overflow-hidden">
       <CosmicPageHeader title={t("multistream")} variant="signal" />
-      <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto overscroll-contain p-3 sm:p-5">
+      <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto overscroll-contain p-3 sm:p-6">
         <div className="flex flex-col gap-1 px-1">
           <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground">{t("subtitle")}</p>
         </div>
         <SignalRail destinationCount={enabledCount} status={config.session?.status} />
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_17rem]">
-          <div className="flex min-w-0 flex-col gap-7">
+          <div className="flex min-w-0 flex-col gap-8">
             <IngestSetup ingest={config.ingest} isLive={isLive} />
             <DestinationList
               destinations={config.destinations}

@@ -25,7 +25,7 @@ export function CosmicPageHeader({
   return (
     <header
       className={cn(
-        "cosmic-page-scene relative flex shrink-0 flex-wrap items-center justify-between gap-3 overflow-hidden px-4 py-2.5 text-milky-paper sm:px-5",
+        "cosmic-page-scene relative flex shrink-0 flex-wrap items-center justify-between gap-3 overflow-hidden px-4 py-3 text-milky-paper sm:px-6",
         className,
       )}
     >

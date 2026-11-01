@@ -215,7 +215,7 @@ function AdminOverviewPage() {
             {dashboardQ.data && (
               <span
                 className={cn(
-                  "hidden items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold sm:flex",
+                  "hidden items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium sm:flex",
                   attentionCount === 0
                     ? "border-status-success-border/30 bg-status-success-deep/50 text-status-success-on-deep"
                     : "border-status-warning-border/40 bg-status-warning-deep/60 text-status-warning-on-deep",
@@ -269,10 +269,10 @@ function AdminOverviewPage() {
 
 function AdminDashboard({ dashboard }: { dashboard: Dashboard }) {
   return (
-    <div className="flex flex-col gap-7 p-4 sm:p-5">
+    <div className="flex flex-col gap-8 p-4 sm:p-6">
       <SystemSection dashboard={dashboard} />
       <ActivitySection dashboard={dashboard} />
-      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.3fr)_minmax(20rem,0.7fr)]">
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(20rem,0.7fr)]">
         <ProductSection dashboard={dashboard} />
         <ProcessingSection dashboard={dashboard} />
       </div>
@@ -360,7 +360,7 @@ function SystemSection({ dashboard }: { dashboard: Dashboard }) {
               <ServiceRow key={service.id} service={service} />
             ))}
           </div>
-          <div className="flex flex-col gap-1.5 border-t border-border bg-muted/30 px-4 py-3 text-caption leading-5 text-muted-foreground tabular-nums">
+          <div className="flex flex-col gap-2 border-t border-border bg-muted/30 px-4 py-3 text-xs leading-5 text-muted-foreground tabular-nums">
             <span>
               {t("databaseSummary", {
                 size: formatBytes(dashboard.database.sizeBytes, locale),
@@ -410,14 +410,14 @@ function ResourceRow({
           : "bg-primary";
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-2 px-4 py-3.5">
+    <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-2 px-4 py-4">
       <div className="flex min-w-0 flex-col gap-0.5">
         <span className="text-xs font-medium text-foreground">{label}</span>
-        <span className="truncate text-caption text-muted-foreground tabular-nums">{detail}</span>
+        <span className="truncate text-xs text-muted-foreground tabular-nums">{detail}</span>
       </div>
       <div className="flex items-baseline gap-2 text-right tabular-nums">
         <span className="text-base font-semibold text-foreground">{value}</span>
-        <span className="text-caption text-muted-foreground">{summary}</span>
+        <span className="text-xs text-muted-foreground">{summary}</span>
       </div>
       {ratio !== null && (
         <div
@@ -443,7 +443,7 @@ function ServiceRow({ service }: { service: Service }) {
   const healthy = service.status === "healthy";
 
   return (
-    <div className="flex items-center justify-between gap-3 px-4 py-2.5 text-xs">
+    <div className="flex items-center justify-between gap-3 px-4 py-3 text-xs">
       <span className="min-w-0 truncate font-medium text-foreground">
         {t(serviceLabels[service.id])}
       </span>
@@ -458,7 +458,7 @@ function ServiceRow({ service }: { service: Service }) {
             healthy ? "bg-status-success-solid" : "bg-destructive",
           )}
         />
-        <span className="w-12 text-right text-caption text-muted-foreground">
+        <span className="w-12 text-right text-xs text-muted-foreground">
           {t("latency", { value: formatDecimal(service.latencyMs, locale, 0) })}
         </span>
       </span>
@@ -482,14 +482,14 @@ function ActivitySection({ dashboard }: { dashboard: Dashboard }) {
       <div className="overflow-hidden rounded-xl border border-border">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-sm tabular-nums">
-            <thead className="bg-muted/40 text-caption font-medium text-muted-foreground">
+            <thead className="bg-muted/40 text-xs font-medium text-muted-foreground">
               <tr>
-                <th className="min-w-28 px-3 py-2.5 text-left font-medium sm:px-4" scope="col">
+                <th className="min-w-28 px-3 py-3 text-left font-medium sm:px-4" scope="col">
                   {t("uniqueStreamers")}
                 </th>
                 {(["now", "day", "week", "month"] as const).map((key) => (
                   <th
-                    className="w-14 px-2 py-2.5 text-right font-medium whitespace-nowrap sm:w-24 sm:px-3"
+                    className="w-14 px-2 py-3 text-right font-medium whitespace-nowrap sm:w-24 sm:px-3"
                     key={key}
                     scope="col"
                   >
@@ -515,7 +515,7 @@ function ActivitySection({ dashboard }: { dashboard: Dashboard }) {
         </div>
         <div
           className={cn(
-            "border-t border-border px-4 py-2.5 text-caption leading-5",
+            "border-t border-border px-4 py-3 text-xs leading-5",
             activity ? "text-muted-foreground" : "bg-destructive/5 text-destructive",
           )}
         >
@@ -583,20 +583,20 @@ function ProductSection({ dashboard }: { dashboard: Dashboard }) {
       <div className="overflow-hidden rounded-xl border border-border">
         <div className="grid divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
           {adoption.map((item) => (
-            <div className="flex min-w-0 flex-col gap-1 px-4 py-3.5" key={item.label}>
-              <span className="text-caption font-medium text-muted-foreground">{item.label}</span>
+            <div className="flex min-w-0 flex-col gap-1 px-4 py-4" key={item.label}>
+              <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
               <span className="text-xl font-semibold text-foreground tabular-nums">
                 {formatNumber(item.value, locale)}
               </span>
               {item.share !== null && (
-                <span className="text-caption text-muted-foreground">
+                <span className="text-xs text-muted-foreground">
                   {t("adoptionShare", { percent: formatPercent(item.share, locale) })}
                 </span>
               )}
             </div>
           ))}
         </div>
-        <div className="border-t border-border px-4 py-2.5 text-caption text-muted-foreground tabular-nums">
+        <div className="border-t border-border px-4 py-3 text-xs text-muted-foreground tabular-nums">
           {t("chatConfigurationSummary", {
             connections: formatNumber(dashboard.multichat.connectionCount, locale),
             sources: formatNumber(dashboard.multichat.enabledSourceCount, locale),
@@ -616,7 +616,7 @@ function ProductSection({ dashboard }: { dashboard: Dashboard }) {
             ]}
           />
         </div>
-        <div className="border-t border-border px-4 py-3.5">
+        <div className="border-t border-border px-4 py-4">
           <h3 className="pb-3 text-sm font-semibold">{t("providers")}</h3>
           {dashboard.multichat.providers.length === 0 ? (
             <p className="text-xs text-muted-foreground">{t("noProviders")}</p>
@@ -643,7 +643,7 @@ function PeriodTable({
   const { locale, t } = useI18n(translations);
   return (
     <table className={cn("border-collapse text-xs tabular-nums", className)}>
-      <thead className="text-caption font-medium text-muted-foreground">
+      <thead className="text-xs font-medium text-muted-foreground">
         <tr>
           <th className="px-4 py-2 text-left font-medium" scope="col" />
           {(["day", "week", "month"] as const).map((key) => (
@@ -656,11 +656,11 @@ function PeriodTable({
       <tbody className="divide-y divide-border">
         {rows.map((row) => (
           <tr key={row.label}>
-            <th className="px-4 py-2.5 text-left font-medium" scope="row">
+            <th className="px-4 py-3 text-left font-medium" scope="row">
               {row.label}
             </th>
             {(["day", "week", "month"] as const).map((key) => (
-              <td className="px-3 py-2.5 text-right" key={key}>
+              <td className="px-3 py-3 text-right" key={key}>
                 {formatNumber(row.values[key], locale)}
               </td>
             ))}
@@ -675,11 +675,11 @@ function ProviderRow({ provider }: { provider: Dashboard["multichat"]["providers
   const { locale, t } = useI18n(translations);
   const meta = ChatProviderMeta[provider.provider];
   return (
-    <div className="flex min-w-0 items-center gap-3 rounded-lg bg-muted/40 px-3 py-2.5">
+    <div className="flex min-w-0 items-center gap-3 rounded-lg bg-muted/40 px-3 py-3">
       <img alt="" aria-hidden="true" className="size-5 shrink-0" src={meta.logo} />
       <div className="flex min-w-0 grow flex-col">
-        <span className="truncate text-xs font-semibold">{meta.label}</span>
-        <span className="truncate text-caption text-muted-foreground tabular-nums">
+        <span className="truncate text-xs font-medium">{meta.label}</span>
+        <span className="truncate text-xs text-muted-foreground tabular-nums">
           {t("providerUsers", { count: formatNumber(provider.users, locale) })}
           {provider.connections !== provider.users &&
             ` · ${t("providerConnections", { count: formatNumber(provider.connections, locale) })}`}
@@ -726,14 +726,14 @@ function ProcessingSection({ dashboard }: { dashboard: Dashboard }) {
           value={dashboard.queues.alerts.inProgress}
         />
         <Link
-          className="flex items-center justify-between gap-4 px-4 py-3.5 outline-none transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+          className="flex items-center justify-between gap-4 px-4 py-4 outline-none transition-colors hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
           to="/admin/dlq"
         >
           <div className="flex min-w-0 flex-col gap-0.5">
             <span className="text-xs font-medium text-foreground">{t("deadLetters")}</span>
             <span
               className={cn(
-                "text-caption",
+                "text-xs",
                 dashboard.queues.deadLetters && dashboard.queues.deadLetters > 0
                   ? "text-destructive"
                   : "text-muted-foreground",
@@ -780,12 +780,12 @@ function QueueRow({
 }) {
   const { locale } = useI18n(translations);
   return (
-    <div className="flex items-center justify-between gap-4 px-4 py-3.5">
+    <div className="flex items-center justify-between gap-4 px-4 py-4">
       <div className="flex min-w-0 flex-col gap-0.5">
         <span className="text-xs font-medium text-foreground">{label}</span>
         <span
           className={cn(
-            "text-caption",
+            "text-xs",
             attention
               ? "text-status-warning-text dark:text-status-warning-dark-text"
               : "text-muted-foreground",
@@ -892,7 +892,7 @@ function formatDuration(seconds: number, locale: "en" | "ru") {
 
 function AdminDashboardSkeleton() {
   return (
-    <div aria-busy="true" className="flex flex-col gap-7 p-4 sm:p-5">
+    <div aria-busy="true" className="flex flex-col gap-8 p-4 sm:p-6">
       {[0, 1].map((section) => (
         <div className="flex flex-col gap-3" key={section}>
           <Skeleton className="h-6 w-44" />
@@ -912,7 +912,7 @@ function AdminDashboardSkeleton() {
           </div>
         </div>
       ))}
-      <div className="grid gap-5 xl:grid-cols-2">
+      <div className="grid gap-6 xl:grid-cols-2">
         <Skeleton className="h-80" shape="card" />
         <Skeleton className="h-64" shape="card" />
       </div>

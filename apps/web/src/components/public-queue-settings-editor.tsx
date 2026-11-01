@@ -78,7 +78,7 @@ function SettingRow({
   onCheckedChange,
 }: SettingRowProps) {
   return (
-    <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-5">
+    <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
       <div className="flex min-w-0 flex-col gap-1">
         <label className="text-sm font-medium text-card-foreground" htmlFor={id}>
           {label}
@@ -115,7 +115,7 @@ export function PublicQueueSettingsEditor() {
 
   return (
     <article className="cosmic-panel shrink-0 overflow-hidden">
-      <header className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+      <header className="flex flex-col gap-3 border-b border-border p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
         <div className="flex min-w-0 items-start gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-primary">
             <Icons.secure aria-hidden="true" size={18} />
@@ -126,7 +126,7 @@ export function PublicQueueSettingsEditor() {
             </h2>
           </div>
         </div>
-        <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-caption font-semibold text-secondary-foreground">
+        <span className="inline-flex w-fit items-center gap-2 rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
           <span
             aria-hidden="true"
             className={
@@ -182,7 +182,7 @@ export function PublicQueueSettingsEditor() {
             )}
           />
         </div>
-        <footer className="flex flex-col gap-2 border-t border-border bg-secondary/35 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <footer className="flex flex-col gap-2 border-t border-border bg-secondary/35 p-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <a
             className={buttonVariants({ size: "sm", variant: "ghost" })}
             href={`/@${userInfo.slug}/videos`}
@@ -201,7 +201,7 @@ export function PublicQueueSettingsEditor() {
           </Button>
         </footer>
         {updateSettingsM.error && (
-          <div className="border-t border-border px-4 py-3 sm:px-5">
+          <div className="border-t border-border px-4 py-3 sm:px-6">
             <FieldError>{apiErrorMessage(updateSettingsM.error)}</FieldError>
           </div>
         )}

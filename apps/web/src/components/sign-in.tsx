@@ -149,11 +149,11 @@ export default function SignIn() {
   ] as const;
 
   return (
-    <main className="landing-world relative flex min-h-dvh flex-col items-center overflow-hidden px-5 text-foreground sm:px-8">
+    <main className="landing-world relative flex min-h-dvh flex-col items-center overflow-hidden px-6 text-foreground sm:px-8">
       <div className="cosmic-starlight pointer-events-none absolute inset-0" />
 
-      <header className="relative z-10 flex w-full max-w-6xl items-center justify-between gap-4 border-b border-border/60 py-5 sm:py-7">
-        <div className="flex items-center gap-2.5 font-heading text-xl font-semibold tracking-tight sm:text-2xl">
+      <header className="relative z-10 flex w-full max-w-6xl items-center justify-between gap-4 border-b border-border/60 py-6 sm:py-8">
+        <div className="flex items-center gap-3 font-heading text-xl font-semibold tracking-tight sm:text-2xl">
           <img
             alt=""
             className="size-10 object-contain sm:size-12"
@@ -175,8 +175,8 @@ export default function SignIn() {
       </header>
 
       <div className="relative z-10 flex w-full max-w-6xl flex-col gap-20 pb-8 sm:gap-28 sm:pb-12">
-        <section className="grid items-center gap-6 pt-10 lg:min-h-[680px] lg:grid-cols-[1fr_1fr] lg:gap-0 lg:pt-0">
-          <div className="relative z-10 flex flex-col justify-center gap-7 py-5 lg:py-16 lg:pr-7">
+        <section className="grid items-center gap-6 pt-12 lg:min-h-[680px] lg:grid-cols-[1fr_1fr] lg:gap-0 lg:pt-0">
+          <div className="relative z-10 flex flex-col justify-center gap-8 py-6 lg:py-16 lg:pr-8">
             <div className="flex max-w-2xl flex-col gap-4">
               <h1 className="font-heading text-display leading-display font-medium tracking-display text-balance">
                 {t("landingHeadline")}
@@ -210,7 +210,7 @@ export default function SignIn() {
           </div>
         </section>
 
-        <section aria-labelledby="landing-features" className="flex flex-col gap-7">
+        <section aria-labelledby="landing-features" className="flex flex-col gap-8">
           <div className="flex max-w-2xl flex-col gap-3">
             <h2
               className="font-heading text-3xl font-semibold tracking-tight sm:text-4xl"
@@ -224,7 +224,7 @@ export default function SignIn() {
               const Icon = feature.icon;
               return (
                 <article
-                  className="flex min-w-0 items-start gap-5 border-t border-border py-7"
+                  className="flex min-w-0 items-start gap-6 border-t border-border py-8"
                   key={feature.title}
                 >
                   <div className="grid size-10 shrink-0 place-items-center rounded-full bg-secondary text-primary">
@@ -240,15 +240,15 @@ export default function SignIn() {
           </div>
         </section>
 
-        <section className="grid gap-6 border-t border-border pt-10 lg:grid-cols-[.45fr_1.55fr]">
-          <div className="relative hidden min-h-56 overflow-hidden rounded-t-full bg-secondary p-9 text-primary lg:block">
+        <section className="grid gap-6 border-t border-border pt-12 lg:grid-cols-[.45fr_1.55fr]">
+          <div className="relative hidden min-h-56 overflow-hidden rounded-t-full bg-secondary p-8 text-primary lg:block">
             <Icons.secure aria-hidden="true" className="relative z-10 size-9 text-primary" />
             <CosmicArt
               className="pointer-events-none absolute right-[-64px] bottom-[-76px] w-72 opacity-75"
               variant="orbit"
             />
           </div>
-          <div className="flex flex-col gap-5 lg:pl-8">
+          <div className="flex flex-col gap-6 lg:pl-8">
             <div className="flex flex-col gap-3">
               <h2 className="font-heading text-3xl font-semibold tracking-tight">
                 {t("googleDataTitle")}
@@ -269,7 +269,7 @@ export default function SignIn() {
 
         <footer className="flex flex-col justify-between gap-4 border-t border-border py-6 text-sm text-muted-foreground sm:flex-row sm:items-center">
           <span>{t("landingFooter")}</span>
-          <nav aria-label={t("legalLinks")} className="flex flex-wrap gap-5">
+          <nav aria-label={t("legalLinks")} className="flex flex-wrap gap-6">
             <Link
               className="rounded-sm hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
               to="/docs/privacy"

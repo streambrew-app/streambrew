@@ -90,7 +90,7 @@ export function SharedVideoCard({ showPriorityLabel = true, video }: Props) {
       : getRoundedWatchDurationParts(getWatchDurationSeconds(video.startSeconds, video.endSeconds));
 
   return (
-    <article className="relative flex min-w-0 flex-col gap-4 px-4 py-5 sm:px-5">
+    <article className="relative flex min-w-0 flex-col gap-4 px-4 py-6 sm:px-6">
       <div className="flex flex-col items-stretch gap-4 sm:flex-row sm:items-start">
         {youtubeVideoId !== null && (
           <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-muted sm:w-60 sm:shrink-0">
@@ -114,7 +114,7 @@ export function SharedVideoCard({ showPriorityLabel = true, video }: Props) {
               />
             </a>
             {timingLabel !== null && (
-              <span className="pointer-events-none absolute right-2 bottom-2 rounded bg-black/75 px-1.5 py-0.5 text-caption font-medium text-white">
+              <span className="pointer-events-none absolute right-2 bottom-2 rounded bg-black/75 px-2 py-0.5 text-xs font-medium text-white">
                 {timingLabel}
               </span>
             )}
@@ -130,7 +130,7 @@ export function SharedVideoCard({ showPriorityLabel = true, video }: Props) {
                 </h3>
               )}
               {showPriorityLabel && video.priorityLabel !== null && (
-                <span className="rounded-full bg-secondary px-2 py-0.5 text-micro font-semibold text-secondary-foreground">
+                <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
                   {video.priorityLabel}
                 </span>
               )}

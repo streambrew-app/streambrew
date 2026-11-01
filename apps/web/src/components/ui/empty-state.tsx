@@ -26,7 +26,7 @@ export function EmptyState({
 
   return (
     <div
-      className={cn("grid min-h-72 place-items-center px-5 py-10 text-center", className)}
+      className={cn("grid min-h-72 place-items-center px-6 py-12 text-center", className)}
       {...props}
     >
       <div className="relative flex min-w-0 max-w-sm flex-col items-center gap-3 wrap-anywhere">

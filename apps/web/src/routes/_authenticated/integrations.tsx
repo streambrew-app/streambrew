@@ -87,7 +87,7 @@ function ConnectionNotice() {
   const sourceName = donationSourceDetails(search.source).name;
   return (
     <div
-      className={`flex items-center gap-2 rounded-xl border px-3.5 py-3 text-compact ${search.success ? "border-status-success-border/50 bg-status-success-surface text-status-success-text dark:bg-status-success-dark-surface/10 dark:text-status-success-dark-text" : "border-status-error-border/50 bg-status-error-surface text-status-error-text dark:bg-status-error-dark-surface/10 dark:text-status-error-dark-text"}`}
+      className={`flex items-center gap-2 rounded-xl border px-4 py-3 text-sm ${search.success ? "border-status-success-border/50 bg-status-success-surface text-status-success-text dark:bg-status-success-dark-surface/10 dark:text-status-success-dark-text" : "border-status-error-border/50 bg-status-error-surface text-status-error-text dark:bg-status-error-dark-surface/10 dark:text-status-error-dark-text"}`}
       role="status"
     >
       <DonationSourceIcon className="size-3.5" size="xs" source={search.source} />
@@ -284,7 +284,7 @@ function DisconnectError({ disconnectM }: { disconnectM: DisconnectMutation }) {
 
   return (
     <div
-      className="flex items-center gap-2 rounded-xl border border-status-error-border/50 bg-status-error-surface px-3.5 py-3 text-compact text-status-error-text dark:bg-status-error-dark-surface/10 dark:text-status-error-dark-text"
+      className="flex items-center gap-2 rounded-xl border border-status-error-border/50 bg-status-error-surface px-4 py-3 text-sm text-status-error-text dark:bg-status-error-dark-surface/10 dark:text-status-error-dark-text"
       role="alert"
     >
       <DonationSourceIcon className="size-3.5" size="xs" source={source} />

@@ -255,18 +255,18 @@ function AuthenticatedApplicationContent() {
         {t("skipToContent")}
       </a>
       <Sidebar>
-        <aside className="coffee-sidebar relative flex size-full flex-col overflow-hidden border-r border-sidebar-border bg-sidebar px-4 pt-7 pb-5 transition-colors duration-300">
+        <aside className="coffee-sidebar relative flex size-full flex-col overflow-hidden border-r border-sidebar-border bg-sidebar px-4 pt-8 pb-6 transition-colors duration-300">
           <div className="relative z-10 flex shrink-0 items-center gap-3">
             <Link
               to="/"
-              className="flex items-center gap-2.5 px-1 font-heading text-2xl font-semibold tracking-tight text-sidebar-foreground focus-visible:rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sidebar-ring"
+              className="flex items-center gap-3 px-1 font-heading text-2xl font-semibold tracking-tight text-sidebar-foreground focus-visible:rounded-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-sidebar-ring"
             >
               <img alt="" src={productMark} className="size-10 object-contain" />
               StreamBrew
             </Link>
           </div>
           <nav
-            className="relative z-10 flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto overscroll-contain pt-8 pb-4"
+            className="relative z-10 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto overscroll-contain pt-8 pb-4"
             aria-label={t("overview")}
           >
             <Link
@@ -350,7 +350,7 @@ function AuthenticatedApplicationContent() {
             className="pointer-events-none absolute right-[-42px] bottom-28 w-52 rotate-[-8deg] text-sidebar-foreground/20 opacity-35"
             variant="orbit"
           />
-          <div className="relative z-10 mt-auto flex shrink-0 flex-col gap-5">
+          <div className="relative z-10 mt-auto flex shrink-0 flex-col gap-6">
             <div className="flex items-center justify-between px-3">
               <Link
                 aria-label={t("settings")}
@@ -361,7 +361,7 @@ function AuthenticatedApplicationContent() {
               >
                 <Icons.settings aria-hidden="true" size={18} />
               </Link>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <Tooltip>
                   <TooltipTrigger
                     render={
@@ -388,7 +388,7 @@ function AuthenticatedApplicationContent() {
                 <LanguageMenu />
               </div>
             </div>
-            <div className="flex items-center gap-2.5 border-t border-sidebar-border px-2 pt-5">
+            <div className="flex items-center gap-3 border-t border-sidebar-border px-2 pt-6">
               <AccountAvatar
                 className="size-8"
                 key={user.image}
@@ -399,7 +399,7 @@ function AuthenticatedApplicationContent() {
                 <strong className="block truncate text-xs text-sidebar-foreground">
                   {user.name}
                 </strong>
-                <small className="mt-0.5 block truncate text-micro text-sidebar-foreground/65">
+                <small className="mt-0.5 block truncate text-xs text-sidebar-foreground/65">
                   @{userInfo.slug}
                 </small>
               </div>
@@ -462,7 +462,7 @@ function AuthenticatedApplicationContent() {
           className="min-h-0 min-w-0 grow overflow-hidden outline-none"
           tabIndex={-1}
         >
-          <div className="mx-auto flex h-full min-h-0 w-full max-w-[1500px] flex-col p-0 sm:p-3 [&>*]:h-full">
+          <div className="mx-auto flex h-full min-h-0 w-full max-w-(--breakpoint-2xl) flex-col p-0 sm:p-3 [&>*]:h-full">
             <Suspense
               fallback={
                 <div aria-busy="true" className="flex min-h-full flex-col gap-3">
@@ -506,7 +506,7 @@ function AccountAvatar({
     <span
       aria-hidden="true"
       className={cn(
-        "grid shrink-0 place-items-center rounded-lg bg-sidebar-accent text-caption font-semibold text-sidebar-primary",
+        "grid shrink-0 place-items-center rounded-lg bg-sidebar-accent text-xs font-semibold text-sidebar-primary",
         className,
       )}
     >

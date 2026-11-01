@@ -399,7 +399,7 @@ function VideoStatusFilters({ page }: { page: VideoQueuePage }) {
           <Link
             aria-current={isActive ? "page" : undefined}
             className={buttonVariants({
-              className: "h-auto px-3 py-2 text-left text-xs font-semibold",
+              className: "h-auto px-3 py-2 text-left text-xs font-medium",
               variant: isActive ? "secondary" : "ghost",
             })}
             key={id}
@@ -413,7 +413,7 @@ function VideoStatusFilters({ page }: { page: VideoQueuePage }) {
           >
             <Icon aria-hidden="true" size={15} />
             <span className="grow">{label}</span>
-            <span className="text-micro font-bold">{count}</span>
+            <span className="text-xs font-medium">{count}</span>
           </Link>
         );
       })}

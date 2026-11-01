@@ -16,7 +16,7 @@ function DialogContent({ className, children, ...props }: DialogPrimitive.Popup.
         )}
         {...props}
       >
-        <div className="flex min-h-0 flex-col gap-5 overflow-y-auto overscroll-contain p-5 sm:p-6">
+        <div className="flex min-h-0 flex-col gap-6 overflow-y-auto overscroll-contain p-6">
           {children}
         </div>
       </DialogPrimitive.Popup>
