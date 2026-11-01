@@ -14,6 +14,9 @@ import (
 
 const defaultWebSocketURL = "wss://donate.stream/wss/socket.io/?EIO=4&transport=websocket"
 
+// rejectedTokenError is the authResult error donate.stream sends for an invalid widget token.
+const rejectedTokenError = "auth"
+
 type Socket interface {
 	Read(context.Context) ([]byte, error)
 	Write(context.Context, []byte) error
@@ -123,7 +126,8 @@ func (source *Source) runSession(ctx context.Context, widgetToken string, emit f
 					}
 				}
 				if result.Error != "" {
-					return authenticated, &RequestError{Unauthorized: true, Operation: "authenticate websocket", Cause: errors.New(result.Error)}
+					// Only a rejected token invalidates the connection; other errors are retried.
+					return authenticated, &RequestError{Unauthorized: result.Error == rejectedTokenError, Operation: "authenticate websocket", Cause: errors.New(result.Error)}
 				}
 				authenticated = true
 				if stopAfterAuthentication {

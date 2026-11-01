@@ -129,6 +129,51 @@ func TestRunSessionSkipsInvalidAlertsWithoutEndingSession(t *testing.T) {
 	}
 }
 
+func TestAuthenticateReportsOtherAuthResultErrorsAsTemporary(t *testing.T) {
+	socket := &sourceTestSocket{reads: [][]byte{
+		[]byte(`0{"sid":"engine"}`),
+		[]byte(`42["auth"]`),
+		[]byte(`42["authResult",{"error":"rate limited"}]`),
+	}}
+	source := NewSource()
+	source.dial = func(context.Context, string) (Socket, error) { return socket, nil }
+	err := source.Authenticate(context.Background(), "widget-token")
+	var requestError *RequestError
+	if !errors.As(err, &requestError) || requestError.Unauthorized || requestError.InvalidInput {
+		t.Fatalf("Authenticate() = %v; want a temporary failure, not a rejected token", err)
+	}
+}
+
+func TestRunRetriesAuthResultErrorsOtherThanRejectedToken(t *testing.T) {
+	source := NewSource()
+	sessions := 0
+	source.dial = func(context.Context, string) (Socket, error) {
+		sessions++
+		return &sourceTestSocket{reads: [][]byte{
+			[]byte(`0{"sid":"engine"}`),
+			[]byte(`42["auth"]`),
+			[]byte(`42["authResult",{"error":"temporarily unavailable"}]`),
+		}}, nil
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	waits := make([]time.Duration, 0, 2)
+	source.wait = func(_ context.Context, duration time.Duration) error {
+		waits = append(waits, duration)
+		if len(waits) == 2 {
+			cancel()
+			return context.Canceled
+		}
+		return nil
+	}
+	if err := source.Run(ctx, "widget-token", func(Donation) error { return nil }); err != nil {
+		t.Fatalf("Run() = %v; want the listener to keep the connection and retry", err)
+	}
+	expected := []time.Duration{5 * time.Second, 10 * time.Second}
+	if sessions != 2 || !reflect.DeepEqual(waits, expected) {
+		t.Fatalf("sessions=%d backoff=%v; want 2 sessions and %v", sessions, waits, expected)
+	}
+}
+
 func TestRunResetsBackoffAfterAuthenticatedSession(t *testing.T) {
 	source := NewSource()
 	source.dial = func(context.Context, string) (Socket, error) {
