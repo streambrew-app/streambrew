@@ -93,6 +93,11 @@ channel is offline or the broadcast ends, discovery remains idle until the strea
 that owns the collector lease. Transport failures during an active operation still reconnect
 automatically with bounded exponential backoff.
 
+When Twitch moves an EventSub session with `session_reconnect`, the collector connects to the
+provided URL while it keeps reading the old session. Messages that arrive before the new session's
+welcome are still published. The chat subscription carries over, so it is not created again, and
+the old session closes once the new one is welcomed.
+
 When a collector session ends, for example because a provider API is unavailable, the collector
 restarts it after 2 seconds and doubles the delay after each further short session, up to
 5 minutes. A definitive authorization failure stops the collector instead; see

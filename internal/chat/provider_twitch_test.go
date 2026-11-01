@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -119,6 +120,83 @@ func TestTwitchStreamUsesReconnectURL(t *testing.T) {
 	case <-second.closed:
 	case <-time.After(time.Second):
 		t.Fatal("second socket was not closed")
+	}
+}
+
+func TestTwitchStreamKeepsPreviousSessionUntilReconnectWelcome(t *testing.T) {
+	var subscriptions atomic.Int32
+	client := &http.Client{Transport: oauthRoundTripFunc(func(request *http.Request) (*http.Response, error) {
+		if request.URL.Path != "/helix/eventsub/subscriptions" {
+			t.Errorf("unexpected request: %s", request.URL)
+		}
+		subscriptions.Add(1)
+		return &http.Response{StatusCode: http.StatusAccepted, Body: io.NopCloser(&emptyReader{}), Header: make(http.Header)}, nil
+	})}
+	provider := NewTwitchProvider("client", "secret", client)
+	first := &fakeTwitchSocket{reads: make(chan []byte, 3), closed: make(chan struct{})}
+	second := &fakeTwitchSocket{reads: make(chan []byte, 2), closed: make(chan struct{})}
+	dialed := make(chan string, 2)
+	provider.dial = func(_ context.Context, rawURL string) (twitchSocket, error) {
+		dialed <- rawURL
+		if rawURL == twitchEventSubURL {
+			return first, nil
+		}
+		return second, nil
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	events, providerErrors := provider.Stream(ctx, twitchTestSource())
+	nextEvent := func(name string) StreamEvent {
+		t.Helper()
+		select {
+		case event := <-events:
+			return event
+		case err := <-providerErrors:
+			t.Fatalf("%s: unexpected provider error: %v", name, err)
+		case <-time.After(time.Second):
+			t.Fatalf("timed out waiting for %s", name)
+		}
+		return StreamEvent{}
+	}
+	if event := nextEvent("connecting"); event.State != "connecting" {
+		t.Fatalf("initial event = %#v", event)
+	}
+	first.reads <- []byte(`{"metadata":{"message_type":"session_welcome"},"payload":{"session":{"id":"session-1"}}}`)
+	if event := nextEvent("first welcome"); event.State != "live" {
+		t.Fatalf("event after first welcome = %#v", event)
+	}
+	first.reads <- []byte(`{"metadata":{"message_type":"session_reconnect"},"payload":{"session":{"reconnect_url":"wss://eventsub.wss.twitch.tv/reconnect"}}}`)
+	first.reads <- []byte(`{"metadata":{"message_type":"notification","message_timestamp":"2026-08-27T12:00:00Z"},"payload":{"event":{"chatter_user_id":"viewer-1","chatter_user_name":"Viewer","message_id":"before-welcome","message":{"text":"Hello"}}}}`)
+	<-dialed
+	if actual := <-dialed; actual != "wss://eventsub.wss.twitch.tv/reconnect" {
+		t.Fatalf("reconnect URL = %q", actual)
+	}
+	if event := nextEvent("message on previous session"); event.Message == nil || event.Message.ID != "before-welcome" {
+		t.Fatalf("event from previous session = %#v", event)
+	}
+	select {
+	case <-first.closed:
+		t.Fatal("previous session closed before the reconnect session was welcomed")
+	default:
+	}
+	second.reads <- []byte(`{"metadata":{"message_type":"session_welcome"},"payload":{"session":{"id":"session-2"}}}`)
+	if event := nextEvent("reconnect welcome"); event.State != "live" {
+		t.Fatalf("event after reconnect welcome = %#v", event)
+	}
+	select {
+	case <-first.closed:
+	case <-time.After(time.Second):
+		t.Fatal("previous session was not closed after the reconnect welcome")
+	}
+	second.reads <- []byte(`{"metadata":{"message_type":"notification","message_timestamp":"2026-08-27T12:00:01Z"},"payload":{"event":{"chatter_user_id":"viewer-1","chatter_user_name":"Viewer","message_id":"after-welcome","message":{"text":"Hi"}}}}`)
+	if event := nextEvent("message on reconnect session"); event.Message == nil || event.Message.ID != "after-welcome" {
+		t.Fatalf("event from reconnect session = %#v", event)
+	}
+	if count := subscriptions.Load(); count != 1 {
+		t.Fatalf("subscription requests = %d; want 1 because the subscription carries over", count)
+	}
+	cancel()
+	for range providerErrors {
 	}
 }
 
