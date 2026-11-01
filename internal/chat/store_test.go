@@ -136,6 +136,7 @@ func TestStoreSavesOptionalDeviceID(t *testing.T) {
 			UNIQUE (provider, provider_user_id)
 		);
 		CREATE TEMP TABLE chat_source (
+			chat_source_id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 			chat_provider_connection_id uuid, user_id integer, provider text,
 			provider_source_id text, display_name text, source_url text,
 			position integer, enabled boolean DEFAULT true, updated_at timestamptz DEFAULT now(),
@@ -158,7 +159,7 @@ func TestStoreSavesOptionalDeviceID(t *testing.T) {
 			}
 			connection := SaveConnection{Provider: provider, ProviderUserID: "channel", DisplayName: "Channel", AccessToken: "access", RefreshToken: "refresh", OAuthDeviceID: deviceID, Scopes: []string{}}
 			source := SaveSource{Provider: provider, ProviderSourceID: "channel", DisplayName: "Channel", SourceURL: "https://example.com/channel"}
-			var connectionID string
+			var sourceID string
 			for attempt := range 3 {
 				if attempt == 1 {
 					connection.OAuthDeviceID = "" // A reconnect may omit an existing device ID.
@@ -171,13 +172,18 @@ func TestStoreSavesOptionalDeviceID(t *testing.T) {
 				if err != nil {
 					t.Fatalf("save attempt %d: %v", attempt, err)
 				}
-				if attempt > 0 && id != connectionID {
-					t.Fatal("reconnect created a different connection")
+				if attempt > 0 && id != sourceID {
+					t.Fatal("reconnect created a different source")
 				}
-				connectionID = id
+				sourceID = id
 				var storedDeviceID *string
 				var version int
-				if err := pool.QueryRow(ctx, `SELECT oauth_device_id, token_version FROM pg_temp.chat_provider_connection WHERE chat_provider_connection_id = $1`, id).Scan(&storedDeviceID, &version); err != nil {
+				if err := pool.QueryRow(ctx, `
+					SELECT connection.oauth_device_id, connection.token_version
+					FROM pg_temp.chat_provider_connection AS connection
+					JOIN pg_temp.chat_source AS source USING (chat_provider_connection_id)
+					WHERE source.chat_source_id = $1
+				`, id).Scan(&storedDeviceID, &version); err != nil {
 					t.Fatal(err)
 				}
 				if deviceID == "" {
@@ -191,12 +197,16 @@ func TestStoreSavesOptionalDeviceID(t *testing.T) {
 					t.Fatalf("token version = %d; want %d", version, attempt+1)
 				}
 			}
-			var count int
-			if err := pool.QueryRow(ctx, `SELECT count(*) FROM pg_temp.chat_source WHERE user_id = 1 AND provider = $1`, provider).Scan(&count); err != nil {
+			var count, connections int
+			if err := pool.QueryRow(ctx, `
+				SELECT
+					(SELECT count(*) FROM pg_temp.chat_source WHERE user_id = 1 AND provider = $1),
+					(SELECT count(*) FROM pg_temp.chat_provider_connection WHERE user_id = 1 AND provider = $1)
+			`, provider).Scan(&count, &connections); err != nil {
 				t.Fatal(err)
 			}
-			if count != 1 {
-				t.Fatalf("source count = %d; want 1", count)
+			if count != 1 || connections != 1 {
+				t.Fatalf("source count = %d, connection count = %d; want 1 each", count, connections)
 			}
 		})
 	}
@@ -249,7 +259,7 @@ func TestBoostySessionExpiryAndRotationWithPostgres(t *testing.T) {
 	now := time.Now().Truncate(time.Millisecond)
 	expiry := now.Add(time.Hour).UnixMilli()
 	input := BoostyCredentials{AccessToken: "access", RefreshToken: "refresh", DeviceID: "separate-device", ExpiresAt: &expiry, DedicatedSession: true}
-	if connectErr := NewBoostyConnector(NewBoostyProvider(client), store).Connect(ctx, 1, input); connectErr != nil {
+	if connectErr := NewBoostyConnector(NewBoostyProvider(client), store, &fakeCollectorControl{}).Connect(ctx, 1, input); connectErr != nil {
 		t.Fatal(connectErr)
 	}
 	sources, sourcesErr := store.GetEnabledSources(ctx, 1)
@@ -393,5 +403,62 @@ func TestStoreSkipsUnreadableCollectorSourcesWithPostgres(t *testing.T) {
 	}
 	if !strings.Contains(logs.String(), "unreadable credentials") {
 		t.Fatalf("skipped source was not logged: %s", logs.String())
+	}
+}
+
+func TestStoreRefreshRequiredConnectionsWithPostgres(t *testing.T) {
+	pool := newChatStoreTestPool(t)
+	ctx := context.Background()
+	cipher, err := NewTokenCipher("store-refresh-required-test-secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+	store := NewStore(pool, cipher)
+	if saveErr := saveTwitchTestAccount(ctx, store, 1, "streamer"); saveErr != nil {
+		t.Fatal(saveErr)
+	}
+	sources, err := store.GetEnabledSources(ctx, 1)
+	if err != nil || len(sources) != 1 || sources[0].ConnectionStatus != "connected" {
+		t.Fatalf("sources=%#v err=%v", sources, err)
+	}
+	connected := sources[0]
+	connectionID, version := connected.Source.ConnectionID, connected.Credentials.TokenVersion
+	if marked, markErr := store.MarkRefreshRequired(ctx, connectionID, version-1); markErr != nil || marked {
+		t.Fatalf("stale version marked=%v err=%v", marked, markErr)
+	}
+	if marked, markErr := store.MarkRefreshRequired(ctx, connectionID, version); markErr != nil || !marked {
+		t.Fatalf("current version marked=%v err=%v", marked, markErr)
+	}
+	collected, err := store.GetAllEnabledSources(ctx)
+	if err != nil || len(collected) != 0 {
+		t.Fatalf("collectors selected a refresh_required source: %#v err=%v", collected, err)
+	}
+	webhookSource, err := store.GetEnabledSourceByProviderID(ctx, "twitch", "streamer")
+	if err != nil || webhookSource != nil {
+		t.Fatalf("webhook lookup selected a refresh_required source: %#v err=%v", webhookSource, err)
+	}
+	commandSource, err := store.GetSource(ctx, 1, connected.Source.SourceID)
+	if err != nil || commandSource == nil || commandSource.ConnectionStatus != "refresh_required" {
+		t.Fatalf("command source=%#v err=%v", commandSource, err)
+	}
+	config, err := store.GetConfig(ctx, 1)
+	if err != nil || len(config.Connections) != 1 || config.Connections[0].Status != "refresh_required" {
+		t.Fatalf("config=%#v err=%v", config, err)
+	}
+
+	if saveErr := saveTwitchTestAccount(ctx, store, 1, "streamer"); saveErr != nil {
+		t.Fatal(saveErr)
+	}
+	collected, err = store.GetAllEnabledSources(ctx)
+	if err != nil || len(collected) != 1 {
+		t.Fatalf("reconnected source was not collected: %#v err=%v", collected, err)
+	}
+	reconnected := collected[0].ConnectedSource
+	if reconnected.Source.ConnectionID != connectionID || reconnected.ConnectionStatus != "connected" || reconnected.Credentials.TokenVersion != version+1 {
+		t.Fatalf("reconnected source = %#v", reconnected)
+	}
+	// A replica that still holds the rejected credentials cannot undo the reconnect.
+	if marked, markErr := store.MarkRefreshRequired(ctx, connectionID, version); markErr != nil || marked {
+		t.Fatalf("stale replica marked=%v err=%v", marked, markErr)
 	}
 }

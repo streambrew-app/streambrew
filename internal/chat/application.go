@@ -82,6 +82,9 @@ func (application *Application) RefreshSource(ctx context.Context, userID int, s
 	if source.Source.Provider != "youtube" && source.Source.Provider != "vk_video" {
 		return &ApplicationError{Type: "chat source refresh unsupported", Detail: "Manual stream discovery is only available for YouTube and VK Video"}
 	}
+	if source.ConnectionStatus != "connected" {
+		return &ApplicationError{Type: "chat connection reconnect required", Detail: "Reconnect the chat account to check its stream"}
+	}
 	return application.collectorControl.RequestRefresh(ctx, sourceID)
 }
 
@@ -113,17 +116,7 @@ func (application *Application) Broadcast(ctx context.Context, userID int, text 
 		go func() {
 			defer waitGroup.Done()
 			source := connectedSource.Source
-			provider, exists := application.providers[source.Provider]
-			result := CommandResult{SourceID: source.SourceID}
-			if !exists || !connectedSource.HasCapability(CapabilitySendMessage) {
-				result.Status = "unsupported"
-				result.Detail = "This provider connection is read-only"
-			} else if err := provider.SendMessage(ctx, connectedSource, normalized); err != nil {
-				result.Status = "failed"
-				result.Detail = providerErrorDetail(err)
-			} else {
-				result.Status = "succeeded"
-			}
+			result := application.send(ctx, connectedSource, normalized)
 			results[index] = result
 			errorsByIndex[index] = application.repository.RecordAction(ctx, AuditEntry{UserID: userID, SourceID: source.SourceID, Provider: source.Provider, ActionType: "send_message", Status: result.Status, Detail: result.Detail})
 		}()
@@ -135,6 +128,34 @@ func (application *Application) Broadcast(ctx context.Context, userID int, text 
 		}
 	}
 	return BroadcastResult{Results: results}, nil
+}
+
+func (application *Application) send(ctx context.Context, connectedSource ConnectedSource, text string) CommandResult {
+	result := CommandResult{SourceID: connectedSource.Source.SourceID, Status: "succeeded"}
+	provider, exists := application.providers[connectedSource.Source.Provider]
+	if !exists || !connectedSource.HasCapability(CapabilitySendMessage) {
+		result.Status = "unsupported"
+		result.Detail = "This provider connection is read-only"
+		return result
+	}
+	err := reconnectRequired(connectedSource)
+	if err == nil {
+		err = provider.SendMessage(ctx, connectedSource, text)
+	}
+	if err != nil {
+		result.Status = "failed"
+		result.Detail = providerErrorDetail(err)
+	}
+	return result
+}
+
+// reconnectRequired fails a command for a connection that is not connected without calling the
+// provider. Its outcome is failed, as for a rejected authorization, rather than unsupported.
+func reconnectRequired(source ConnectedSource) error {
+	if source.ConnectionStatus == "connected" {
+		return nil
+	}
+	return &ProviderError{Type: "provider unauthorized", Detail: "Reconnect the chat account to use it again"}
 }
 
 func (application *Application) Moderate(ctx context.Context, userID int, command ModerationCommand) (CommandResult, error) {
@@ -160,7 +181,11 @@ func (application *Application) Moderate(ctx context.Context, userID int, comman
 			return CommandResult{}, err
 		}
 	}
-	success, providerErr := provider.Moderate(ctx, *connectedSource, command, providerBanID)
+	var success ProviderCommandSuccess
+	providerErr := reconnectRequired(*connectedSource)
+	if providerErr == nil {
+		success, providerErr = provider.Moderate(ctx, *connectedSource, command, providerBanID)
+	}
 	result := CommandResult{SourceID: command.SourceID, Status: "succeeded"}
 	if providerErr != nil {
 		result.Status = "failed"

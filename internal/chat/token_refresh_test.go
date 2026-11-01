@@ -16,6 +16,9 @@ import (
 type refreshStore struct {
 	version *int
 	input   refreshStoreInput
+	// marked records the token versions marked refresh_required; unmarkable simulates a lost race.
+	marked     []int
+	unmarkable bool
 }
 
 type refreshStoreInput struct {
@@ -29,6 +32,14 @@ type refreshStoreInput struct {
 func (store *refreshStore) UpdateConnectionCredentials(_ context.Context, connectionID string, expectedVersion int, accessToken, refreshToken string, expiresAt *time.Time) (*int, error) {
 	store.input = refreshStoreInput{connectionID: connectionID, expectedVersion: expectedVersion, accessToken: accessToken, refreshToken: refreshToken, expiresAt: expiresAt}
 	return store.version, nil
+}
+
+func (store *refreshStore) MarkRefreshRequired(_ context.Context, _ string, expectedVersion int) (bool, error) {
+	if store.unmarkable {
+		return false, nil
+	}
+	store.marked = append(store.marked, expectedVersion)
+	return true, nil
 }
 
 func TestTokenRefresherKeepsFreshCredentials(t *testing.T) {
@@ -240,7 +251,7 @@ func TestBoostyRefreshRequiresMatchingAccount(t *testing.T) {
 	source.Source.ProviderSourceID = "my.blog"
 	source.Credentials.DeviceID = "device-1"
 	_, err := refresher.Refresh(context.Background(), source)
-	if providerErrorType(err) != "provider unauthorized" || store.input.connectionID != "" {
+	if providerErrorType(err) != "provider refresh required" || store.input.connectionID != "" || !reflect.DeepEqual(store.marked, []int{1}) {
 		t.Fatal("foreign account accepted")
 	}
 }
@@ -309,5 +320,149 @@ func TestBoostyRefreshAllowsExistingAccessOnlyConnection(t *testing.T) {
 	actual, err := refresher.Refresh(context.Background(), source)
 	if err != nil || actual.Credentials.AccessToken != source.Credentials.AccessToken {
 		t.Fatal("access-only connection changed")
+	}
+}
+
+func expiredRefreshSource(provider string) ConnectedSource {
+	source := youtubeTestSource()
+	source.Source.Provider = provider
+	source.Source.ProviderSourceID = "my.blog"
+	source.Credentials.DeviceID = "device-1"
+	expired := time.Now().Add(-time.Minute)
+	source.Credentials.ExpiresAt = &expired
+	return source
+}
+
+func TestTokenRefresherMarksRejectedRefreshTokens(t *testing.T) {
+	tests := []struct {
+		name     string
+		provider string
+		status   int
+		body     string
+	}{
+		{name: "OAuth invalid_grant", provider: "youtube", status: http.StatusBadRequest, body: `{"error":"invalid_grant","error_description":"Token has been expired or revoked."}`},
+		{name: "Twitch invalid refresh token", provider: "twitch", status: http.StatusBadRequest, body: `{"status":400,"message":"Invalid refresh token"}`},
+		{name: "VK ID error body", provider: "vk_video", status: http.StatusOK, body: `{"error":"invalid_grant"}`},
+		{name: "Boosty rejection", provider: "boosty", status: http.StatusUnauthorized, body: `{}`},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			store := &refreshStore{}
+			client := &http.Client{Transport: oauthRoundTripFunc(func(*http.Request) (*http.Response, error) {
+				return youtubeResponse(test.status, test.body), nil
+			})}
+			credentials := &[2]string{"client", "secret"}
+			refresher := NewTokenRefresher(store, TokenRefreshConfigs(credentials, credentials, credentials, credentials, "https://chat.example"), client)
+			_, err := refresher.Refresh(context.Background(), expiredRefreshSource(test.provider))
+			if providerErrorType(err) != "provider refresh required" || !reflect.DeepEqual(store.marked, []int{1}) || store.input.connectionID != "" {
+				t.Fatalf("error=%v marked=%v", err, store.marked)
+			}
+		})
+	}
+}
+
+func TestTokenRefresherMarksMissingRenewalCredentials(t *testing.T) {
+	for _, provider := range []string{"youtube", "vk_video", "boosty"} {
+		t.Run(provider, func(t *testing.T) {
+			store := &refreshStore{}
+			client := &http.Client{Transport: oauthRoundTripFunc(func(*http.Request) (*http.Response, error) {
+				t.Fatal("unexpected refresh request")
+				return nil, errors.New("unexpected request")
+			})}
+			credentials := &[2]string{"client", "secret"}
+			refresher := NewTokenRefresher(store, TokenRefreshConfigs(credentials, nil, nil, credentials, "https://chat.example"), client)
+			source := expiredRefreshSource(provider)
+			if provider == "youtube" {
+				source.Credentials.RefreshToken = ""
+			} else {
+				source.Credentials.DeviceID = ""
+			}
+			_, err := refresher.Refresh(context.Background(), source)
+			if providerErrorType(err) != "provider refresh required" || !reflect.DeepEqual(store.marked, []int{1}) {
+				t.Fatalf("error=%v marked=%v", err, store.marked)
+			}
+		})
+	}
+}
+
+func TestTokenRefresherKeepsRetryableFailuresConnected(t *testing.T) {
+	tests := []struct {
+		name     string
+		provider string
+		status   int
+		body     string
+		network  bool
+	}{
+		{name: "server error", provider: "youtube", status: http.StatusInternalServerError, body: `{}`},
+		{name: "rate limit", provider: "twitch", status: http.StatusTooManyRequests, body: `{}`},
+		{name: "invalid client", provider: "kick", status: http.StatusUnauthorized, body: `{"error":"invalid_client"}`},
+		{name: "network failure", provider: "youtube", network: true},
+		{name: "Boosty server error", provider: "boosty", status: http.StatusBadGateway, body: `{}`},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			store := &refreshStore{}
+			client := &http.Client{Transport: oauthRoundTripFunc(func(*http.Request) (*http.Response, error) {
+				if test.network {
+					return nil, errors.New("connection reset")
+				}
+				return youtubeResponse(test.status, test.body), nil
+			})}
+			credentials := &[2]string{"client", "secret"}
+			refresher := NewTokenRefresher(store, TokenRefreshConfigs(credentials, credentials, credentials, nil, ""), client)
+			_, err := refresher.Refresh(context.Background(), expiredRefreshSource(test.provider))
+			if err == nil || requiresReauthorization(err) || len(store.marked) != 0 {
+				t.Fatalf("error=%v marked=%v", err, store.marked)
+			}
+		})
+	}
+}
+
+func TestTokenRefresherKeepsNewerCredentialsAfterLostRace(t *testing.T) {
+	store := &refreshStore{unmarkable: true}
+	client := &http.Client{Transport: oauthRoundTripFunc(func(*http.Request) (*http.Response, error) {
+		return youtubeResponse(http.StatusBadRequest, `{"error":"invalid_grant"}`), nil
+	})}
+	refresher := NewTokenRefresher(store, TokenRefreshConfigs(&[2]string{"client", "secret"}, nil, nil, nil, ""), client)
+	_, err := refresher.Refresh(context.Background(), expiredRefreshSource("youtube"))
+	if providerErrorType(err) != "provider unavailable" {
+		t.Fatalf("error = %v; want a retryable error after a concurrent refresh or reconnect", err)
+	}
+}
+
+func TestRefreshingProviderPersistsDefinitiveStreamFailure(t *testing.T) {
+	client := &http.Client{Transport: oauthRoundTripFunc(func(*http.Request) (*http.Response, error) {
+		return youtubeResponse(http.StatusUnauthorized, `{}`), nil
+	})}
+	store := &refreshStore{}
+	provider := NewRefreshingProvider(NewBoostyProvider(client), NewTokenRefresher(store, TokenRefreshConfigs(nil, nil, nil, nil, ""), client))
+	source := youtubeTestSource()
+	source.Source.Provider = "boosty"
+	source.Source.ProviderSourceID = "my.blog"
+	source.Credentials.RefreshToken = ""
+	source.Credentials.TokenVersion = 4
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	events, failures := provider.Stream(ctx, source)
+	var failure error
+	for events != nil || failures != nil {
+		select {
+		case _, open := <-events:
+			if !open {
+				events = nil
+			}
+		case err, open := <-failures:
+			if !open {
+				failures = nil
+				continue
+			}
+			failure = err
+		}
+	}
+	if ctx.Err() != nil {
+		t.Fatal("stream kept running after a definitive authorization failure")
+	}
+	if !requiresReauthorization(failure) || !reflect.DeepEqual(store.marked, []int{4}) {
+		t.Fatalf("failure=%v marked=%v", failure, store.marked)
 	}
 }

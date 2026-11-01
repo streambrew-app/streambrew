@@ -47,19 +47,20 @@ type OauthStore interface {
 }
 
 type Oauth struct {
-	store     OauthStore
-	publicURL string
-	configs   map[string]ProviderConfig
-	client    *http.Client
-	now       func() time.Time
+	store      OauthStore
+	collectors CollectorControl
+	publicURL  string
+	configs    map[string]ProviderConfig
+	client     *http.Client
+	now        func() time.Time
 }
 
-func NewOauth(store OauthStore, publicURL string, configs []ProviderConfig, client *http.Client) *Oauth {
+func NewOauth(store OauthStore, collectors CollectorControl, publicURL string, configs []ProviderConfig, client *http.Client) *Oauth {
 	byProvider := make(map[string]ProviderConfig, len(configs))
 	for _, config := range configs {
 		byProvider[config.Provider] = config
 	}
-	return &Oauth{store: store, publicURL: publicURL, configs: byProvider, client: client, now: time.Now}
+	return &Oauth{store: store, collectors: collectors, publicURL: publicURL, configs: byProvider, client: client, now: time.Now}
 }
 
 func (oauth *Oauth) Available(provider string) bool {
@@ -169,7 +170,7 @@ func (oauth *Oauth) Finish(ctx context.Context, provider, requestURL string, ses
 		value := oauth.now().Add(time.Duration(*token.ExpiresIn) * time.Second)
 		expiresAt = &value
 	}
-	_, err = oauth.store.SaveProviderAccount(ctx, attempt.UserID, SaveConnection{Provider: provider, ProviderUserID: identity.ProviderUserID, DisplayName: identity.DisplayName, AccessToken: token.AccessToken, RefreshToken: token.RefreshToken, OAuthDeviceID: callbackValues.DeviceID, AccessTokenExpiresAt: expiresAt, Scopes: normalizedScopes(token.Scope, config.Scopes)}, SaveSource{Provider: provider, ProviderSourceID: identity.ProviderUserID, DisplayName: identity.DisplayName, SourceURL: identity.SourceURL})
+	sourceID, err := oauth.store.SaveProviderAccount(ctx, attempt.UserID, SaveConnection{Provider: provider, ProviderUserID: identity.ProviderUserID, DisplayName: identity.DisplayName, AccessToken: token.AccessToken, RefreshToken: token.RefreshToken, OAuthDeviceID: callbackValues.DeviceID, AccessTokenExpiresAt: expiresAt, Scopes: normalizedScopes(token.Scope, config.Scopes)}, SaveSource{Provider: provider, ProviderSourceID: identity.ProviderUserID, DisplayName: identity.DisplayName, SourceURL: identity.SourceURL})
 	if errors.Is(err, errProviderAccountConnectedElsewhere) {
 		return "", &OauthError{Type: "chat account connected to another user", Detail: "Аккаунт уже подключён к другому пользователю StreamBrew", ReturnURL: attempt.ReturnURL, Cause: err}
 	}
@@ -179,6 +180,7 @@ func (oauth *Oauth) Finish(ctx context.Context, provider, requestURL string, ses
 	if err != nil {
 		return "", err
 	}
+	resumeCollection(ctx, oauth.collectors, sourceID)
 	return attempt.ReturnURL, nil
 }
 

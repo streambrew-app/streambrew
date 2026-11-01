@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -36,7 +37,7 @@ func (store *oauthTestStore) SaveProviderAccount(_ context.Context, _ int, conne
 	}
 	store.savedConnection = connection
 	store.savedSource = source
-	return "connection-id", nil
+	return "source-id", nil
 }
 
 type oauthRoundTripFunc func(*http.Request) (*http.Response, error)
@@ -47,7 +48,7 @@ func (function oauthRoundTripFunc) RoundTrip(request *http.Request) (*http.Respo
 
 func TestOauthUsesPublicChatURLForCallback(t *testing.T) {
 	store := &oauthTestStore{}
-	oauth := NewOauth(store, "http://localhost:5173/api/chat", OauthConfigs(&[2]string{"client-id", "client-secret"}, nil, nil, nil), http.DefaultClient)
+	oauth := NewOauth(store, &fakeCollectorControl{}, "http://localhost:5173/api/chat", OauthConfigs(&[2]string{"client-id", "client-secret"}, nil, nil, nil), http.DefaultClient)
 	authorizationURL, err := oauth.Start(context.Background(), 42, "youtube", "http://localhost:5173/chat")
 	if err != nil {
 		t.Fatal(err)
@@ -89,13 +90,17 @@ func TestOauthSubscribesToKickChatWebhook(t *testing.T) {
 			return nil, errors.New("unexpected request")
 		}
 	})}
-	oauth := NewOauth(store, "http://localhost:5173/api/chat", OauthConfigs(nil, nil, &[2]string{"client-id", "client-secret"}, nil), client)
+	collectors := &fakeCollectorControl{}
+	oauth := NewOauth(store, collectors, "http://localhost:5173/api/chat", OauthConfigs(nil, nil, &[2]string{"client-id", "client-secret"}, nil), client)
 	returnURL, err := oauth.Finish(context.Background(), "kick", "http://localhost:5173/api/chat/oauth/kick/callback?state=state&code=code", 42)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if returnURL != "http://localhost:5173/chat" || requestNumber != 3 {
 		t.Fatalf("returnURL=%q requests=%d", returnURL, requestNumber)
+	}
+	if !reflect.DeepEqual(collectors.refreshes, []string{"source-id"}) {
+		t.Fatalf("collector refreshes = %v; want the connected source", collectors.refreshes)
 	}
 	if subscriptionBody["broadcaster_user_id"] != float64(123) || subscriptionBody["method"] != "webhook" {
 		t.Fatalf("unexpected Kick subscription: %#v", subscriptionBody)
@@ -137,7 +142,7 @@ func TestOauthConnectsVKVideoWithVKIDDevice(t *testing.T) {
 			return nil, errors.New("unexpected request")
 		}
 	})}
-	oauth := NewOauth(store, "http://localhost:5173/api/chat", OauthConfigs(nil, nil, nil, &[2]string{"client-id", "client-secret"}), client)
+	oauth := NewOauth(store, &fakeCollectorControl{}, "http://localhost:5173/api/chat", OauthConfigs(nil, nil, nil, &[2]string{"client-id", "client-secret"}), client)
 	callbackPayload := url.QueryEscape(`{"code":"code","state":"state","device_id":"device-1"}`)
 	returnURL, err := oauth.Finish(context.Background(), "vk_video", "http://localhost:5173/api/chat/oauth/vk_video/callback?payload="+callbackPayload, 42)
 	if err != nil {
@@ -155,7 +160,7 @@ func TestOauthRejectsCallbackFromAnotherSession(t *testing.T) {
 			t.Fatalf("authorization code was redeemed for a foreign session: %s", request.URL)
 			return nil, errors.New("unexpected request")
 		})}
-		oauth := NewOauth(store, "http://localhost:5173/api/chat", OauthConfigs(nil, &[2]string{"client-id", "client-secret"}, nil, nil), client)
+		oauth := NewOauth(store, &fakeCollectorControl{}, "http://localhost:5173/api/chat", OauthConfigs(nil, &[2]string{"client-id", "client-secret"}, nil, nil), client)
 		_, err := oauth.Finish(context.Background(), "twitch", "http://localhost:5173/api/chat/oauth/twitch/callback?state=state&code=code", sessionUserID)
 		var oauthError *OauthError
 		if !errors.As(err, &oauthError) || oauthError.Type != "oauth session mismatch" || oauthError.ReturnURL != "http://localhost:5173/chat" {
@@ -175,7 +180,7 @@ func TestOauthReportsAccountConnectedToAnotherUser(t *testing.T) {
 		}
 		return oauthResponse(`{"data":[{"id":"123","login":"Streamer","display_name":"Streamer"}]}`), nil
 	})}
-	oauth := NewOauth(store, "http://localhost:5173/api/chat", OauthConfigs(nil, &[2]string{"client-id", "client-secret"}, nil, nil), client)
+	oauth := NewOauth(store, &fakeCollectorControl{}, "http://localhost:5173/api/chat", OauthConfigs(nil, &[2]string{"client-id", "client-secret"}, nil, nil), client)
 	_, err := oauth.Finish(context.Background(), "twitch", "http://localhost:5173/api/chat/oauth/twitch/callback?state=state&code=code", 42)
 	var oauthError *OauthError
 	if !errors.As(err, &oauthError) || oauthError.Type != "chat account connected to another user" || oauthError.ReturnURL != "http://localhost:5173/chat" {
@@ -184,7 +189,7 @@ func TestOauthReportsAccountConnectedToAnotherUser(t *testing.T) {
 }
 
 func TestOauthStartsVKIDWithLowercaseChallengeMethod(t *testing.T) {
-	oauth := NewOauth(&oauthTestStore{}, "https://streambrew.example/api/chat", OauthConfigs(nil, nil, nil, &[2]string{"client-id", "client-secret"}), http.DefaultClient)
+	oauth := NewOauth(&oauthTestStore{}, &fakeCollectorControl{}, "https://streambrew.example/api/chat", OauthConfigs(nil, nil, nil, &[2]string{"client-id", "client-secret"}), http.DefaultClient)
 	authorizationURL, err := oauth.Start(context.Background(), 42, "vk_video", "https://streambrew.example/chat")
 	if err != nil {
 		t.Fatal(err)
@@ -206,7 +211,7 @@ func TestOauthRejectsTokenResponsesOutsideOriginalSchema(t *testing.T) {
 		`{"access_token":"token","scope":["chat:read",42]}`,
 	}
 	for _, body := range responses {
-		oauth := NewOauth(&oauthTestStore{}, "https://chat.example/api/chat", nil, &http.Client{Transport: oauthRoundTripFunc(func(*http.Request) (*http.Response, error) {
+		oauth := NewOauth(&oauthTestStore{}, &fakeCollectorControl{}, "https://chat.example/api/chat", nil, &http.Client{Transport: oauthRoundTripFunc(func(*http.Request) (*http.Response, error) {
 			return oauthResponse(body), nil
 		})})
 		_, err := oauth.exchangeToken(context.Background(), ProviderConfig{Provider: "youtube", ClientID: "client", ClientSecret: "secret", TokenURL: "https://oauth.example/token"}, oauthCallback{Code: "code"}, "verifier") //nolint:gosec // These are inert test-only credentials for a fake transport.

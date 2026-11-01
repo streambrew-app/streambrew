@@ -351,7 +351,7 @@ func TestHTTPHandlerIgnoresUnsolicitedOauthCallbacks(t *testing.T) {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(&logs, nil)))
 	t.Cleanup(func() { slog.SetDefault(previousLogger) })
 
-	oauth := NewOauth(&oauthTestStore{}, "https://web.example/api/chat", nil, http.DefaultClient)
+	oauth := NewOauth(&oauthTestStore{}, &fakeCollectorControl{}, "https://web.example/api/chat", nil, http.DefaultClient)
 	handler := NewHTTPHandler(&httpTestApplication{}, &httpTestActivity{}, oauth, &httpTestStore{}, httpTestSecret, "https://web.example", nil, nil, nil)
 	for _, scenario := range []struct {
 		target    string

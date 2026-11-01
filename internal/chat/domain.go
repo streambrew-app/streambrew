@@ -60,6 +60,8 @@ type ConnectedSource struct {
 	Source       Source
 	Capabilities []Capability
 	Credentials  ProviderCredentials
+	// ConnectionStatus is the chat_provider_connection status: connected, refresh_required, or error.
+	ConnectionStatus string
 }
 
 func (source ConnectedSource) HasCapability(capability Capability) bool {
