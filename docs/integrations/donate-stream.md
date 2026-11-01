@@ -19,7 +19,11 @@ authenticates with `auth.token`, joins the `donates` and `widget-alerts` channel
 
 The widget address is a credential because it grants access to incoming alert data. StreamBrew stores
 the widget group UID and token, never returns either value to the browser, and removes only the
-matching saved connection if donate.stream later rejects its token.
+matching saved connection if donate.stream later rejects its token. donate.stream answers an invalid
+token with the `authResult` error `auth`; only that error counts as a rejected token. Any other
+`authResult` error keeps the connection and is retried like a transport failure. While a streamer
+connects a new address, such an error is reported as a temporary failure rather than an invalid
+address.
 
 An alert's `message_uid` is stored as `source_donation_id`. The `sum` and `currency` reported by
 donate.stream are stored as the immutable donation `amount` and `currency`; StreamBrew does not convert
