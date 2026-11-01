@@ -10,10 +10,6 @@ import { Icons } from "./icons";
 import { Button } from "./ui/button";
 
 const translations = createTranslations({
-  signIn: {
-    en: "Sign in",
-    ru: "Войти",
-  },
   landingHeadline: {
     en: "Donations, videos, and chat",
     ru: "Донаты, видео и чат",
@@ -152,31 +148,19 @@ export default function SignIn() {
     <main className="landing-world relative flex min-h-dvh flex-col items-center overflow-hidden px-6 text-foreground sm:px-8">
       <div className="cosmic-starlight pointer-events-none absolute inset-0" />
 
-      <header className="relative z-10 flex w-full max-w-6xl items-center justify-between gap-4 border-b border-border/60 py-6 sm:py-8">
-        <div className="flex items-center gap-3 font-heading text-xl font-semibold tracking-tight sm:text-2xl">
-          <img
-            alt=""
-            className="size-10 object-contain sm:size-12"
-            height={48}
-            src={productMark}
-            width={48}
-          />
-          StreamBrew
-        </div>
-        <Button
-          aria-busy={isSigningIn}
-          disabled={isSigningIn}
-          onClick={() => void handleSignIn()}
-          size="lg"
-          variant="outline"
-        >
-          {t(isSigningIn ? "redirecting" : "signIn")}
-        </Button>
-      </header>
-
       <div className="relative z-10 flex w-full max-w-6xl flex-col gap-20 pb-8 sm:gap-28 sm:pb-12">
         <section className="grid items-center gap-6 pt-12 lg:min-h-[680px] lg:grid-cols-[1fr_1fr] lg:gap-0 lg:pt-0">
           <div className="relative z-10 flex flex-col justify-center gap-8 py-6 lg:py-16 lg:pr-8">
+            <div className="flex items-center gap-3 font-heading text-xl font-semibold tracking-tight sm:text-2xl">
+              <img
+                alt=""
+                className="size-10 object-contain sm:size-12"
+                height={48}
+                src={productMark}
+                width={48}
+              />
+              StreamBrew
+            </div>
             <div className="flex max-w-2xl flex-col gap-4">
               <h1 className="font-heading text-display leading-display font-medium tracking-display text-balance">
                 {t("landingHeadline")}
