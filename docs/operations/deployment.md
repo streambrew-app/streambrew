@@ -223,9 +223,14 @@ Create the `streambrew-logs` dataset in Axiom and restrict its token to ingest.
 ## Infrastructure changes
 
 Run `AWS infrastructure` manually with `action=plan`, review the complete plan,
-then rerun it with `action=apply`. The workflow applies the saved plan and waits
-for cloud-init and Docker. Infrastructure and application releases share the
-`production` concurrency group, so they cannot overlap.
+then rerun it with `action=apply` and the plan fingerprint from the plan run's
+summary. The apply run plans again and stops unless the new plan's resource and
+output changes match that fingerprint, so it applies only the reviewed changes.
+If state or infrastructure changed in between, plan and review again. The plan
+file is not uploaded: it can contain sensitive values and the repository is
+public. After applying, the workflow waits for cloud-init and Docker.
+Infrastructure and application releases share the `production` concurrency
+group, so they cannot overlap.
 
 An existing Lightsail instance and backup bucket must be imported before the
 first apply. Applying against an empty state would try to create replacements:
@@ -272,7 +277,9 @@ also the recovery path for redeploying or rolling back to an explicitly selected
 revision. Migrations are forward-only and are not automatically reversed.
 
 The workflow verifies all ten containers, `/api/health`, and an API routing
-probe. If Terraform apply or verification fails, it reapplies the previous image
+probe. `/api/health` answers 503 when PostgreSQL does not respond within two
+seconds, so the web container's Docker health check and this verification also
+cover its database connection. If Terraform apply or verification fails, it reapplies the previous image
 references recorded in state. That rollback does not reverse database
 migrations and does not change AWS infrastructure.
 
