@@ -82,8 +82,11 @@ jobs:
     name: CI
     if: needs.resolve.outputs.ci_passed != 'true'
     needs: resolve
+    # GitHub validates nested job permissions statically. CI's merge-queue image
+    # job requests packages: write; it is skipped when CI runs through this call.
     permissions:
       contents: read
+      packages: write
     uses: ./.github/workflows/ci.yml
     with:
       revision: ${{ needs.resolve.outputs.sha }}
