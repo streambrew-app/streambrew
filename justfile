@@ -66,9 +66,9 @@ typecheck-scripts:
 
 typecheck: typecheck-scripts typecheck-web typecheck-go typecheck-packages
 
-
+# mise provides the sqruff version pinned in mise.toml and installs it on first use.
 fmt-sql:
-  bun scripts/format-sql.ts db/schema.sql db/migrations/*.sql
+  mise exec -- bun scripts/format-sql.ts db/schema.sql db/migrations/*.sql
 
 fmt-terraform:
   terraform fmt -recursive infra
@@ -78,7 +78,7 @@ fmt: fmt-sql fmt-terraform
   go fmt ./...
 
 fmt-check-sql:
-  bun scripts/format-sql.ts --check db/schema.sql db/migrations/*.sql
+  mise exec -- bun scripts/format-sql.ts --check db/schema.sql db/migrations/*.sql
 
 fmt-check-terraform:
   terraform fmt -check -recursive infra
