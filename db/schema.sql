@@ -87,7 +87,7 @@ CREATE TYPE public.donation_source_connection_status AS ENUM (
   'error'
 );
 
-CREATE DOMAIN public.js_date AS timestamp (3) with time zone;
+CREATE DOMAIN public.js_date AS timestamp(3) with time zone;
 
 CREATE DOMAIN public.money_amount AS numeric(20, 2)
 CONSTRAINT money_amount_check CHECK ((value >= (0)::numeric));
@@ -571,7 +571,7 @@ CREATE TABLE public.restream_destination (
   CONSTRAINT restream_destination_label_check CHECK (((char_length(trim(BOTH FROM label)) >= 1) AND (char_length(trim(BOTH FROM label)) <= 64))),
   CONSTRAINT restream_destination_position_check CHECK ((("position")::integer < 3)),
   CONSTRAINT restream_destination_server_url_check
-    CHECK ((((char_length(server_url) >= 10) AND (char_length(server_url) <= 2048)) AND (server_url ~ '^rtmps?://'::text) AND (strpos(server_url, '#'::text) = 0))),
+    CHECK (((char_length(server_url) >= 10) AND (char_length(server_url) <= 2048) AND (server_url ~ '^rtmps?://'::text) AND (strpos(server_url, '#'::text) = 0))),
   CONSTRAINT restream_destination_stream_key_ciphertext_check CHECK (((octet_length(stream_key_ciphertext) >= 30) AND (octet_length(stream_key_ciphertext) <= 2048))),
   CONSTRAINT restream_destination_stream_key_hint_check CHECK (((char_length(stream_key_hint) >= 1) AND (char_length(stream_key_hint) <= 8)))
 );
