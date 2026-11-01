@@ -40,25 +40,6 @@ export function youtubeVideoId(url: string) {
   return id || null;
 }
 
-export function parseYoutubeTimestamp(value: string | null) {
-  if (value === null) {
-    return null;
-  }
-  if (/^\d+$/.test(value)) {
-    const seconds = Number(value);
-    return Number.isSafeInteger(seconds) ? seconds : null;
-  }
-
-  const match = value.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?$/);
-  if (match === null || match[0] === "") {
-    return null;
-  }
-
-  const [, hours = "0", minutes = "0", seconds = "0"] = match;
-  const totalSeconds = Number(hours) * 3600 + Number(minutes) * 60 + Number(seconds);
-  return Number.isSafeInteger(totalSeconds) ? totalSeconds : null;
-}
-
 export function extractYoutubeUrls(message: string | null) {
   const youtubeUrls = (linkify.match(message ?? "") ?? [])
     .map((match) => parseUrl(match.url))
