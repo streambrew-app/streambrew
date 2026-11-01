@@ -191,7 +191,8 @@ BEGIN
   END IF;
 
   IF TG_OP = 'UPDATE' AND
-     NEW.queue_amount IS NOT DISTINCT FROM OLD.queue_amount AND
+     (NEW.queue_amount IS NOT DISTINCT FROM OLD.queue_amount OR
+      current_setting('streambrew.retain_video_priority', TRUE) = 'on') AND
      NEW.start_seconds = OLD.start_seconds AND
      NEW.end_seconds IS NOT DISTINCT FROM OLD.end_seconds AND
      NEW.donation_id IS NOT DISTINCT FROM OLD.donation_id AND
@@ -1193,4 +1194,5 @@ INSERT INTO public.schema_migrations (version) VALUES
 ('20260915190000'),
 ('20260915190100'),
 ('20260915195000'),
-('20260915195100');
+('20260915195100'),
+('20261101090738');

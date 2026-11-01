@@ -217,6 +217,42 @@ func TestScanPersistsValidLinksAndIgnoresInvalidTiming(t *testing.T) {
 	}
 }
 
+func TestCompletionAssignsVideoPrioritiesFromThresholds(t *testing.T) {
+	store, pool := newIntegrationStore(t)
+	seedDonation(t, pool, 1)
+	ctx := context.Background()
+	if _, err := pool.Exec(ctx, `
+		INSERT INTO video_priority (user_id, label, min_price_per_minute, is_default)
+		VALUES (1, 'High', 5, false)
+	`); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Date(2026, 9, 4, 12, 0, 0, 0, time.UTC)
+	job, err := store.Claim(ctx, now, time.Minute)
+	if err != nil || job == nil {
+		t.Fatalf("claim = %#v, %v", job, err)
+	}
+	// The 10 RUB donation pays 10 RUB/min for one minute and 2.5 RUB/min for four.
+	videos := []Video{
+		{ProviderVideoID: "short", URL: "https://youtu.be/short", StartSeconds: 0, EndSeconds: intPointer(60), DurationSeconds: intPointer(60)},
+		{ProviderVideoID: "long", URL: "https://youtu.be/long", StartSeconds: 0, EndSeconds: intPointer(240), DurationSeconds: intPointer(240)},
+	}
+	if err = store.Complete(ctx, *job, videos, now.Add(time.Second)); err != nil {
+		t.Fatal(err)
+	}
+	for providerVideoID, want := range map[string]string{"short": "High", "long": "Default"} {
+		var label string
+		if err = pool.QueryRow(ctx, `
+			SELECT video_priority.label
+			FROM video
+			JOIN video_priority USING (video_priority_id)
+			WHERE video.provider_video_id = $1
+		`, providerVideoID).Scan(&label); err != nil || label != want {
+			t.Fatalf("%s priority = %q, %v; want %q", providerVideoID, label, err, want)
+		}
+	}
+}
+
 func TestCompletionWaitsForQueueCurrencyChange(t *testing.T) {
 	store, pool := newIntegrationStore(t)
 	seedDonation(t, pool, 1)

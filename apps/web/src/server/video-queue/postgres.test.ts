@@ -181,13 +181,21 @@ describe("PostgresVideoQueue", () => {
     ).resolves.toBe("USD");
 
     expect(database.begin).toHaveBeenCalledOnce();
-    expect(database.queries.map(({ text }) => text)).toEqual(
+    const texts = database.queries.map(({ text }) => text);
+    expect(texts).toEqual(
       expect.arrayContaining([
         expect.stringContaining("FOR UPDATE"),
         expect.stringContaining("UPDATE video_priority"),
         expect.stringContaining("UPDATE video SET queue_amount"),
         expect.stringContaining('UPDATE "user" SET queue_currency'),
       ]),
+    );
+    const retainPriorities = texts.findIndex((text) =>
+      text.includes("set_config('streambrew.retain_video_priority', 'on', true)"),
+    );
+    expect(retainPriorities).toBeGreaterThanOrEqual(0);
+    expect(retainPriorities).toBeLessThan(
+      texts.findIndex((text) => text.startsWith("UPDATE video SET queue_amount")),
     );
   });
 

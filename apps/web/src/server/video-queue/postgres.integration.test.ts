@@ -273,6 +273,57 @@ describe.skipIf(!databaseUrl)("video queues in PostgreSQL", () => {
     ]);
   });
 
+  it("keeps priority assignments, including a manual one, when the queue currency changes", async () => {
+    const owner = await user();
+    const [top, middle, low, fallback] = await queue.listPriorities(owner.id);
+    // 50 RUB/min reaches the 50 RUB/min threshold; at 90 RUB per USD the video pays
+    // 1.11 USD for two minutes, 0.555 USD/min, while the threshold rounds up to 0.56.
+    const nearThreshold = await queue.addManualVideo(owner.id, {
+      ...videoInput,
+      amount: MoneyAmountSchema.parse("100"),
+      endSeconds: 120,
+    });
+    const manual = await queue.addManualVideo(owner.id, videoInput);
+    await sql`ALTER TABLE video DISABLE TRIGGER set_video_priority_id`;
+    await sql`UPDATE video SET video_priority_id = ${top!.videoPriorityId} WHERE video_id = ${String(manual.videoId)}`;
+    await sql`ALTER TABLE video ENABLE TRIGGER set_video_priority_id`;
+    const assignments = () =>
+      sql`SELECT queue_amount::text, video_priority_id FROM video ORDER BY video_id`;
+    expect(await assignments()).toMatchObject([
+      { queueAmount: "100.00", videoPriorityId: low!.videoPriorityId },
+      { queueAmount: "120.00", videoPriorityId: top!.videoPriorityId },
+    ]);
+
+    await queue.setQueueCurrency(owner.id, "USD", MoneyAmountSchema.parse("90"));
+
+    expect((await queue.listPriorities(owner.id)).map((p) => p.minPricePerMinute)).toEqual([
+      "2.22",
+      "1.11",
+      "0.56",
+      "0.00",
+    ]);
+    expect(await assignments()).toMatchObject([
+      { queueAmount: "1.11", videoPriorityId: low!.videoPriorityId },
+      { queueAmount: "1.33", videoPriorityId: top!.videoPriorityId },
+    ]);
+
+    // Editing an amount afterwards assigns the priority from the converted thresholds.
+    await queue.updateVideo(owner.id, nearThreshold.videoId, {
+      amount: MoneyAmountSchema.parse("1.10"),
+      startSeconds: 0,
+      endSeconds: 120,
+    });
+    await queue.updateVideo(owner.id, manual.videoId, {
+      amount: MoneyAmountSchema.parse("1.34"),
+      startSeconds: 0,
+      endSeconds: 60,
+    });
+    expect(await assignments()).toMatchObject([
+      { queueAmount: "1.10", videoPriorityId: fallback!.videoPriorityId },
+      { queueAmount: "1.34", videoPriorityId: middle!.videoPriorityId },
+    ]);
+  });
+
   it("reports constraint rejections as video queue errors", async () => {
     const owner = await user();
     const [first, second] = await queue.listPriorities(owner.id);
