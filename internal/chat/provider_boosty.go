@@ -86,12 +86,13 @@ type BoostyConnectionStore interface {
 }
 
 type BoostyConnector struct {
-	provider *BoostyProvider
-	store    BoostyConnectionStore
+	provider   *BoostyProvider
+	store      BoostyConnectionStore
+	collectors CollectorControl
 }
 
-func NewBoostyConnector(provider *BoostyProvider, store BoostyConnectionStore) *BoostyConnector {
-	return &BoostyConnector{provider: provider, store: store}
+func NewBoostyConnector(provider *BoostyProvider, store BoostyConnectionStore, collectors CollectorControl) *BoostyConnector {
+	return &BoostyConnector{provider: provider, store: store, collectors: collectors}
 }
 
 type BoostyCredentials struct {
@@ -151,14 +152,18 @@ func (connector *BoostyConnector) Connect(ctx context.Context, userID int, input
 	if !capacity {
 		return &ApplicationError{Type: "chat source limit reached", Detail: "Chat source limit reached"}
 	}
-	_, err = connector.store.SaveProviderAccount(ctx, userID, SaveConnection{Provider: "boosty", ProviderUserID: string(identity.ID), DisplayName: identity.Name, AccessToken: token, RefreshToken: refreshToken, OAuthDeviceID: deviceID, AccessTokenExpiresAt: expiresAt, Scopes: []string{}}, SaveSource{Provider: "boosty", ProviderSourceID: blog, DisplayName: identity.Name, SourceURL: "https://boosty.to/" + blog + "/streams/video_stream"})
+	sourceID, err := connector.store.SaveProviderAccount(ctx, userID, SaveConnection{Provider: "boosty", ProviderUserID: string(identity.ID), DisplayName: identity.Name, AccessToken: token, RefreshToken: refreshToken, OAuthDeviceID: deviceID, AccessTokenExpiresAt: expiresAt, Scopes: []string{}}, SaveSource{Provider: "boosty", ProviderSourceID: blog, DisplayName: identity.Name, SourceURL: "https://boosty.to/" + blog + "/streams/video_stream"})
 	if errors.Is(err, errProviderAccountConnectedElsewhere) {
 		return &ApplicationError{Type: "chat account connected to another user", Detail: "This Boosty account is already connected to another StreamBrew account"}
 	}
 	if errors.Is(err, errChatSourceLimitReached) {
 		return &ApplicationError{Type: "chat source limit reached", Detail: "Chat source limit reached"}
 	}
-	return err
+	if err != nil {
+		return err
+	}
+	resumeCollection(ctx, connector.collectors, sourceID)
+	return nil
 }
 
 type boostyMessage struct {
@@ -297,8 +302,12 @@ func (provider *BoostyProvider) Stream(ctx context.Context, source ConnectedSour
 				}
 			}
 			state = "error"
+			// Without a refresh token, no renewal can replace a rejected access token.
+			if providerErrorType(err) == "provider unauthorized" && source.Credentials.RefreshToken == "" {
+				err = refreshRequiredError("Reconnect Boosty with a current access token", err)
+			}
 			sendProviderError(ctx, failures, err)
-			if providerErrorType(err) == "provider unauthorized" {
+			if providerErrorType(err) == "provider unauthorized" || requiresReauthorization(err) {
 				<-ctx.Done()
 				return
 			}

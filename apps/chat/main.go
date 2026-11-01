@@ -66,7 +66,7 @@ func run() error {
 	store := chat.NewStore(pool, tokenCipher)
 	httpClient := &http.Client{Timeout: 30 * time.Second}
 	oauthConfigs := chat.OauthConfigs(config.youtube, config.twitch, config.kick, config.vkVideo)
-	oauth := chat.NewOauth(store, config.publicURL, oauthConfigs, httpClient)
+	oauth := chat.NewOauth(store, natsConnection.CollectorControl, config.publicURL, oauthConfigs, httpClient)
 	boosty := chat.NewBoostyProvider(httpClient)
 	baseProviders := []chat.Provider{chat.NewYoutubeProvider(httpClient), boosty}
 	if config.twitch != nil {
@@ -92,7 +92,7 @@ func run() error {
 			return fmt.Errorf("configure Kick webhook: %w", err)
 		}
 	}
-	handler := chat.NewHTTPHandler(application, natsConnection.Activity, oauth, store, config.serviceSecret, config.webURL, kickWebhook, chat.NewBoostyConnector(boosty, store), natsConnection.DeadLetters)
+	handler := chat.NewHTTPHandler(application, natsConnection.Activity, oauth, store, config.serviceSecret, config.webURL, kickWebhook, chat.NewBoostyConnector(boosty, store, natsConnection.CollectorControl), natsConnection.DeadLetters)
 	server := &http.Server{Addr: ":" + strconv.Itoa(config.port), Handler: handler, ReadHeaderTimeout: 10 * time.Second}
 	// Open NDJSON streams never become idle on their own, so shutdown must end them.
 	server.RegisterOnShutdown(handler.CloseStreams)

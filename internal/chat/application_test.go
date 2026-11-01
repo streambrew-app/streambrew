@@ -114,7 +114,7 @@ func (provider *fakeProvider) Moderate(_ context.Context, _ ConnectedSource, com
 }
 
 func connectedSource(id, provider string, capabilities ...Capability) ConnectedSource {
-	return ConnectedSource{Source: Source{SourceID: id, ConnectionID: "connection-" + id, Provider: provider, ProviderSourceID: provider + "-channel", DisplayName: provider + " channel", SourceURL: "https://example.com/" + provider, Enabled: true}, Capabilities: capabilities, Credentials: ProviderCredentials{TokenVersion: 1}}
+	return ConnectedSource{Source: Source{SourceID: id, ConnectionID: "connection-" + id, Provider: provider, ProviderSourceID: provider + "-channel", DisplayName: provider + " channel", SourceURL: "https://example.com/" + provider, Enabled: true}, Capabilities: capabilities, Credentials: ProviderCredentials{TokenVersion: 1}, ConnectionStatus: "connected"}
 }
 
 func setupApplication() (*Application, *fakeRepository, *fakeBroker, *fakeCollectorControl, *[]string) {
@@ -284,5 +284,32 @@ func TestApplicationNormalizesModerationReasonAtInputSeam(t *testing.T) {
 	}
 	if received.Reason != "repeated spam" || len(repository.audit) != 1 || repository.audit[0].Reason != "repeated spam" {
 		t.Fatalf("command=%#v audit=%#v", received, repository.audit)
+	}
+}
+
+func TestApplicationFailsCommandsForConnectionsAwaitingReconnect(t *testing.T) {
+	application, repository, broker, control, sends := setupApplication()
+	for index := range repository.sources {
+		repository.sources[index].ConnectionStatus = "refresh_required"
+	}
+	result, err := application.Broadcast(context.Background(), 42, "hello")
+	if err != nil {
+		t.Fatal(err)
+	}
+	reconnect := "Reconnect the chat account to use it again"
+	expected := []CommandResult{{SourceID: youtubeSourceID, Status: "failed", Detail: reconnect}, {SourceID: twitchSourceID, Status: "failed", Detail: reconnect}, {SourceID: boostySourceID, Status: "unsupported", Detail: "This provider connection is read-only"}}
+	if !reflect.DeepEqual(result.Results, expected) || len(*sends) != 0 || len(repository.audit) != 3 {
+		t.Fatalf("results=%#v sends=%v audit=%#v", result.Results, *sends, repository.audit)
+	}
+	moderation, err := application.Moderate(context.Background(), 42, ModerationCommand{Type: "delete_message", SourceID: youtubeSourceID, MessageID: "message-1"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if moderation != (CommandResult{SourceID: youtubeSourceID, Status: "failed", Detail: reconnect}) || len(broker.published) != 0 || repository.audit[3].Status != "failed" {
+		t.Fatalf("moderation=%#v published=%#v audit=%#v", moderation, broker.published, repository.audit)
+	}
+	var applicationError *ApplicationError
+	if err := application.RefreshSource(context.Background(), 42, youtubeSourceID); !errors.As(err, &applicationError) || applicationError.Type != "chat connection reconnect required" || len(control.refreshes) != 0 {
+		t.Fatalf("refresh err=%v refreshes=%v", err, control.refreshes)
 	}
 }

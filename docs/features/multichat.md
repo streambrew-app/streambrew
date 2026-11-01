@@ -6,6 +6,11 @@
   Providers use OAuth except where this guide explicitly documents another authorization method. A
   user may have multiple connections for the same provider. Credentials stay inside the chat
   aggregation module.
+- A **chat provider connection status** is `connected`, `refresh_required`, or `error`. Only a
+  `connected` connection collects its sources. `refresh_required` means that the provider has
+  definitively rejected the stored authorization, so the streamer must reconnect the account; see
+  [connection status](#connection-status). `error` is reserved: the service never assigns it, and
+  it otherwise behaves like `refresh_required`.
 - A **chat source** is one provider-owned channel whose messages are included in a user's multichat.
   Every source belongs to exactly one chat provider connection; arbitrary public sources are not
   supported.
@@ -88,9 +93,10 @@ channel is offline or the broadcast ends, discovery remains idle until the strea
 that owns the collector lease. Transport failures during an active operation still reconnect
 automatically with bounded exponential backoff.
 
-When a collector session ends, for example because a refresh token was revoked, the collector
+When a collector session ends, for example because a provider API is unavailable, the collector
 restarts it after 2 seconds and doubles the delay after each further short session, up to
-5 minutes. A session that lasts at least one minute resets the delay. The first restart of a
+5 minutes. A definitive authorization failure stops the collector instead; see
+[connection status](#connection-status). A session that lasts at least one minute resets the delay. The first restart of a
 failure streak after a provider error is logged with the error type and safe detail; later
 restarts in the same streak are not, because operational logs reach Telegram. A changed token
 version or **Check stream** starts a new collector immediately. Twitch reconnects its EventSub
@@ -137,6 +143,36 @@ lowest free position below the 20-source limit.
 Token refresh is centralized in the chat service. Updates use `token_version` as a compare-and-swap
 guard so concurrent replicas cannot overwrite a newer token. Provider calls retry with the next
 collector/config snapshot after a refresh race.
+
+### Connection status
+
+A chat provider connection becomes `refresh_required` only after a definitive authorization
+failure:
+
+- the provider token endpoint rejects the refresh token: OAuth `invalid_grant`, Twitch's HTTP 400
+  `Invalid refresh token`, or a Boosty HTTP 400, 401, or 403;
+- an expired access token has no refresh token, or a VK Video or Boosty connection has no device ID;
+- Boosty rejects the renewed access token or reports another account, or rejects the access token of
+  a connection without a refresh token.
+
+Other failures keep the collector backoff: network failures, 5xx responses, rate limits, missing
+service OAuth settings, and an HTTP 401 from a provider API, which the next scheduled refresh may
+resolve. A revoked authorization is therefore detected when the access token next needs renewal.
+
+The status update uses the same `token_version` guard without incrementing it. A replica that still
+holds rejected credentials cannot overwrite a refresh or reconnect that already replaced them; it
+reports a retryable error, and reconciliation restarts the collector with the newer credentials.
+After the update, the collector publishes the source `error` state and stops instead of restarting.
+Reconciliation, Kick webhooks, and **Check stream** skip sources of connections that are not
+`connected`. The multichat page refreshes the configuration when a source reports `error`, then
+shows the expired access with a reconnect action. OAuth providers reconnect through the usual OAuth
+flow; Boosty reconnects by submitting its token form again.
+
+Reconnecting the same provider account updates its tokens, sets the status to `connected`, and
+increments `token_version`. A connection or reconnect requests collector reconciliation for its
+source immediately, so collection resumes without waiting for the periodic reconciliation.
+Connecting a different account of the same provider creates a separate connection and leaves the
+expired one unchanged.
 
 Required service settings:
 
@@ -219,6 +255,12 @@ shown only when the connection granted the required scope.
 The broadcast composer sends the same normalized text to every enabled source with
 `send_message`. Read-only sources return `unsupported`; provider failures return `failed`; other
 providers continue independently. The UI shows these partial results per source.
+
+A source whose connection is not `connected` keeps its capabilities, but the service does not call
+the provider. A broadcast returns `failed` for it with a reconnect detail, or `unsupported` when it
+is read-only, and records the outcome in the audit. A moderation command for it returns `failed`
+and is audited the same way; the multichat page hides moderation actions for its messages and the
+composer does not count it as a writable source.
 
 ## OBS overlay
 

@@ -195,6 +195,12 @@ func collectSource(ctx context.Context, owned OwnedConnectedSource, provider Pro
 		if ctx.Err() != nil {
 			return
 		}
+		// The connection is already marked refresh_required, so reconciliation no longer selects it
+		// and a reconnect starts a new collector.
+		if requiresReauthorization(lastProviderErr) {
+			slog.Info("Chat collector stopped until the connection is reconnected", "sourceId", sourceID, "provider", provider.Name(), "detail", providerErrorDetail(lastProviderErr))
+			return
+		}
 		delay := backoff.next(time.Since(startedAt))
 		// Operational logs reach Telegram, so report only the first restart of a failure streak.
 		if lastProviderErr != nil && delay == collectorStreamRetry {
@@ -203,6 +209,14 @@ func collectSource(ctx context.Context, owned OwnedConnectedSource, provider Pro
 		if !waitFor(ctx, delay) {
 			return
 		}
+	}
+}
+
+// resumeCollection reconciles a connected or reconnected source now. The periodic reconciliation
+// remains the fallback when the request fails, so the connection itself still succeeds.
+func resumeCollection(ctx context.Context, collectors CollectorControl, sourceID string) {
+	if err := collectors.RequestRefresh(ctx, sourceID); err != nil {
+		slog.Warn("Chat collector refresh request failed after connecting a source", "sourceId", sourceID, "error", err)
 	}
 }
 

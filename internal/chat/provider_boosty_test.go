@@ -43,7 +43,7 @@ func (s *boostyTestStore) SaveProviderAccount(_ context.Context, userID int, c S
 	s.source = source
 	s.userID = userID
 	s.saves++
-	return "connection", nil
+	return "source", nil
 }
 
 func TestBoostyConnectReportsAccountConnectedToAnotherUser(t *testing.T) {
@@ -58,7 +58,7 @@ func TestBoostyConnectReportsAccountConnectedToAnotherUser(t *testing.T) {
 	provider := NewBoostyProvider(server.Client())
 	provider.apiURL = server.URL
 	store := &boostyTestStore{capacity: true, saveErr: errProviderAccountConnectedElsewhere}
-	err := NewBoostyConnector(provider, store).Connect(context.Background(), 7, BoostyCredentials{AccessToken: "session-token"})
+	err := NewBoostyConnector(provider, store, &fakeCollectorControl{}).Connect(context.Background(), 7, BoostyCredentials{AccessToken: "session-token"})
 	var applicationError *ApplicationError
 	if !errors.As(err, &applicationError) || applicationError.Type != "chat account connected to another user" {
 		t.Fatalf("err = %v", err)
@@ -84,8 +84,12 @@ func TestBoostyConnectOwnedAccount(t *testing.T) {
 	provider := NewBoostyProvider(server.Client())
 	provider.apiURL = server.URL
 	store := &boostyTestStore{capacity: true}
-	if err := NewBoostyConnector(provider, store).Connect(context.Background(), 7, BoostyCredentials{AccessToken: " session-token ", RefreshToken: " refresh-token ", DeviceID: " device-1 ", DedicatedSession: true}); err != nil {
+	collectors := &fakeCollectorControl{}
+	if err := NewBoostyConnector(provider, store, collectors).Connect(context.Background(), 7, BoostyCredentials{AccessToken: " session-token ", RefreshToken: " refresh-token ", DeviceID: " device-1 ", DedicatedSession: true}); err != nil {
 		t.Fatal(err)
+	}
+	if len(collectors.refreshes) != 1 || collectors.refreshes[0] != "source" {
+		t.Fatalf("collector refreshes = %v; want the connected source", collectors.refreshes)
 	}
 	if store.userID != 7 || store.source.ProviderSourceID != "my.blog" || store.connection.ProviderUserID != "42" || store.connection.AccessToken != "session-token" || store.saves != 1 || store.connection.RefreshToken != "refresh-token" || store.connection.OAuthDeviceID != "device-1" {
 		t.Fatalf("unexpected saved account: %+v", store)
@@ -121,7 +125,7 @@ func TestBoostyRejectsInvalidConnections(t *testing.T) {
 			p := NewBoostyProvider(server.Client())
 			p.apiURL = server.URL
 			store := &boostyTestStore{capacity: test.capacity}
-			if err := NewBoostyConnector(p, store).Connect(context.Background(), 1, BoostyCredentials{AccessToken: test.token}); err == nil {
+			if err := NewBoostyConnector(p, store, &fakeCollectorControl{}).Connect(context.Background(), 1, BoostyCredentials{AccessToken: test.token}); err == nil {
 				t.Fatal("expected rejection")
 			}
 			if store.saves != 0 {
@@ -183,24 +187,29 @@ func TestBoostyStreamSkipsHistoryAndCatchesUpInOrder(t *testing.T) {
 }
 
 func TestBoostyStreamUnauthorizedWaitsForReconnect(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(401) }))
-	defer server.Close()
-	p := NewBoostyProvider(server.Client())
-	p.apiURL = server.URL
-	ctx, cancel := context.WithCancel(context.Background())
-	events, failures := p.Stream(ctx, ConnectedSource{Source: Source{ProviderSourceID: "blog"}, Credentials: ProviderCredentials{AccessToken: "token"}})
-	<-events
-	if err := <-failures; providerErrorType(err) != "provider unauthorized" {
-		t.Fatalf("error: %v", err)
-	}
-	cancel()
-	select {
-	case _, ok := <-events:
-		if ok {
-			t.Fatal("unexpected event")
-		}
-	case <-time.After(time.Second):
-		t.Fatal("did not cancel")
+	// Only a connection without a refresh token cannot renew the rejected access token.
+	for refreshToken, want := range map[string]string{"": "provider refresh required", "refresh": "provider unauthorized"} {
+		t.Run("refreshToken="+refreshToken, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(401) }))
+			defer server.Close()
+			p := NewBoostyProvider(server.Client())
+			p.apiURL = server.URL
+			ctx, cancel := context.WithCancel(context.Background())
+			events, failures := p.Stream(ctx, ConnectedSource{Source: Source{ProviderSourceID: "blog"}, Credentials: ProviderCredentials{AccessToken: "token", RefreshToken: refreshToken}})
+			<-events
+			if err := <-failures; providerErrorType(err) != want {
+				t.Fatalf("error: %v", err)
+			}
+			cancel()
+			select {
+			case _, ok := <-events:
+				if ok {
+					t.Fatal("unexpected event")
+				}
+			case <-time.After(time.Second):
+				t.Fatal("did not cancel")
+			}
+		})
 	}
 }
 
@@ -297,7 +306,7 @@ func TestBoostyConnectPreservesExpiryBeforeCollectorRefresh(t *testing.T) {
 		}
 	})}
 	store := &boostyTestStore{capacity: true}
-	if err := NewBoostyConnector(NewBoostyProvider(client), store).Connect(context.Background(), 7, input); err != nil {
+	if err := NewBoostyConnector(NewBoostyProvider(client), store, &fakeCollectorControl{}).Connect(context.Background(), 7, input); err != nil {
 		t.Fatal(err)
 	}
 	saved := store.connection
@@ -320,7 +329,7 @@ func TestBoostyConnectRejectsSharedRefreshSession(t *testing.T) {
 		return nil, errors.New("unexpected request")
 	})}
 	store := &boostyTestStore{capacity: true}
-	err := NewBoostyConnector(NewBoostyProvider(client), store).Connect(context.Background(), 7, BoostyCredentials{AccessToken: "access", RefreshToken: "refresh", DeviceID: "browser"})
+	err := NewBoostyConnector(NewBoostyProvider(client), store, &fakeCollectorControl{}).Connect(context.Background(), 7, BoostyCredentials{AccessToken: "access", RefreshToken: "refresh", DeviceID: "browser"})
 	if err == nil || store.saves != 0 {
 		t.Fatal("shared browser refresh session accepted")
 	}

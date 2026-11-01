@@ -162,6 +162,8 @@ func (store *Store) GetConfig(ctx context.Context, userID int) (Config, error) {
 	return Config{Connections: connections, Sources: sources, HasOverlayToken: hasOverlayToken}, nil
 }
 
+// GetEnabledSources returns enabled sources of every connection status, so that commands can
+// report a per-source outcome for connections that must be reconnected.
 func (store *Store) GetEnabledSources(ctx context.Context, userID int) ([]ConnectedSource, error) {
 	return store.loadConnectedSources(ctx, userID, "")
 }
@@ -190,14 +192,14 @@ func (store *Store) loadConnectedSources(ctx context.Context, userID int, source
 			connection.oauth_device_id,
 			connection.access_token_expires_at,
 			connection.scopes,
-			connection.token_version
+			connection.token_version,
+			connection.status::text
 		FROM chat_source AS source
 		JOIN chat_provider_connection AS connection
 			ON connection.chat_provider_connection_id = source.chat_provider_connection_id
 			AND connection.user_id = source.user_id
 		WHERE source.user_id = $1
 			AND source.enabled
-			AND connection.status = 'connected'
 			AND ($2 = '' OR source.chat_source_id = $2::uuid)
 		ORDER BY source.position
 	`, userID, sourceID)
@@ -236,7 +238,7 @@ func scanEncryptedConnectedSource(row rowScanner) (encryptedConnectedSource, err
 	var result encryptedConnectedSource
 	source := &result.source
 	var deviceID *string
-	if err := row.Scan(&source.Source.SourceID, &source.Source.ConnectionID, &source.Source.Provider, &source.Source.ProviderSourceID, &source.Source.DisplayName, &source.Source.SourceURL, &source.Source.Position, &source.Source.Enabled, &result.accessCiphertext, &result.refreshCiphertext, &deviceID, &source.Credentials.ExpiresAt, &source.Credentials.Scopes, &source.Credentials.TokenVersion); err != nil {
+	if err := row.Scan(&source.Source.SourceID, &source.Source.ConnectionID, &source.Source.Provider, &source.Source.ProviderSourceID, &source.Source.DisplayName, &source.Source.SourceURL, &source.Source.Position, &source.Source.Enabled, &result.accessCiphertext, &result.refreshCiphertext, &deviceID, &source.Credentials.ExpiresAt, &source.Credentials.Scopes, &source.Credentials.TokenVersion, &source.ConnectionStatus); err != nil {
 		return encryptedConnectedSource{}, err
 	}
 	if deviceID != nil {
@@ -282,7 +284,8 @@ func (store *Store) GetAllEnabledSources(ctx context.Context) ([]OwnedConnectedS
 			connection.oauth_device_id,
 			connection.access_token_expires_at,
 			connection.scopes,
-			connection.token_version
+			connection.token_version,
+			connection.status::text
 		FROM chat_source AS source
 		JOIN chat_provider_connection AS connection
 			ON connection.chat_provider_connection_id = source.chat_provider_connection_id
@@ -341,7 +344,8 @@ func (store *Store) GetEnabledSourceByProviderID(ctx context.Context, provider, 
 			connection.oauth_device_id,
 			connection.access_token_expires_at,
 			connection.scopes,
-			connection.token_version
+			connection.token_version,
+			connection.status::text
 		FROM chat_source AS source
 		JOIN chat_provider_connection AS connection
 			ON connection.chat_provider_connection_id = source.chat_provider_connection_id
@@ -378,6 +382,8 @@ func (store *Store) HasSourceCapacity(ctx context.Context, userID int, provider,
 	return capacity, err
 }
 
+// SaveProviderAccount connects or reconnects a provider account with its source, marks the
+// connection connected, and returns the chat source ID.
 func (store *Store) SaveProviderAccount(ctx context.Context, userID int, connection SaveConnection, source SaveSource) (string, error) {
 	if err := validateProvider(connection.Provider); err != nil {
 		return "", err
@@ -385,14 +391,14 @@ func (store *Store) SaveProviderAccount(ctx context.Context, userID int, connect
 	if connection.Provider != source.Provider {
 		return "", errors.New("chat connection and source providers differ")
 	}
-	var connectionID string
+	var sourceID string
 	err := pgx.BeginFunc(ctx, store.pool, func(tx pgx.Tx) error {
 		// Serialize source placement per user so concurrent connections cannot claim the same slot.
 		_, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtext('chat_source'), $1)`, userID)
 		if err != nil {
 			return err
 		}
-		connectionID, err = store.saveConnection(ctx, tx, userID, connection)
+		connectionID, err := store.saveConnection(ctx, tx, userID, connection)
 		if err != nil {
 			return err
 		}
@@ -418,7 +424,7 @@ func (store *Store) SaveProviderAccount(ctx context.Context, userID int, connect
 		if position == nil {
 			return errChatSourceLimitReached
 		}
-		_, err = tx.Exec(ctx, `
+		return tx.QueryRow(ctx, `
 			INSERT INTO chat_source (
 				chat_provider_connection_id, user_id, provider, provider_source_id, display_name, source_url, position
 			)
@@ -430,10 +436,10 @@ func (store *Store) SaveProviderAccount(ctx context.Context, userID int, connect
 				source_url = EXCLUDED.source_url,
 				enabled = true,
 				updated_at = now()
-		`, connectionID, userID, source.Provider, source.ProviderSourceID, source.DisplayName, source.SourceURL, *position)
-		return err
+			RETURNING chat_source_id::text
+		`, connectionID, userID, source.Provider, source.ProviderSourceID, source.DisplayName, source.SourceURL, *position).Scan(&sourceID)
 	})
-	return connectionID, err
+	return sourceID, err
 }
 
 func (store *Store) saveConnection(ctx context.Context, tx pgx.Tx, userID int, connection SaveConnection) (string, error) {
@@ -499,6 +505,19 @@ func (store *Store) UpdateConnectionCredentials(ctx context.Context, connectionI
 		return nil, nil //nolint:nilnil // A nil version signals that the compare-and-swap lost a race.
 	}
 	return &tokenVersion, err
+}
+
+// MarkRefreshRequired records a definitive authorization failure for the credentials of
+// expectedVersion. It reports false when a refresh or reconnect has already replaced them.
+func (store *Store) MarkRefreshRequired(ctx context.Context, connectionID string, expectedVersion int) (bool, error) {
+	result, err := store.pool.Exec(ctx, `
+		UPDATE chat_provider_connection
+		SET
+			status = 'refresh_required',
+			updated_at = now()
+		WHERE chat_provider_connection_id = $1 AND token_version = $2
+	`, connectionID, expectedVersion)
+	return result.RowsAffected() == 1, err
 }
 
 func (store *Store) CreateOauthAttempt(ctx context.Context, stateHash string, userID int, provider, verifier, returnURL string, expiresAt time.Time) error {
