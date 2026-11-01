@@ -11,6 +11,11 @@ on:
         options:
           - plan
           - apply
+      plan_fingerprint:
+        description: Fingerprint from the reviewed plan run; apply refuses any other plan
+        required: false
+        default: ""
+        type: string
 
 permissions: {}
 
@@ -77,6 +82,38 @@ jobs:
 
       - name: Plan infrastructure
         run: terraform -chdir=infra/aws plan -input=false -out="$RUNNER_TEMP/aws.tfplan"
+
+      # The plan file can contain sensitive values and this repository is public, so the
+      # reviewed plan is identified by a fingerprint of its changes instead of an artifact.
+      - name: Fingerprint the plan
+        id: plan
+        run: |
+          set -euo pipefail
+          fingerprint="$(
+            terraform -chdir=infra/aws show -json "$RUNNER_TEMP/aws.tfplan" |
+              jq -cS '{resource_changes, output_changes}' |
+              sha256sum |
+              cut -d ' ' -f 1
+          )"
+          echo "fingerprint=$fingerprint" >> "$GITHUB_OUTPUT"
+          {
+            echo '### AWS infrastructure plan'
+            echo
+            echo "Plan fingerprint: \`$fingerprint\`"
+            echo
+            echo "After reviewing this plan, run the workflow with \`action=apply\` and this fingerprint."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Confirm the reviewed plan
+        if: inputs.action == 'apply'
+        env:
+          PLAN_FINGERPRINT: ${{ steps.plan.outputs.fingerprint }}
+          REVIEWED_FINGERPRINT: ${{ inputs.plan_fingerprint }}
+        run: |
+          if [ "$PLAN_FINGERPRINT" != "$REVIEWED_FINGERPRINT" ]; then
+            echo "::error::This plan differs from the reviewed plan. Run action=plan again, review it, and apply with its fingerprint."
+            exit 1
+          fi
 
       - name: Apply infrastructure
         if: inputs.action == 'apply'
