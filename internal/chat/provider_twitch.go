@@ -20,6 +20,7 @@ const (
 	twitchDefaultKeepalive = 10 * time.Second
 	twitchMaxKeepalive     = 600 * time.Second
 	twitchKeepaliveMargin  = 5 * time.Second
+	twitchEventSubURL      = "wss://eventsub.wss.twitch.tv/ws"
 )
 
 type TwitchProvider struct {
@@ -60,44 +61,64 @@ func (provider *TwitchProvider) Stream(ctx context.Context, source ConnectedSour
 			return
 		}
 		sendStreamEvent(ctx, events, StreamEvent{Type: "state", SourceID: source.Source.SourceID, State: "connecting"})
-		reconnectURL := "wss://eventsub.wss.twitch.tv/ws"
-		retry := twitchReconnectDelay
-		for ctx.Err() == nil {
-			connection, err := provider.dial(ctx, reconnectURL)
-			if err != nil {
-				sendProviderError(ctx, errorsChannel, operationError("Twitch chat connection failed", err))
-				if !provider.wait(ctx, retry) {
-					return
-				}
-				retry = min(retry*2, twitchReconnectDelayMax)
-				reconnectURL = "wss://eventsub.wss.twitch.tv/ws"
-				continue
-			}
-			nextURL, immediate, subscribed := provider.readTwitchSocket(ctx, connection, source, events, errorsChannel)
-			_ = connection.Close(websocket.StatusNormalClosure, "")
-			if ctx.Err() != nil {
-				return
-			}
-			if immediate {
-				reconnectURL = nextURL
-				continue
-			}
-			if subscribed {
-				retry = twitchReconnectDelay
-			}
-			reconnectURL = "wss://eventsub.wss.twitch.tv/ws"
-			if !provider.wait(ctx, retry) {
-				return
-			}
-			retry = min(retry*2, twitchReconnectDelayMax)
-		}
+		provider.runTwitchSessions(ctx, source, events, errorsChannel)
 	}()
 	return events, errorsChannel
 }
 
+// runTwitchSessions connects EventSub sessions until ctx ends, following session_reconnect
+// notices and reconnecting with backoff after failures.
+func (provider *TwitchProvider) runTwitchSessions(ctx context.Context, source ConnectedSource, events chan<- StreamEvent, errorsChannel chan<- error) {
+	reconnectURL := twitchEventSubURL
+	retry := twitchReconnectDelay
+	var previous *twitchPreviousSession
+	defer func() { previous.close() }()
+	for ctx.Err() == nil {
+		connection, err := provider.dial(ctx, reconnectURL)
+		if err != nil {
+			previous.close()
+			previous = nil
+			sendProviderError(ctx, errorsChannel, operationError("Twitch chat connection failed", err))
+			if !provider.wait(ctx, retry) {
+				return
+			}
+			retry = min(retry*2, twitchReconnectDelayMax)
+			reconnectURL = twitchEventSubURL
+			continue
+		}
+		nextURL, immediate, subscribed := provider.readTwitchSocket(ctx, connection, source, events, errorsChannel, previous)
+		previous.close()
+		previous = nil
+		if immediate && subscribed {
+			// Twitch delivers events to this session until the reconnect session is welcomed.
+			previous = readPreviousTwitchSession(ctx, connection, source, events)
+			reconnectURL = nextURL
+			continue
+		}
+		_ = connection.Close(websocket.StatusNormalClosure, "")
+		if ctx.Err() != nil {
+			return
+		}
+		if immediate {
+			reconnectURL = nextURL
+			continue
+		}
+		if subscribed {
+			retry = twitchReconnectDelay
+		}
+		reconnectURL = twitchEventSubURL
+		if !provider.wait(ctx, retry) {
+			return
+		}
+		retry = min(retry*2, twitchReconnectDelayMax)
+	}
+}
+
 // readTwitchSocket reads one EventSub session. It reports a reconnect URL for an immediate
-// reconnect and whether the session subscribed to chat messages.
-func (provider *TwitchProvider) readTwitchSocket(ctx context.Context, connection twitchSocket, source ConnectedSource, events chan<- StreamEvent, errorsChannel chan<- error) (string, bool, bool) {
+// reconnect and whether the session subscribed to chat messages. A non-nil previous session
+// means that this session replaces it after session_reconnect: the chat subscription carries
+// over, and previous is closed once this session is welcomed.
+func (provider *TwitchProvider) readTwitchSocket(ctx context.Context, connection twitchSocket, source ConnectedSource, events chan<- StreamEvent, errorsChannel chan<- error, previous *twitchPreviousSession) (string, bool, bool) {
 	// Silence longer than the keepalive period means that the connection was dropped.
 	readTimeout := twitchDefaultKeepalive + twitchKeepaliveMargin
 	subscribed := false
@@ -124,10 +145,13 @@ func (provider *TwitchProvider) readTwitchSocket(ctx context.Context, connection
 			if event.KeepaliveTimeout > 0 {
 				readTimeout = event.KeepaliveTimeout + twitchKeepaliveMargin
 			}
-			if err := provider.createTwitchSubscription(ctx, source, event.SessionID); err != nil {
-				sendProviderError(ctx, errorsChannel, err)
-				return "", false, subscribed
+			if previous == nil {
+				if err := provider.createTwitchSubscription(ctx, source, event.SessionID); err != nil {
+					sendProviderError(ctx, errorsChannel, err)
+					return "", false, subscribed
+				}
 			}
+			previous.close()
 			subscribed = true
 			sendStreamEvent(ctx, events, StreamEvent{Type: "state", SourceID: source.Source.SourceID, State: "live"})
 		case "reconnect":
@@ -135,11 +159,50 @@ func (provider *TwitchProvider) readTwitchSocket(ctx context.Context, connection
 		case "revocation":
 			sendProviderError(ctx, errorsChannel, &ProviderError{Type: "provider unavailable", Detail: event.Reason})
 		case "message":
-			message := Message{ID: event.MessageID, SourceID: source.Source.SourceID, ConnectionID: source.Source.ConnectionID, Provider: "twitch", Author: Author{ID: event.AuthorID, DisplayName: event.Author}, Text: event.Text, OccurredAt: event.OccurredAt}
-			sendStreamEvent(ctx, events, StreamEvent{Type: "message", Message: &message})
+			sendStreamEvent(ctx, events, twitchMessageEvent(source, event))
 		}
 	}
 	return "", false, subscribed
+}
+
+// twitchPreviousSession keeps reading a session after session_reconnect, so that messages
+// Twitch delivers before the reconnect session is welcomed are not lost.
+type twitchPreviousSession struct {
+	cancel context.CancelFunc
+	done   chan struct{}
+}
+
+func readPreviousTwitchSession(ctx context.Context, connection twitchSocket, source ConnectedSource, events chan<- StreamEvent) *twitchPreviousSession {
+	readCtx, cancel := context.WithCancel(ctx)
+	session := &twitchPreviousSession{cancel: cancel, done: make(chan struct{})}
+	go func() {
+		defer close(session.done)
+		defer func() { _ = connection.Close(websocket.StatusNormalClosure, "") }()
+		for {
+			_, body, err := connection.Read(readCtx)
+			if err != nil {
+				return
+			}
+			if event, err := decodeTwitchEvent(body); err == nil && event != nil && event.Type == "message" {
+				sendStreamEvent(readCtx, events, twitchMessageEvent(source, event))
+			}
+		}
+	}()
+	return session
+}
+
+// close stops reading the previous session and closes its connection. A nil session is ignored.
+func (session *twitchPreviousSession) close() {
+	if session == nil {
+		return
+	}
+	session.cancel()
+	<-session.done
+}
+
+func twitchMessageEvent(source ConnectedSource, event *twitchEvent) StreamEvent {
+	message := Message{ID: event.MessageID, SourceID: source.Source.SourceID, ConnectionID: source.Source.ConnectionID, Provider: "twitch", Author: Author{ID: event.AuthorID, DisplayName: event.Author}, Text: event.Text, OccurredAt: event.OccurredAt}
+	return StreamEvent{Type: "message", Message: &message}
 }
 
 type twitchEvent struct {
