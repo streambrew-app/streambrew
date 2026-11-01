@@ -501,6 +501,9 @@ class PostgresVideoQueue {
           END
         WHERE user_id = ${userId}
       `;
+      // The transaction-local setting tells the priority trigger to keep each video's
+      // assignment while only its queue amount is converted; it ends with this transaction.
+      await sql`SELECT set_config('streambrew.retain_video_priority', 'on', true)`;
       await sql`
         UPDATE video
         SET
