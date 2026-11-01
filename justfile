@@ -183,6 +183,26 @@ production-deploy $app_image $postgres_image:
       fi
     '
 
+# Pause deployments from main and deploy an earlier revision through GitHub Actions.
+[script("bash", "-euo", "pipefail")]
+production-rollback revision:
+  git fetch --quiet origin main
+  sha="$(git rev-parse --verify "{{ revision }}^{commit}")"
+  if ! git merge-base --is-ancestor "$sha" origin/main; then
+    echo "Rollback revision $sha is not on main." >&2
+    exit 1
+  fi
+  gh variable set PRODUCTION_AUTO_DEPLOY --body false
+  gh workflow run production.yml --ref main -f revision="$sha"
+  echo "Deployments from main are paused. Watch the run with: gh run list --workflow production.yml"
+  echo "After the fix reaches main, run: just production-resume"
+
+# Resume deployments from main and deploy the current main.
+[script("bash", "-euo", "pipefail")]
+production-resume:
+  gh variable delete PRODUCTION_AUTO_DEPLOY || true
+  gh workflow run production.yml --ref main -f revision=main
+
 compose-db-up:
   docker compose up -d postgres
 

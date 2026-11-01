@@ -334,13 +334,13 @@ Public tRPC request bodies are limited to 1 MiB before routing. Stream and media
 POST bodies have smaller route-specific limits, and upload bytes use the
 separate bounded multipart endpoint.
 
-Apply the donation-alert migration before deploying application code that uses
-this feature. Deployment requires an explicit manual run with
-`apply_migrations=true`, as described in [deployment.md](../operations/deployment.md).
+Deployment applies the donation-alert migrations automatically before starting
+the application code that uses them, as described in
+[deployment.md](../operations/deployment.md#deployments-and-migrations).
 
 ## Validation matrix
 
-Before a release, verify:
+Before merging changes to alert playback or widgets, verify:
 
 - English and Russian dashboards at desktop and mobile widths in light and dark
   themes;

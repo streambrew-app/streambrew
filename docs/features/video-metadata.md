@@ -52,12 +52,12 @@ accelerate the job. They never reset attempt history.
 
 ## Deployment
 
-Review the migrations in `db/migrations`, then deploy their matching application
-revision with `apply_migrations=true` using the [deployment
-workflow](../operations/deployment.md). The workflow pauses the old web and video processes
-before applying the migration because old web code cannot parse NULL timing, then
-starts all application services on the matching new revision. Do not leave mixed
-old/new web and worker versions running.
+The nullable-timing migrations are already in production. They predate the
+[backward-compatible migration rule](../engineering/sql.md#migrations): old web code
+could not parse NULL timing, so they were applied with the old web and video
+processes stopped. Future timing changes must follow the expand/contract rule,
+because the [deployment workflow](../operations/deployment.md#deployments-and-migrations)
+now applies migrations while the previous revision keeps serving.
 
 The worker backfills missing metadata jobs for videos with unknown duration at
 startup. Existing known durations are retained. Applying migrations or deploying
@@ -98,7 +98,7 @@ Raw provider HTML and credentials are not logged.
 
 ## Repair the confirmed historical donations
 
-Run the following read-only preview first, after verifying that the new release
+Run the following read-only preview first, after verifying that the new revision
 is running. Review the exact IDs and existing videos before the write operation.
 
 ```sql

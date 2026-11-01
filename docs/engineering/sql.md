@@ -8,6 +8,26 @@ The repository-wide `just fmt` and `just fmt-check` recipes include these checks
 Formatting removes SQL comments except for dbmate's required `migrate:up` and
 `migrate:down` directives.
 
+## Migrations
+
+Production applies new migrations automatically on deployment, before new
+containers start and while the previous revision keeps serving. A migration must
+therefore work with both the revision in production and the revision that adds
+it. Split incompatible changes across PRs (expand/contract):
+
+1. Expand: add new tables, nullable columns, columns with defaults, enum values,
+   or functions without changing what existing code relies on.
+2. Migrate code: deploy code that writes and reads the new shape, and backfill
+   existing rows when needed.
+3. Contract: once no deployed revision uses the old shape, drop or tighten it in
+   a later PR.
+
+Do not rename or drop a column, table, or enum value, add `NOT NULL` without a
+default, or change a function's contract in the same deployment as the code that
+stops using it. Keep each migration short-running, because it holds locks while
+the application serves traffic. Rolling back the application does not reverse
+migrations, so the expanded schema must also work with the previous revision.
+
 ## Naming and syntax
 
 - Write SQL keywords in uppercase and built-in types in lowercase. Use lowercase `snake_case` for tables, columns, constraints, functions, and CTEs; SQL function calls are lowercase.

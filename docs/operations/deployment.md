@@ -1,24 +1,24 @@
 # StreamBrew production deployment
 
 The main application stays on AWS and is split into three Terraform roots. This
-keeps routine releases independent from cloud provisioning and keeps the
+keeps routine deployments independent from cloud provisioning and keeps the
 application runtime portable:
 
 | Root               | State                           | Responsibility                                                        | Normal trigger                         |
 | ------------------ | ------------------------------- | --------------------------------------------------------------------- | -------------------------------------- |
 | `infra/bootstrap`  | local, operator-held            | S3 state bucket and GitHub OIDC role                                  | once from an authenticated workstation |
 | `infra/aws`        | `streambrew/aws.tfstate`        | Lightsail instance, firewall, snapshots, and S3 backups               | manual `AWS infrastructure` workflow   |
-| `infra/production` | `streambrew/production.tfstate` | Docker network, containers, persistent volumes, and deployed revision | published stable GitHub Release        |
+| `infra/production` | `streambrew/production.tfstate` | Docker network, containers, persistent volumes, and deployed revision | every push to `main`                   |
 
 `compose.yaml` remains a development and emergency-recovery reference. Normal
-production releases do not copy the repository to the server and do not run
+production deployments do not copy the repository to the server and do not run
 Compose there. GitHub Actions builds immutable images, pulls them over SSH, and
 Terraform reconciles the Docker runtime.
 
 The bandwidth-heavy multistream media plane is the one exception: when enabled,
 it runs as a stateless container on Hetzner Cloud and is deployed by
 `.github/workflows/restream.yml`. Hetzner hosting is currently paused with no
-media node; releases and manual dispatches skip the media jobs unless the
+media node; pushes and manual dispatches skip the media jobs unless the
 repository variable `HETZNER_RESTREAM_ENABLED` is explicitly set to `true`.
 The AWS application remains its control plane.
 See [Multistream architecture and operations](../features/restream.md) for provisioning,
@@ -118,10 +118,9 @@ Set the outputs on the `Production` GitHub environment:
 - `AWS_TERRAFORM_ROLE_ARN` from `deployment_role_arn`;
 - `TF_STATE_REGION` and `AWS_REGION` to the selected region.
 
-Configure the environment with custom deployment branch and tag rules: allow the
-`main` branch for manual infrastructure, migration, rollback, and recovery runs,
-and allow `v*` tags for automatic releases. A push to `main` does not start an
-application deployment. See GitHub's
+Configure the environment with a custom deployment branch rule that allows the
+`main` branch. Pushes to `main` deploy the application; manual infrastructure,
+rollback, and recovery runs also start from `main`. See GitHub's
 [AWS OIDC guide](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws)
 for the repository/environment subject format.
 
@@ -229,7 +228,7 @@ output changes match that fingerprint, so it applies only the reviewed changes.
 If state or infrastructure changed in between, plan and review again. The plan
 file is not uploaded: it can contain sensitive values and the repository is
 public. After applying, the workflow waits for cloud-init and Docker.
-Infrastructure and application releases share the `production` concurrency
+Infrastructure and application deployments share the `production` concurrency
 group, so they cannot overlap.
 
 An existing Lightsail instance and backup bucket must be imported before the
@@ -247,43 +246,64 @@ Import and reconcile the Docker resources separately. Never import a resource
 and immediately apply without reviewing every replacement and confirming that
 persistent volumes are no-op.
 
-## Releases and migrations
+## Deployments and migrations
 
-Merging to `main` makes a revision releasable but does not deploy it. To release
-production, publish a non-prerelease GitHub Release with a `vX.Y.Z` tag pointing to
-a commit on `main`. Drafts do not trigger the workflows; prereleases, malformed
-tags, and tags outside `main` fail validation before images are published. Treat
-release publication as deployment intent: the GitHub Release remains published if
-deployment fails, so confirm the `Production` environment deployment before
-announcing completion.
+Every push to `main` deploys that commit. The merge queue already tested it:
+the queue fast-forwards `main` to the tested commit, and its CI built the
+SHA-tagged application image. `Production` reuses that successful `Quality checks`
+run and that image. It runs CI and builds the image only when they are missing,
+for example for a manual dispatch of a revision that never passed the queue.
+`Production` then publishes the PostgreSQL/WAL-G image if its content changed,
+discovers the current Lightsail IP, uploads runtime files, and applies only
+`infra/production`. Images use commit or content identifiers. Images are pulled
+before Terraform changes containers. PostgreSQL is excluded from routine restarts
+unless `restart_database=true` is selected in a manual run.
 
-The release workflows run CI for the tagged commit. `Production` then publishes
-immutable application and PostgreSQL/WAL-G images, discovers the current Lightsail
-IP, uploads runtime files, and applies only `infra/production`. Images continue to
-use content or commit identifiers rather than the mutable release label. Images are
-pulled before Terraform changes containers. PostgreSQL is excluded from routine
-restarts unless `restart_database=true` is selected in a manual run.
+Pushes deploy in order. A newer pending push replaces an older pending one, and
+a delayed push run skips its deployment when production already runs a newer
+revision that contains it. The `Production` environment's deployment history and
+each run's summary record the deployed revision.
 
-The restream workflow compares the tagged commit with the previous published stable
-release. It publishes and deploys the media image only when restream code,
-infrastructure, workflow, or Go module files changed. It deploys conservatively when
-there is no previous stable release or the previous release is not an ancestor of
-the new one.
+Migrations added or changed since the deployed revision apply automatically
+before new containers start, while the previous revision keeps serving. Every
+migration must therefore work with the revision already in production; see
+[migrations in the SQL guide](../engineering/sql.md#migrations). Merging a PR with
+a migration approves applying it to production. Migrations are forward-only and are
+not automatically reversed; recover data with WAL-G point-in-time restore.
 
-If `db/migrations` differs from the revision recorded in Terraform state, an
-automatic release stops before deployment. Review the SQL and rerun `Production`
-manually for the exact release tag with `apply_migrations=true`. Manual dispatch is
-also the recovery path for redeploying or rolling back to an explicitly selected
-revision. Migrations are forward-only and are not automatically reversed.
+The restream workflow runs on pushes to `main` that change restream code,
+infrastructure, its workflow, or Go module files, and on manual dispatch.
+
+### Rollback
+
+Deploy an earlier `main` revision and pause automatic deployments:
+
+```sh
+just production-rollback <revision>
+```
+
+The recipe sets the repository variable `PRODUCTION_AUTO_DEPLOY=false` and
+dispatches `Production` for the revision. A revision that passed the merge queue
+skips CI and the image build, so the rollback takes only the Terraform apply.
+Check that no deployment from `main` is still running, because it may replace the
+rollback. Rolling back does not reverse migrations; the expand/contract rule keeps
+older revisions compatible with the newer schema. Fix forward with a revert or fix
+PR, then resume:
+
+```sh
+just production-resume
+```
 
 The workflow verifies all ten containers, `/api/health`, and an API routing
 probe. `/api/health` answers 503 when PostgreSQL does not respond within two
 seconds, so the web container's Docker health check and this verification also
 cover its database connection. If Terraform apply or verification fails, it reapplies the previous image
 references recorded in state. That rollback does not reverse database
-migrations and does not change AWS infrastructure.
+migrations and does not change AWS infrastructure. A failed deployment or
+migration sends a Telegram message to `TELEGRAM_ADMIN_CHAT_ID` with the revision,
+the rollback outcome, and the run link.
 
-Routine releases create revision-and-run-specific `chat`, `donations`, and
+Routine deployments create revision-and-run-specific `chat`, `donations`, and
 `web` containers and wait for their Docker health checks before destroying the
 previous containers. Their stable network aliases keep Caddy routing to healthy
 instances throughout the change. Each event-processing `video` and `alerts`
@@ -295,7 +315,7 @@ changes.
 When a changed runtime file must be reloaded by Caddy, Vector, or WAL-G, run the
 workflow manually with `reload_runtime_services=true`. Use
 `restart_database=true` only when PostgreSQL itself must be recreated; both are
-explicit maintenance operations rather than routine release behavior.
+explicit maintenance operations rather than routine deployment behavior.
 
 ## Validation and recovery
 
@@ -319,4 +339,4 @@ shortcut.
 If Terraform deployment is unavailable, SSH to the host and use the checked-in
 `compose.yaml` only as a temporary recovery path. Re-import any containers that
 Compose replaces and require a zero-change Terraform plan before returning to
-normal releases.
+normal deployments.
