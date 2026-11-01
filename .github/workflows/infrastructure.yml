@@ -96,6 +96,8 @@ jobs:
               cut -d ' ' -f 1
           )"
           echo "fingerprint=$fingerprint" >> "$GITHUB_OUTPUT"
+          # Annotations are readable through the API and gh; job summaries are not.
+          echo "::notice title=AWS plan fingerprint::$fingerprint"
           {
             echo '### AWS infrastructure plan'
             echo

@@ -223,7 +223,8 @@ Create the `streambrew-logs` dataset in Axiom and restrict its token to ingest.
 
 Run `AWS infrastructure` manually with `action=plan`, review the complete plan,
 then rerun it with `action=apply` and the plan fingerprint from the plan run's
-summary. The apply run plans again and stops unless the new plan's resource and
+summary. The fingerprint is also reported as a notice annotation, which
+`gh run view` and the check-run annotations API expose. The apply run plans again and stops unless the new plan's resource and
 output changes match that fingerprint, so it applies only the reviewed changes.
 If state or infrastructure changed in between, plan and review again. The plan
 file is not uploaded: it can contain sensitive values and the repository is
