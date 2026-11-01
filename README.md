@@ -36,10 +36,12 @@ Install these tools on the host:
 - Docker with the Compose plugin for PostgreSQL and NATS;
 - PostgreSQL 18 client tools for `pg_dump`;
 - [ripgrep](https://github.com/BurntSushi/ripgrep) for the Go lint task;
-- [sqruff](https://github.com/quarylabs/sqruff) 0.40.0 for SQL formatting and linting.
+- [mise](https://mise.jdx.dev/installing-mise.html) for tools pinned in `mise.toml`.
 
 `just install` installs workspace tools such as `dotenvx` and `dbmate`; they do not need a
-separate global installation. `cloc` is only needed for the optional
+separate global installation. mise installs the pinned
+[sqruff](https://github.com/quarylabs/sqruff) SQL formatter on first use of a SQL
+formatting recipe and verifies it against `mise.lock`. `cloc` is only needed for the optional
 `just count-lines` task. Keep the PostgreSQL client version at least as new as
 the database server so `dbmate` can refresh the schema dump.
 
