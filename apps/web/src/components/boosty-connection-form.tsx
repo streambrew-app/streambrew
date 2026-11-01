@@ -189,7 +189,7 @@ export function BoostyConnectionForm({ onClose }: { onClose: () => void }) {
           <DialogTitle>{t("boostyConnectTitle")}</DialogTitle>
           <DialogDescription>{t("boostyTokenHelp")}</DialogDescription>
         </div>
-        <ol className="flex list-decimal flex-col gap-3 pl-5 text-sm leading-relaxed">
+        <ol className="flex list-decimal flex-col gap-3 pl-6 text-sm leading-relaxed">
           <li>
             {t("boostyTokenStepSignIn")}{" "}
             <a

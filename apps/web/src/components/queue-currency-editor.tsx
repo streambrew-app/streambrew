@@ -72,7 +72,7 @@ function QueueCurrencyHeading() {
   const { t } = useI18n(translations);
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-2">
       <h2 className="font-heading text-lg font-semibold text-card-foreground">
         {t("queueCurrency")}
       </h2>
@@ -141,7 +141,7 @@ export function QueueCurrencyEditor() {
     updateQueueCurrencyM.mutate(input, { onSuccess: closeEditor });
 
   return (
-    <section className="cosmic-panel relative shrink-0 overflow-hidden p-4 sm:p-5">
+    <section className="cosmic-panel relative shrink-0 overflow-hidden p-4 sm:p-6">
       <span className="absolute top-0 left-6 h-1 w-16 rounded-b-full bg-mint-signal" />
       {!isEditing ? (
         <div className="flex flex-wrap items-center gap-3">

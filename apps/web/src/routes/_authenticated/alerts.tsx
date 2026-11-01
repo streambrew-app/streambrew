@@ -231,7 +231,7 @@ export const Route = createFileRoute("/_authenticated/alerts")({
   },
 });
 
-const panelClass = "rounded-2xl border border-border bg-card p-4 sm:p-5";
+const panelClass = "rounded-2xl border border-border bg-card p-4 sm:p-6";
 
 function previewPlayback(settings: AlertSettings): AlertPlayback {
   return AlertPlaybackSchema.parse({
@@ -524,7 +524,7 @@ function PlayerStatus({ dashboard, t }: { dashboard: AlertDashboardData; t: Tran
       className={cn(
         // Status pills use the standard control height.
         // oxlint-disable-next-line tw-no-self-positioning/no-dimensions
-        "inline-flex h-8 items-center gap-2 rounded-lg border px-2.5 text-xs font-semibold",
+        "inline-flex h-8 items-center gap-2 rounded-lg border px-3 text-xs font-medium",
         statusClass,
       )}
       title={status.detail}
@@ -603,7 +603,7 @@ function NoticeBanner({
   return (
     <div
       className={cn(
-        "rounded-xl border px-3.5 py-3 text-sm",
+        "rounded-xl border px-4 py-3 text-sm",
         failed
           ? "border-destructive/30 bg-destructive/8 text-destructive"
           : "border-status-success-border/40 bg-status-success-dark-surface/10 text-status-success-text dark:text-status-success-dark-text",
@@ -669,7 +669,7 @@ function PreviewPanel({
             {t("previewDescription")}
           </p>
         </div>
-        <span className="rounded-lg bg-secondary px-2 py-1 text-micro font-bold text-secondary-foreground">
+        <span className="rounded-lg bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground">
           4:3
         </span>
       </div>
@@ -726,7 +726,7 @@ function OverlayPanel({
       )}
       <OverlayButtons hasToken={hasToken} overlay={overlay} t={t} />
       <a
-        className="inline-flex items-center gap-1.5 self-start rounded text-xs font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        className="inline-flex items-center gap-2 self-start rounded text-xs font-medium text-primary underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         href="https://obsproject.com/kb/browser-source"
         rel="noreferrer"
         target="_blank"
@@ -960,7 +960,7 @@ function DiagnosticRow({
         ? "border-status-warning-dark-text/40 bg-status-warning-dark-surface/8"
         : "border-border bg-muted/25";
   return (
-    <div className={cn("rounded-xl border px-3 py-2.5 text-sm", levelClass)}>
+    <div className={cn("rounded-xl border px-3 py-3 text-sm", levelClass)}>
       <div className="flex items-center justify-between gap-3">
         <strong>{copy.title}</strong>
         <LocalTime
@@ -1012,7 +1012,7 @@ function PresentationSettings({
   t: Translator;
 }) {
   return (
-    <article className={cn(panelClass, "flex flex-col gap-5")}>
+    <article className={cn(panelClass, "flex flex-col gap-6")}>
       <div>
         <h2 className="font-heading text-lg font-semibold">{t("settings")}</h2>
         <p className="pt-1 text-xs text-muted-foreground">{t("alertsEnabledDescription")}</p>
@@ -1028,7 +1028,7 @@ function PresentationSettings({
       <Field>
         <div className="flex items-center justify-between gap-3">
           <FieldLabel htmlFor="alert-duration">{t("duration")}</FieldLabel>
-          <output className="text-xs font-semibold text-primary">
+          <output className="text-xs font-medium text-primary">
             {t("seconds", { value: draft.displayDurationMs / 1000 })}
           </output>
         </div>
@@ -1092,7 +1092,7 @@ function SourceSettings({
           const checked = draft.enabledSources.includes(source);
           return (
             <div
-              className="flex items-center gap-3 rounded-xl border border-border bg-muted/20 p-2.5"
+              className="flex items-center gap-3 rounded-xl border border-border bg-muted/20 p-3"
               key={source}
             >
               <DonationSourceMark source={source} />
@@ -1133,7 +1133,7 @@ function SpeechSettings({
   t: Translator;
 }) {
   return (
-    <article className={cn(panelClass, "flex flex-col gap-5")}>
+    <article className={cn(panelClass, "flex flex-col gap-6")}>
       <h2 className="font-heading text-lg font-semibold">{t("speech")}</h2>
       <Field orientation="horizontal" className="justify-between">
         <FieldLabel htmlFor="tts-enabled">{t("speechEnabled")}</FieldLabel>
@@ -1146,7 +1146,7 @@ function SpeechSettings({
       <Field>
         <FieldLabel htmlFor="tts-voice">{t("voice")}</FieldLabel>
         <select
-          className="h-8 rounded-lg border border-input bg-background px-2.5 text-base md:text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
+          className="h-8 rounded-lg border border-input bg-background px-3 text-base md:text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:opacity-50"
           disabled={!draft.ttsEnabled}
           id="tts-voice"
           onChange={(event) => setSetting("ttsVoice", event.currentTarget.value)}
@@ -1183,7 +1183,7 @@ function VolumeField({
     <Field>
       <div className="flex items-center justify-between gap-3">
         <FieldLabel htmlFor={id}>{label}</FieldLabel>
-        <output className="text-xs font-semibold text-primary">{value}%</output>
+        <output className="text-xs font-medium text-primary">{value}%</output>
       </div>
       <input
         className="alert-range"
@@ -1327,7 +1327,7 @@ function PlaybackPanels({
             <Icons.activity aria-hidden="true" className="text-primary" />
             <h2 className="font-heading text-lg font-semibold">{t("queue")}</h2>
           </div>
-          <span className="rounded-lg bg-secondary px-2 py-1 text-xs font-semibold">
+          <span className="rounded-lg bg-secondary px-2 py-1 text-xs font-medium">
             {t("pending", { count: dashboard.pendingCount })}
           </span>
         </div>

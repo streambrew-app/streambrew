@@ -63,7 +63,7 @@ export function WidgetConnectionForm({
             <DialogDescription>{translate("description")}</DialogDescription>
           </div>
         </div>
-        <form className="flex flex-col gap-5" onSubmit={submit}>
+        <form className="flex flex-col gap-6" onSubmit={submit}>
           <Field data-invalid={isError || undefined}>
             <FieldLabel htmlFor={fieldId}>{translate("widgetURLLabel")}</FieldLabel>
             <Input

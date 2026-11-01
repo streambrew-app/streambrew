@@ -272,7 +272,7 @@ function VideoThumbnail({
           className="absolute inset-0 bg-black/10 transition-colors group-hover:bg-black/20"
         />
       </a>
-      <span className="pointer-events-none absolute right-2 bottom-2 rounded bg-black/75 px-1.5 py-0.5 text-caption font-medium text-white tabular-nums">
+      <span className="pointer-events-none absolute right-2 bottom-2 rounded bg-black/75 px-2 py-0.5 text-xs font-medium text-white tabular-nums">
         {timingLabel}
       </span>
     </div>
@@ -296,7 +296,7 @@ function VideoStatusControls({
     void statusChange.run(() => onStatusChange(status));
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className="flex flex-col gap-2">
       <div className="grid grid-cols-2 gap-2">
         <Button
           aria-label={t(isWatched ? "markVideoNotWatched" : "markVideoWatched")}
@@ -428,7 +428,7 @@ function VideoHeading({
   const { locale, t } = useI18n(translations);
   return (
     <div className="flex min-w-0 flex-wrap items-start justify-between gap-x-4 gap-y-2">
-      <div className="flex min-w-0 grow flex-wrap items-center gap-x-1.5 gap-y-1">
+      <div className="flex min-w-0 grow flex-wrap items-center gap-x-2 gap-y-1">
         <span className="text-sm font-medium wrap-anywhere text-card-foreground">{author}</span>
         <span aria-hidden="true" className="text-xs text-muted-foreground/60">
           ·
@@ -495,10 +495,10 @@ function VideoSummary({
           {video.title}
         </h3>
       )}
-      <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
         {showPriorityLabel && (
           <span
-            className="max-w-full truncate rounded-md bg-secondary px-1.5 py-0.5 text-caption font-medium text-secondary-foreground"
+            className="max-w-full truncate rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground"
             title={video.priorityLabel ?? t("videoUnassigned")}
           >
             {video.priorityLabel ?? t("videoUnassigned")}
@@ -603,7 +603,7 @@ function VideoMetadataStatus({
 
   return (
     <div className="flex flex-col gap-1">
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
         <LocalTime
           className="text-xs text-muted-foreground"
           locale={locale}
@@ -735,8 +735,8 @@ export default function VideoCard({
     video.source === "donation" ? (video.donation.author ?? t("anonymous")) : t("video");
 
   return (
-    <article className="@container relative min-w-0 px-4 py-4 sm:px-5">
-      <div className="grid min-w-0 items-start gap-5 @3xl:grid-cols-[clamp(19rem,33%,25rem)_minmax(0,1fr)]">
+    <article className="@container relative min-w-0 px-4 py-4 sm:px-6">
+      <div className="grid min-w-0 items-start gap-6 @3xl:grid-cols-[clamp(19rem,33%,25rem)_minmax(0,1fr)]">
         <VideoPreview
           author={author}
           isUpdating={isUpdating}

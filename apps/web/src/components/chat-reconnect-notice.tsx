@@ -45,7 +45,7 @@ export function ChatReconnectNotice({
   if (status === "connected") return null;
   return (
     <div
-      className="flex flex-wrap items-center gap-2 rounded-lg border border-status-warning-border bg-status-warning-surface px-3 py-2 text-caption text-status-warning-deep dark:border-status-warning-dark-surface/25 dark:bg-status-warning-dark-surface/10 dark:text-status-warning-on-deep"
+      className="flex flex-wrap items-center gap-2 rounded-lg border border-status-warning-border bg-status-warning-surface px-3 py-2 text-xs text-status-warning-deep dark:border-status-warning-dark-surface/25 dark:bg-status-warning-dark-surface/10 dark:text-status-warning-on-deep"
       role="status"
     >
       <p className="flex min-w-0 grow basis-48 items-center gap-2">

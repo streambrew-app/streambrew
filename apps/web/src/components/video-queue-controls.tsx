@@ -235,7 +235,7 @@ function QueueForm({ id, queue, onCancel, onSaved }: QueueFormProps) {
   return (
     <form
       autoComplete="off"
-      className="flex min-w-0 flex-col gap-1.5"
+      className="flex min-w-0 flex-col gap-2"
       data-slot="queue-form"
       id={id}
       onSubmit={(event) => {
@@ -414,7 +414,7 @@ export function VideoQueueControls({
   };
 
   return (
-    <div className="flex shrink-0 flex-col gap-1.5 border-b border-border px-3 py-2">
+    <div className="flex shrink-0 flex-col gap-2 border-b border-border px-3 py-2">
       <nav
         aria-label={t("videoQueues")}
         className="flex min-w-0 flex-wrap items-center gap-1 [&_[data-slot=queue-form]]:w-full [&_[data-slot=queue-form]]:sm:w-fit"

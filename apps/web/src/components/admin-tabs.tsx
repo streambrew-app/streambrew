@@ -26,7 +26,7 @@ export function AdminTabs() {
   return (
     <nav
       aria-label={t("adminPanel")}
-      className="flex max-w-full items-center gap-1.5 overflow-x-auto"
+      className="flex max-w-full items-center gap-2 overflow-x-auto"
     >
       <Link
         activeOptions={{ exact: true, includeSearch: false }}

@@ -13,8 +13,8 @@ type MetricProps = {
 
 function Metric({ title, value, note, subnote, icon: MetricIcon, iconClass }: MetricProps) {
   return (
-    <article className={`${panel} relative flex min-h-[148px] flex-col gap-4 overflow-hidden p-5`}>
-      <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
+    <article className={`${panel} relative flex flex-col gap-4 overflow-hidden p-6`}>
+      <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
         <span>{title}</span>
         <span className={`grid size-8 place-items-center rounded-full ${iconClass}`}>
           <MetricIcon aria-hidden="true" />
@@ -24,10 +24,10 @@ function Metric({ title, value, note, subnote, icon: MetricIcon, iconClass }: Me
         {value}
       </strong>
       <p
-        className={`text-caption font-semibold ${subnote ? "text-status-success-text dark:text-status-success-dark-surface" : "text-muted-foreground"}`}
+        className={`text-xs ${subnote ? "text-status-success-text dark:text-status-success-dark-surface" : "text-muted-foreground"}`}
       >
         {note}
-        {subnote && <span className="font-normal text-muted-foreground"> {subnote}</span>}
+        {subnote && <span className="text-muted-foreground"> {subnote}</span>}
       </p>
     </article>
   );

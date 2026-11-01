@@ -19,9 +19,9 @@ export function LegalDocument({
   title: string;
 }) {
   return (
-    <main className="relative min-h-dvh bg-background px-5 py-6 text-foreground sm:px-8 sm:py-10">
-      <article className="relative mx-auto flex w-full max-w-3xl flex-col gap-10 sm:gap-12">
-        <header className="relative flex flex-col gap-8 overflow-hidden border-b border-border pb-8 sm:gap-12 sm:pb-10">
+    <main className="relative min-h-dvh bg-background px-6 py-6 text-foreground sm:px-8 sm:py-12">
+      <article className="relative mx-auto flex w-full max-w-3xl flex-col gap-12">
+        <header className="relative flex flex-col gap-8 overflow-hidden border-b border-border pb-8 sm:gap-12 sm:pb-12">
           <Link
             className="relative z-10 flex w-fit items-center gap-2 font-heading text-xl font-medium text-foreground sm:text-2xl hover:text-primary focus-visible:rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
             to="/"
@@ -41,11 +41,11 @@ export function LegalDocument({
           />
         </header>
 
-        <div className="flex flex-col gap-9 text-base leading-7 text-muted-foreground">
+        <div className="flex flex-col gap-8 text-base leading-7 text-muted-foreground">
           {children}
         </div>
 
-        <footer className="flex flex-wrap items-center justify-between gap-5 border-t border-border pt-6 pb-8 text-sm">
+        <footer className="flex flex-wrap items-center justify-between gap-6 border-t border-border pt-6 pb-8 text-sm">
           <Link
             className="rounded-sm text-primary underline decoration-primary/30 underline-offset-4 hover:decoration-primary focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring"
             to={otherDocument.to}

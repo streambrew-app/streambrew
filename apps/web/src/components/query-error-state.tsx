@@ -40,7 +40,7 @@ export default function QueryErrorState({
 
   return (
     <div
-      className={cn("grid min-h-40 place-items-center p-5 text-center", className)}
+      className={cn("grid min-h-40 place-items-center p-6 text-center", className)}
       role="alert"
       {...props}
     >

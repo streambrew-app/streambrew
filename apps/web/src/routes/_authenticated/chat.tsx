@@ -511,7 +511,7 @@ function ChatOauthNotice({ page }: { page: ChatPageModel }) {
   return (
     <div
       className={cn(
-        "flex items-center gap-2 rounded-xl border px-3.5 py-2 text-compact",
+        "flex items-center gap-2 rounded-xl border px-4 py-2 text-sm",
         chatOauth === "success"
           ? "border-status-success-border/50 bg-status-success-surface text-status-success-text dark:bg-status-success-dark-surface/10 dark:text-status-success-dark-text"
           : "border-status-error-border/50 bg-status-error-surface text-status-error-text dark:bg-status-error-dark-surface/10 dark:text-status-error-dark-text",
@@ -550,13 +550,13 @@ function BroadcastResults({ page }: { page: ChatPageModel }) {
   const result = page.state.broadcastResult;
   if (!result) return null;
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="flex flex-wrap gap-2">
       {result.results.map((item) => {
         const source = page.indexes.sourceById.get(item.sourceId);
         return (
           <span
             className={cn(
-              "rounded-full px-2 py-0.5 text-micro",
+              "rounded-full px-2 py-0.5 text-xs",
               item.status === "succeeded"
                 ? "bg-status-success-solid/10 text-status-success-text dark:text-status-success-dark-text"
                 : item.status === "unsupported"
@@ -640,7 +640,7 @@ function ChatStreamStatus({ code }: { code: ChatConnectionErrorCode | null }) {
   return (
     <div aria-live="polite" className="shrink-0" role="status">
       {code !== null && (
-        <div className="flex items-center gap-2 border-b border-status-warning-border bg-status-warning-surface px-4 py-2 text-compact text-status-warning-deep dark:border-status-warning-dark-surface/25 dark:bg-status-warning-dark-surface/10 dark:text-status-warning-on-deep">
+        <div className="flex items-center gap-2 border-b border-status-warning-border bg-status-warning-surface px-4 py-2 text-sm text-status-warning-deep dark:border-status-warning-dark-surface/25 dark:bg-status-warning-dark-surface/10 dark:text-status-warning-on-deep">
           <Icons.warn
             aria-hidden="true"
             className="size-4 shrink-0 text-status-warning-text dark:text-status-warning-dark-text"
@@ -664,7 +664,7 @@ function ChatFeedPanel({ className, page }: { className?: string; page: ChatPage
       <CosmicPageHeader
         actions={
           <a
-            className="rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-semibold text-milky-paper transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-milky-paper xl:hidden"
+            className="rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-xs font-medium text-milky-paper transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-milky-paper xl:hidden"
             href="#chat-connections"
           >
             {t("connections")}
@@ -827,12 +827,12 @@ function ConnectionErrors({ page, source }: { page: ChatPageModel; source?: Chat
   return (
     <>
       {refreshSource.isError && refreshSource.variables?.sourceId === source.sourceId && (
-        <p role="alert" className="text-caption text-destructive">
+        <p role="alert" className="text-xs text-destructive">
           {chatErrorMessage(refreshSource.error)}
         </p>
       )}
       {setSourceEnabled.isError && setSourceEnabled.variables?.sourceId === source.sourceId && (
-        <p role="alert" className="text-caption text-destructive">
+        <p role="alert" className="text-xs text-destructive">
           {chatErrorMessage(setSourceEnabled.error)}
         </p>
       )}
@@ -920,7 +920,7 @@ function AvailableProviderButton({
       <span className="flex min-w-0 grow flex-col items-start">
         <span>{meta.label}</span>
         {provider.access !== "full" && (
-          <span className="max-w-full truncate text-micro font-normal text-muted-foreground">
+          <span className="max-w-full truncate text-xs font-normal text-muted-foreground">
             {t(provider.access === "read_only" ? "readOnly" : "unavailable")}
           </span>
         )}
@@ -956,7 +956,7 @@ function OverlayBackgroundPicker({ page }: { page: ChatPageModel }) {
     ["white", t("overlayBackgroundWhite")],
   ] as const;
   return (
-    <fieldset className="flex flex-col gap-1.5">
+    <fieldset className="flex flex-col gap-2">
       <legend className="text-xs text-muted-foreground">{t("overlayBackground")}</legend>
       <div className="grid grid-cols-3 gap-1 rounded-lg border border-border bg-muted/40 p-1">
         {options.map(([value, label]) => (
@@ -1019,7 +1019,7 @@ function OverlayFooter({ page }: { page: ChatPageModel }) {
         </Button>
       )}
       {page.state.overlayCopy === "failed" && (
-        <p className="text-caption text-destructive" role="alert">
+        <p className="text-xs text-destructive" role="alert">
           {t("copyFailed")}
         </p>
       )}

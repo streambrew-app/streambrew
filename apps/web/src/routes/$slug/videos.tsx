@@ -100,11 +100,11 @@ function SharedPriorityHeader({ priority }: { priority: SharedPriority }) {
   const { t } = useI18n(translations);
 
   return (
-    <header className="flex items-center justify-between gap-4 border-y border-border bg-secondary/50 px-4 py-2.5 sm:px-5">
+    <header className="flex items-center justify-between gap-4 border-y border-border bg-secondary/50 px-4 py-3 sm:px-6">
       <h2 className="min-w-0 truncate font-heading text-sm font-semibold text-card-foreground">
         {priority.label}
       </h2>
-      <span className="shrink-0 text-caption font-semibold text-primary">
+      <span className="shrink-0 text-xs font-medium text-primary">
         {t("durationRemaining", getRoundedWatchDurationParts(priority.remainingSeconds))}
       </span>
     </header>
@@ -155,7 +155,7 @@ function SharedVideoGroups({
       })}
       {unassignedVideos.length > 0 && (
         <div className="divide-y divide-border border-t border-border">
-          <h2 className="bg-secondary/50 px-4 py-2.5 font-heading text-sm font-semibold">
+          <h2 className="bg-secondary/50 px-4 py-3 font-heading text-sm font-semibold">
             {t("videoUnassigned")}
           </h2>
           {unassignedVideos.map((video) => (

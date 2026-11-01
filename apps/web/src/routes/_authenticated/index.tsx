@@ -14,7 +14,6 @@ import {
 } from "@web/components/donation-source";
 import { Icons } from "@web/components/icons";
 import { DashboardSkeleton } from "@web/components/loading-skeletons";
-import MockChart from "@web/components/mock-chart";
 import QueryErrorState from "@web/components/query-error-state";
 import {
   StreamElementsConnectionStatus,
@@ -32,7 +31,6 @@ import { EmptyState } from "@web/components/ui/empty-state";
 import { fmtAmount } from "@web/lib/fmt";
 import { createTranslations, createTranslator, useI18n, type Locale } from "@web/lib/i18n";
 import { preloadRouteQuery } from "@web/lib/trpc";
-import { cn } from "@web/lib/utils";
 import { z } from "zod";
 
 import { useDonationOverviewQ, useUserInfoSafe } from "../../hooks/api";
@@ -84,10 +82,6 @@ const translations = createTranslations({
     en: "View all",
     ru: "Посмотреть все",
   },
-  donationTrends: {
-    en: "Donation trends",
-    ru: "Динамика донатов",
-  },
   automaticSync: {
     en: "Donations sync automatically.",
     ru: "Новые донаты загружаются автоматически.",
@@ -137,14 +131,6 @@ const translations = createTranslations({
       otherAmounts.length === 0
         ? "За всё время"
         : `За всё время. Другие валюты: ${otherAmounts.join(", ")}`,
-  },
-  sampleChart: {
-    en: "Example",
-    ru: "Пример",
-  },
-  sampleChartDescription: {
-    en: "Sample data, not your donations.",
-    ru: "Пример данных, не ваши донаты.",
   },
   loadingDonations: {
     en: "Loading donations",
@@ -254,35 +240,24 @@ function Overview() {
   const donationsLength = donationOverviewQ.data?.donationCount ?? 0;
   const totalReceived = currencyMetric(currencies, (summary) => summary.totalAmount, locale);
   const averageDonation = currencyMetric(currencies, (summary) => summary.averageAmount, locale);
-  const chartDates = ["2026-06-29", "2026-07-06", "2026-07-13", "2026-07-20", "2026-07-27"].map(
-    (date) =>
-      new Intl.DateTimeFormat(locale === "ru" ? "ru-RU" : "en-US", {
-        day: "numeric",
-        month: "short",
-      }).format(new Date(`${date}T00:00:00`)),
-  );
 
   return (
     <section className="cosmic-panel flex min-h-0 min-w-0 flex-col overflow-hidden" id="top">
       <CosmicPageHeader title={t("overview")} />
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-        <div className="flex flex-col gap-4 p-4 sm:p-5">
+        <div className="flex flex-col gap-8 p-4 sm:p-6">
           {success !== undefined && (
             <div
-              className={`rounded-xl border px-3.5 py-3 text-compact ${success ? "border-status-success-border/50 bg-status-success-surface text-status-success-text dark:bg-status-success-dark-surface/10 dark:text-status-success-dark-text" : "border-status-error-border/50 bg-status-error-surface text-status-error-text dark:bg-status-error-dark-surface/10 dark:text-status-error-dark-text"}`}
+              className={`rounded-xl border px-4 py-3 text-sm ${success ? "border-status-success-border/50 bg-status-success-surface text-status-success-text dark:bg-status-success-dark-surface/10 dark:text-status-success-dark-text" : "border-status-error-border/50 bg-status-error-surface text-status-error-text dark:bg-status-error-dark-surface/10 dark:text-status-error-dark-text"}`}
             >
               {success ? t("connected") : t("notConnected")}
             </div>
           )}
           {donationOverviewQ.isLoading ? (
-            <DashboardSkeleton
-              aria-busy="true"
-              aria-label={t("loadingDonations")}
-              className="mt-7"
-            />
+            <DashboardSkeleton aria-busy="true" aria-label={t("loadingDonations")} />
           ) : donationOverviewQ.isError ? (
             <QueryErrorState
-              className="mt-7 rounded-2xl border border-border bg-card sm:mt-9"
+              className="rounded-2xl border border-border bg-card"
               isRetrying={donationOverviewQ.isFetching}
               onRetry={() => void donationOverviewQ.refetch()}
             />
@@ -311,19 +286,18 @@ function Overview() {
                   iconClass="bg-mint-signal/18 text-status-success-text dark:text-status-success-dark-text"
                 />
               </section>
-              <section className="grid gap-4 xl:grid-cols-[1.03fr_.97fr]">
+              <section className="grid items-start gap-4 xl:grid-cols-2">
                 <article className={panel} id="donations">
-                  <div className="flex items-start justify-between p-5">
-                    <div className="flex flex-col gap-1">
-                      <h2 className="font-heading text-lg font-semibold text-card-foreground">
-                        {t("recentActivity")}
-                      </h2>
-                    </div>
+                  <div className="flex items-center justify-between gap-3 p-6">
+                    <h2 className="font-heading text-lg font-semibold text-card-foreground">
+                      {t("recentActivity")}
+                    </h2>
                     <Link
+                      className={buttonVariants({ variant: "outline", size: "sm" })}
                       to="/donations"
-                      className="flex items-center text-xs font-bold text-primary hover:text-primary/75"
                     >
-                      {t("viewAll")} <Icons.chevronRight aria-hidden="true" size={16} />
+                      {t("viewAll")}{" "}
+                      <Icons.chevronRight aria-hidden="true" data-icon="inline-end" />
                     </Link>
                   </div>
                   {donationOverviewQ.data?.recentDonations.length ? (
@@ -347,93 +321,62 @@ function Overview() {
                     />
                   )}
                 </article>
-                <article className={`${panel} min-h-[290px] overflow-hidden`}>
-                  <div className="flex items-start justify-between p-5 pb-1">
-                    <div>
-                      <h2 className="font-heading text-lg font-semibold text-card-foreground">
-                        {t("donationTrends")}
-                      </h2>
-                      <p className="mt-1.5 max-w-sm text-xs leading-relaxed text-muted-foreground">
-                        {t("sampleChartDescription")}
-                      </p>
+                <div className="flex min-w-0 flex-col gap-4">
+                  <article className={`${panel} flex flex-col gap-4 p-6`} id="integrations">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex flex-col gap-1">
+                        <h2 className="font-heading text-lg font-semibold text-card-foreground">
+                          {t("donationSources")}
+                        </h2>
+                        <p className="text-xs text-muted-foreground">
+                          {t(hasDonationConnection ? "automaticSync" : "connectAllDonations")}
+                        </p>
+                      </div>
+                      <Link
+                        className={buttonVariants({ variant: "outline", size: "sm" })}
+                        to="/integrations"
+                      >
+                        {t("manage")}{" "}
+                        <Icons.chevronRight aria-hidden="true" data-icon="inline-end" />
+                      </Link>
                     </div>
-                    <span className="shrink-0 rounded-md bg-muted px-2 py-1.5 text-caption font-medium text-muted-foreground">
-                      {t("sampleChart")}
-                    </span>
-                  </div>
-                  <div className="relative h-52 px-4 pt-3 pb-2 pl-10">
-                    <div className="absolute bottom-9 left-2 flex h-[164px] flex-col justify-between text-micro text-muted-foreground">
-                      <span>6k</span>
-                      <span>4k</span>
-                      <span>2k</span>
-                      <span>0</span>
-                    </div>
-                    <MockChart className="h-[164px] w-full" />
-                    <div className="flex justify-between text-micro text-muted-foreground">
-                      {chartDates.map((date) => (
-                        <span key={date}>{date}</span>
+                    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+                      {donationConnections.map(({ name, source, mark, status }) => (
+                        <div
+                          className="flex min-w-0 items-center gap-2 rounded-xl bg-muted/55 p-2"
+                          key={source}
+                        >
+                          {mark}
+                          <span className="min-w-0 grow truncate text-sm font-medium text-card-foreground">
+                            {name}
+                          </span>
+                          {status}
+                        </div>
                       ))}
                     </div>
-                  </div>
-                </article>
-              </section>
-              <section className="grid items-start gap-4 xl:grid-cols-2">
-                <article
-                  className={`${panel} flex min-h-[120px] flex-col gap-4 p-5`}
-                  id="integrations"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <h2 className="font-heading text-base font-semibold text-card-foreground">
-                        {t("donationSources")}
-                      </h2>
-                      <p className="text-xs text-muted-foreground">
-                        {t(hasDonationConnection ? "automaticSync" : "connectAllDonations")}
-                      </p>
+                  </article>
+                  <article className="relative flex flex-wrap items-center gap-3 overflow-hidden rounded-2xl bg-overlay-invite p-6 text-milky-paper">
+                    <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/15">
+                      <Icons.copy aria-hidden="true" />
                     </div>
+                    <h2 className="font-heading text-lg font-semibold">{t("readyForOverlay")}</h2>
                     <Link
-                      className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-2 text-caption font-bold text-foreground transition hover:bg-muted"
-                      to="/integrations"
+                      className={buttonVariants({
+                        variant: "outline",
+                        size: "sm",
+                        className: "z-10 ml-auto",
+                      })}
+                      to="/chat"
                     >
-                      {t("manage")} <Icons.chevronRight aria-hidden="true" size={16} />
+                      {t("createOverlay")}{" "}
+                      <Icons.chevronRight aria-hidden="true" data-icon="inline-end" />
                     </Link>
-                  </div>
-                  <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-                    {donationConnections.map(({ name, source, mark, status }) => (
-                      <div
-                        className="flex min-w-0 items-center gap-2 rounded-xl bg-muted/55 p-2.5"
-                        key={source}
-                      >
-                        {mark}
-                        <span className="min-w-0 grow truncate text-xs font-semibold text-card-foreground">
-                          {name}
-                        </span>
-                        {status}
-                      </div>
-                    ))}
-                  </div>
-                </article>
-                <article className="relative flex min-h-[120px] flex-wrap items-center gap-3 overflow-hidden rounded-2xl bg-overlay-invite p-5 text-milky-paper">
-                  <div className="grid size-9 shrink-0 place-items-center rounded-xl bg-white/15">
-                    <Icons.copy aria-hidden="true" />
-                  </div>
-                  <div>
-                    <h2 className="font-heading text-base font-semibold">{t("readyForOverlay")}</h2>
-                  </div>
-                  <Link
-                    className={cn(
-                      buttonVariants(),
-                      "z-10 ml-auto h-auto bg-white px-2.5 py-2 text-caption font-bold text-overlay-invite hover:bg-white/90",
-                    )}
-                    to="/chat"
-                  >
-                    {t("createOverlay")} <Icons.chevronRight aria-hidden="true" size={17} />
-                  </Link>
-                  <CosmicArt
-                    className="pointer-events-none absolute -right-4 -bottom-9 w-40 text-white/30 opacity-35"
-                    variant="orbit"
-                  />
-                </article>
+                    <CosmicArt
+                      className="pointer-events-none absolute -right-4 -bottom-9 w-40 text-white/30 opacity-35"
+                      variant="orbit"
+                    />
+                  </article>
+                </div>
               </section>
             </>
           )}

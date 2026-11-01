@@ -3,15 +3,15 @@ import { describe, expect, it } from "vitest";
 import { cn } from "./utils";
 
 describe("cn", () => {
-  it("keeps a compact button's text color when applying its size", () => {
-    expect(cn("bg-secondary text-secondary-foreground text-sm", "text-compact")).toBe(
-      "bg-secondary text-secondary-foreground text-compact",
+  it("keeps an overlay message's text color when applying its size", () => {
+    expect(cn("text-white text-sm", "text-overlay-message")).toBe(
+      "text-white text-overlay-message",
     );
   });
 
-  it("keeps metadata sizing when applying a status color", () => {
-    expect(cn("text-micro font-bold", "text-status-warning-text")).toBe(
-      "text-micro font-bold text-status-warning-text",
+  it("keeps custom sizing when applying a status color", () => {
+    expect(cn("text-error-display font-bold", "text-status-warning-text")).toBe(
+      "text-error-display font-bold text-status-warning-text",
     );
   });
 
