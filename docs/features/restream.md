@@ -139,18 +139,19 @@ destination key first. Rotating `RESTREAM_MEDIA_SHARED_SECRET` requires an
 ordered deployment of both planes and briefly prevents new streams, so do it
 during a maintenance window.
 
-## Releases and verification
+## Deployment and verification
 
 The workflow's media jobs run only when the **repository** variable
 `HETZNER_RESTREAM_ENABLED` is exactly `true`; a missing variable also skips them.
-This gate applies to releases and manual dispatches. Keep it at repository scope
+This gate applies to pushes and manual dispatches. Keep it at repository scope
 so revision resolution can check it before entering the `Production` environment.
 
 `.github/workflows/restream.yml` builds an immutable `linux/amd64` image, uses
 `hcloud` to resolve the configured server, copies only the Compose definition
 and generated runtime environment, then waits for the container health check
-and the public RTMP listener. It runs when the media-plane files change and can
-also deploy an explicit revision manually.
+and the public RTMP listener. It runs on pushes to `main` that change the media-plane files and can
+also deploy an explicit revision manually. It reuses the merge queue's successful
+CI run for the same commit when one exists.
 
 To resume hosting, provision the node, update `HETZNER_RESTREAM_SERVER` and the
 pinned SSH host key, then explicitly enable deployments:
@@ -191,7 +192,7 @@ gh workflow disable restream.yml
 
 Verify that there are no active RTMP publishers on the node. Replace the
 `Production` variable `RESTREAM_INGEST_URL` with `rtmp://127.0.0.1:1935` so future
-AWS releases cannot advertise an address that Hetzner may reassign. The running
+AWS deployments cannot advertise an address that Hetzner may reassign. The running
 AWS application loads this value at startup; apply it through the normal AWS
 deployment before reusing multistream.
 

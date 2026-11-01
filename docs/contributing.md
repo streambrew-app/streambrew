@@ -32,6 +32,13 @@ code. Documentation may be updated alongside the behavior it describes.
    failures or unavailable checks explicitly; do not describe them as passing.
 4. Hand a green, review-ready PR to the human for review, approval, and merge.
    The merge authorization boundary is defined in [AGENTS.md](../AGENTS.md#working-agreements).
+   Merging is cheap: the merge queue tests the PR against the latest `main`, and
+   every merge to `main` deploys to production. Recover from a bad merge with a
+   rollback and a fix-forward PR as described in the
+   [deployment guide](operations/deployment.md#rollback). A PR does not need to be
+   up to date with `main`; enable auto-merge to add it to the queue once checks pass.
+   A migration must stay compatible with the revision in production; see
+   [migrations](engineering/sql.md#migrations).
 5. Turn recurring review findings into automated repository checks when practical.
 
 Green CI establishes automated correctness only. Follow the decision and approval

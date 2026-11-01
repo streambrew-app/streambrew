@@ -1,9 +1,9 @@
 name: Production
 
 on:
-  release:
-    types:
-      - published
+  push:
+    branches:
+      - main
   workflow_dispatch:
     inputs:
       revision:
@@ -11,11 +11,6 @@ on:
         required: true
         default: main
         type: string
-      apply_migrations:
-        description: Apply pending database migrations before deploying the revision
-        required: true
-        default: false
-        type: boolean
       restart_database:
         description: Recreate PostgreSQL to reload database and WAL archive configuration
         required: true
@@ -29,54 +24,63 @@ on:
 
 permissions: {}
 
+# Pushes to main deploy in order: a newer pending push replaces an older pending
+# one. Manual runs are not superseded by pushes at the workflow level.
+concurrency:
+  group: ${{ github.event_name == 'push' && 'production-main' || format('production-manual-{0}', github.run_id) }}
+  cancel-in-progress: false
+
 jobs:
   resolve:
     name: Resolve revision
+    # Setting the repository variable PRODUCTION_AUTO_DEPLOY=false pauses
+    # deployments from main, for example while a rollback is in production.
+    if: github.event_name != 'push' || vars.PRODUCTION_AUTO_DEPLOY != 'false'
     runs-on: ubuntu-latest
     permissions:
+      checks: read
       contents: read
     outputs:
+      ci_passed: ${{ steps.revision.outputs.ci_passed }}
       postgres_tag: ${{ steps.revision.outputs.postgres_tag }}
       sha: ${{ steps.revision.outputs.sha }}
     steps:
       - name: Check out revision
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.revision || github.event.release.tag_name }}
-          fetch-depth: 0
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.revision || github.sha }}
 
-      - name: Validate and record revision
+      - name: Record revision and earlier CI result
         id: revision
         env:
-          RELEASE_PRERELEASE: ${{ github.event.release.prerelease || false }}
-          RELEASE_TAG: ${{ github.event.release.tag_name || '' }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
           sha="$(git rev-parse HEAD)"
-          if [[ "${{ github.event_name }}" == release ]]; then
-            if [[ "$RELEASE_PRERELEASE" == true ]]; then
-              echo "Prereleases cannot deploy to production." >&2
-              exit 1
-            fi
-            if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-              echo "Production release tag must match vX.Y.Z, got: $RELEASE_TAG" >&2
-              exit 1
-            fi
 
-            git fetch --no-tags origin \
-              +refs/heads/main:refs/remotes/origin/main
-            if ! git merge-base --is-ancestor "$sha" origin/main; then
-              echo "Release tag $RELEASE_TAG does not point to a commit on main." >&2
-              exit 1
-            fi
+          # The merge queue fast-forwards main to the commit it tested, so its
+          # successful Quality checks run already covers this SHA.
+          passed_runs="$(gh api \
+            "repos/$GITHUB_REPOSITORY/commits/$sha/check-runs?check_name=Quality%20checks&filter=all&per_page=100" \
+            --jq '[.check_runs[] | select(.app.slug == "github-actions" and .conclusion == "success")] | length')"
+          ci_passed=false
+          if [[ "$passed_runs" -gt 0 ]]; then
+            ci_passed=true
+            echo "Reusing the successful Quality checks run for $sha."
+          else
+            echo "No successful Quality checks run for $sha; running CI."
           fi
 
-          echo "sha=$sha" >> "$GITHUB_OUTPUT"
-          echo "postgres_tag=$(git rev-parse HEAD:docker/postgres-walg)" >> "$GITHUB_OUTPUT"
+          {
+            echo "ci_passed=$ci_passed"
+            echo "sha=$sha"
+            echo "postgres_tag=$(git rev-parse HEAD:docker/postgres-walg)"
+          } >> "$GITHUB_OUTPUT"
 
   quality:
     name: CI
+    if: needs.resolve.outputs.ci_passed != 'true'
     needs: resolve
     permissions:
       contents: read
@@ -89,7 +93,7 @@ jobs:
     if: >-
       always() &&
       needs.resolve.result == 'success' &&
-      needs.quality.result == 'success'
+      (needs.quality.result == 'success' || needs.quality.result == 'skipped')
     needs:
       - resolve
       - quality
@@ -136,8 +140,8 @@ jobs:
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ needs.resolve.outputs.sha }}
-          cache-from: type=gha,scope=application
-          cache-to: type=gha,mode=max,scope=application,timeout=1m,ignore-error=true
+          cache-from: type=registry,ref=ghcr.io/${{ github.repository_owner }}/streambrew:buildcache
+          cache-to: type=registry,ref=ghcr.io/${{ github.repository_owner }}/streambrew:buildcache,mode=max,ignore-error=true
 
       - name: Check for existing PostgreSQL WAL-G image
         id: postgres_image
@@ -170,7 +174,8 @@ jobs:
     if: >-
       always() &&
       needs.resolve.result == 'success' &&
-      needs.publish.result == 'success'
+      needs.publish.result == 'success' &&
+      (github.event_name != 'push' || vars.PRODUCTION_AUTO_DEPLOY != 'false')
     needs:
       - resolve
       - publish
@@ -190,12 +195,12 @@ jobs:
       POSTGRES_IMAGE: ghcr.io/${{ github.repository_owner }}/streambrew-postgres-walg:${{ needs.resolve.outputs.postgres_tag }}
       REMOTE_ENV_FILE: .streambrew-production-env-${{ github.run_id }}-${{ github.run_attempt }}
       REMOTE_AXIOM_FILE: .streambrew-axiom-token-${{ github.run_id }}-${{ github.run_attempt }}
-      APPLY_MIGRATIONS: ${{ github.event_name == 'workflow_dispatch' && inputs.apply_migrations || false }}
       AWS_LIGHTSAIL_INSTANCE_NAME: ${{ vars.AWS_LIGHTSAIL_INSTANCE_NAME || 'Ubuntu-1' }}
       AWS_PROJECT_NAME: ${{ vars.AWS_PROJECT_NAME || 'streambrew' }}
       AWS_REGION: ${{ vars.AWS_REGION }}
       RESTART_DATABASE: ${{ github.event_name == 'workflow_dispatch' && inputs.restart_database || false }}
       RELOAD_RUNTIME_SERVICES: ${{ github.event_name == 'workflow_dispatch' && inputs.reload_runtime_services || false }}
+      EVENT_NAME: ${{ github.event_name }}
       TARGET_SHA: ${{ needs.resolve.outputs.sha }}
       TF_IN_AUTOMATION: "true"
       TF_INPUT: "false"
@@ -530,30 +535,31 @@ jobs:
           previous_app_image="$(terraform_state -chdir=infra/production output -raw application_image 2>/dev/null || true)"
           previous_postgres_image="$(terraform_state -chdir=infra/production output -raw postgres_image 2>/dev/null || true)"
 
-          migrations_changed=true
-          if [[ -n "$previous_revision" ]] && git diff --quiet "$previous_revision" "$TARGET_SHA" -- db/migrations; then
-            migrations_changed=false
+          echo "PREVIOUS_REVISION=$previous_revision" >> "$GITHUB_ENV"
+
+          previous_known=false
+          if [[ -n "$previous_revision" ]] && git cat-file -e "$previous_revision^{commit}" 2>/dev/null; then
+            previous_known=true
           fi
 
-          if [[ "$migrations_changed" == true && "$APPLY_MIGRATIONS" != true ]]; then
-            if [[ -z "$previous_revision" ]]; then
-              echo "Bootstrapping PostgreSQL before the initial migration run."
-              terraform_state -chdir=infra/production plan \
-                -input=false \
-                -target=docker_container.postgres \
-                -out="$RUNNER_TEMP/database-bootstrap.tfplan"
-              terraform_state -chdir=infra/production apply \
-                -input=false \
-                -auto-approve \
-                "$RUNNER_TEMP/database-bootstrap.tfplan"
-            fi
-            echo "db/migrations differs from the deployed Terraform state." >&2
-            echo "Review the migrations, then run this workflow for $TARGET_SHA" >&2
-            echo "with apply_migrations=true." >&2
-            exit 42
+          # A delayed push run must not replace a newer revision that is already
+          # deployed. Manual runs may deploy an older revision on purpose.
+          if [[ "$EVENT_NAME" == push && "$previous_known" == true && "$previous_revision" != "$TARGET_SHA" ]] &&
+            git merge-base --is-ancestor "$TARGET_SHA" "$previous_revision"; then
+            echo "Production already runs $previous_revision, which contains $TARGET_SHA; skipping."
+            exit 0
           fi
 
-          if [[ "$migrations_changed" == true ]]; then
+          # Only migration files that the target adds or changes can be pending.
+          # Rolling back to an older revision removes files and applies nothing.
+          migrations_pending=true
+          if [[ "$previous_known" == true ]] && [[ -z "$(git diff --name-only --diff-filter=AM \
+            "$previous_revision" "$TARGET_SHA" -- db/migrations)" ]]; then
+            migrations_pending=false
+          fi
+
+          if [[ "$migrations_pending" == true ]]; then
+            # PostgreSQL must exist before the first migration run.
             terraform_state -chdir=infra/production plan \
               -input=false \
               -target=docker_container.postgres \
@@ -563,23 +569,8 @@ jobs:
               -auto-approve \
               "$RUNNER_TEMP/migration-prerequisites.tfplan"
 
-            stopped_containers=()
-            if [[ -n "$previous_revision" ]]; then
-              mapfile -t stopped_containers < <(ssh streambrew-production sh -s <<'REMOTE'
-          set -eu
-
-          for service in web video; do
-            for container in $(docker ps -q \
-              --filter 'label=com.streambrew.managed-by=terraform' \
-              --filter "label=com.docker.compose.service=$service"); do
-              docker stop "$container" >/dev/null
-              printf '%s\n' "$container"
-            done
-          done
-          REMOTE
-              )
-            fi
-
+            # Migrations must stay compatible with the revision that is still
+            # running (expand/contract), so the application keeps serving.
             if ! ssh streambrew-production sh -s -- \
               "$TF_VAR_runtime_config_path" \
               "$TF_VAR_runtime_secrets_gid" \
@@ -600,12 +591,7 @@ jobs:
             -c 'set -a; . /run/streambrew/runtime.env; set +a; DBMATE_NO_DUMP_SCHEMA=true DATABASE_URL="${DATABASE_URL}?sslmode=disable" exec bunx dbmate --migrations-dir /app/db/migrations up'
           REMOTE
             then
-              if [[ "${#stopped_containers[@]}" -gt 0 ]]; then
-                ssh streambrew-production sh -s -- "${stopped_containers[@]}" <<'REMOTE'
-          set -eu
-          docker start "$@" >/dev/null
-          REMOTE
-              fi
+              echo "Database migrations failed; production still runs ${previous_revision:-no revision}." >&2
               exit 1
             fi
           fi
@@ -689,6 +675,7 @@ jobs:
           fi
 
           if [[ "$deployment_succeeded" == true ]]; then
+            echo "Deployed \`$TARGET_SHA\` (previous revision: \`${previous_revision:-none}\`)." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
@@ -723,7 +710,42 @@ jobs:
               -input=false \
               -auto-approve \
               "$RUNNER_TEMP/rollback.tfplan"
+          echo "ROLLED_BACK=true" >> "$GITHUB_ENV"
+          echo "Deployment of \`$TARGET_SHA\` failed; rolled back to \`$previous_revision\`." >> "$GITHUB_STEP_SUMMARY"
           exit 1
+
+      - name: Notify about the failed deployment
+        if: failure()
+        continue-on-error: true
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          TELEGRAM_ADMIN_CHAT_ID: ${{ vars.TELEGRAM_ADMIN_CHAT_ID }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$TELEGRAM_BOT_TOKEN" || -z "$TELEGRAM_ADMIN_CHAT_ID" ]]; then
+            echo "Telegram is not configured; skipping the failure notification."
+            exit 0
+          fi
+
+          if [[ "${ROLLED_BACK:-}" == true ]]; then
+            outcome="Automatic rollback restored ${PREVIOUS_REVISION:0:12}."
+          else
+            outcome="No automatic rollback ran; check the run."
+          fi
+          text="$(printf 'ERROR · deploy · production\nDeployment of %s failed: %s\n%s\n%s' \
+            "${TARGET_SHA:0:12}" \
+            "$(git log -1 --format=%s "$TARGET_SHA")" \
+            "$outcome" \
+            "$RUN_URL")"
+
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --data-urlencode "chat_id=$TELEGRAM_ADMIN_CHAT_ID" \
+            --data-urlencode "text=$text" \
+            "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/sendMessage" >/dev/null
 
       - name: Remove transient uploads
         if: always()

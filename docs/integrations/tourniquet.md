@@ -177,11 +177,9 @@ cannot verify donation persistence because its event is intentionally ignored.
 The integration requires a forward database migration for the `tourniquet`
 donation-source enum value, its private connection table, and sufficient
 original donation/alert amount and asset capacity for Tourniquet crypto values.
-Deploy the matching web and donations-service revisions together. Following
-the repository's [release procedure](../operations/deployment.md#releases-and-migrations), a
-revision containing this migration stops before production deployment until an
-operator reviews it and reruns the **Production** workflow for the same
-revision with `apply_migrations=true`.
+Deploy the matching web and donations-service revisions together. The
+[deployment workflow](../operations/deployment.md#deployments-and-migrations) applies
+this migration automatically before starting the new revision.
 
 After deployment:
 
