@@ -1,7 +1,4 @@
 import { rurl, type ReadonlyURL } from "@lebedevna/readonly-url";
-import { LinkifyIt } from "linkify-it";
-
-const linkify = new LinkifyIt({ fuzzyLink: true });
 
 function parseUrl(url: string) {
   try {
@@ -38,13 +35,4 @@ export function youtubeVideoId(url: string) {
       : (parsedUrl.searchParams.get("v") ??
         parsedUrl.pathname.match(/^\/(?:embed|shorts)\/([^/]+)/)?.[1]);
   return id || null;
-}
-
-export function extractYoutubeUrls(message: string | null) {
-  const youtubeUrls = (linkify.match(message ?? "") ?? [])
-    .map((match) => parseUrl(match.url))
-    .filter((url): url is ReadonlyURL => url !== null && isYoutubeUrl(url))
-    .map((url) => (url.protocol === "http:" ? `https:${url.href.slice(5)}` : url.href));
-
-  return Array.from(new Set(youtubeUrls));
 }
