@@ -1,8 +1,9 @@
+import { cn } from "@web/lib/utils";
+
 import type { IconComponent } from "../icons";
 
-const panel = "cosmic-panel";
-
 type MetricProps = {
+  className?: string;
   title: string;
   value: string;
   note: string;
@@ -11,24 +12,32 @@ type MetricProps = {
   iconClass: string;
 };
 
-function Metric({ title, value, note, subnote, icon: MetricIcon, iconClass }: MetricProps) {
+function Metric({
+  className,
+  title,
+  value,
+  note,
+  subnote,
+  icon: MetricIcon,
+  iconClass,
+}: MetricProps) {
   return (
-    <article className={`${panel} relative flex flex-col gap-4 overflow-hidden p-6`}>
-      <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-        <span>{title}</span>
-        <span className={`grid size-8 place-items-center rounded-full ${iconClass}`}>
-          <MetricIcon aria-hidden="true" />
-        </span>
+    <article className={cn("flex min-w-0 items-start justify-between gap-4 px-6 py-4", className)}>
+      <div className="flex min-w-0 flex-col gap-1">
+        <span className="text-sm font-medium text-muted-foreground">{title}</span>
+        <strong className="block font-heading text-3xl leading-tight font-medium tracking-tight wrap-anywhere text-card-foreground tabular-nums">
+          {value}
+        </strong>
+        <p
+          className={`text-sm ${subnote ? "text-status-success-text dark:text-status-success-dark-surface" : "text-muted-foreground"}`}
+        >
+          {note}
+          {subnote && <span className="text-muted-foreground"> {subnote}</span>}
+        </p>
       </div>
-      <strong className="block font-heading text-3xl leading-tight font-medium tracking-tight wrap-anywhere text-card-foreground tabular-nums">
-        {value}
-      </strong>
-      <p
-        className={`text-xs ${subnote ? "text-status-success-text dark:text-status-success-dark-surface" : "text-muted-foreground"}`}
-      >
-        {note}
-        {subnote && <span className="text-muted-foreground"> {subnote}</span>}
-      </p>
+      <span className={cn("grid size-9 shrink-0 place-items-center rounded-full", iconClass)}>
+        <MetricIcon aria-hidden="true" className="size-4.5" />
+      </span>
     </article>
   );
 }

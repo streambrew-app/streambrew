@@ -289,8 +289,9 @@ Padding, margin, and gap use the 4, 8, 12, 16, 24, 32, 48, and 64 px steps
 exception. Space between groups exceeds space within them: dashboard groups are
 32 px apart while their cards sit 16 px apart. Prefer content sizing over
 hand-tuned pixel heights, and share column tracks between rows that should align.
-Forms and settings columns stay readable at up to `max-w-2xl` instead of
-stretching across the panel.
+Settings use one centered `max-w-3xl` column instead of stretching across the
+panel. Dashboard statistics share one panel divided into columns, with 14 px
+labels and notes around each value and an 18 px icon in a 36 px circle.
 Keep flex children `min-w-0` and allow long names, messages, and URLs to wrap. Shared page headers have 16 px
 horizontal padding, increasing to 24 px at `sm`, with 12 px vertical padding.
 They reserve room for faint right-side art.

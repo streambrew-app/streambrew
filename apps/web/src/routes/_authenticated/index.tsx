@@ -263,7 +263,10 @@ function Overview() {
             />
           ) : (
             <>
-              <section className="grid gap-4 md:grid-cols-3" aria-label={t("streamStatistics")}>
+              <section
+                className="cosmic-panel grid divide-y divide-border overflow-hidden md:grid-cols-3 md:divide-x md:divide-y-0"
+                aria-label={t("streamStatistics")}
+              >
                 <Metric
                   title={t("totalReceived")}
                   value={totalReceived.value}
