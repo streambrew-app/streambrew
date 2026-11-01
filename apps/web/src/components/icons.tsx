@@ -84,6 +84,7 @@ export const Icons = {
   platform: icons.Share2,
   pause: icons.Pause,
   play: icons.Play,
+  reconnectSource: icons.Plug,
   retry: icons.RotateCcw,
   removeSource: icons.Trash2,
   rotateToken: icons.RefreshCw,

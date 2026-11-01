@@ -2,11 +2,12 @@ import {
   chatMessageKey,
   type ChatConnectionErrorCode,
   type ChatMessage,
+  type ChatSourceId,
   type ChatSourceState,
   type ChatStreamEvent,
 } from "@streambrew/packages/chat.js";
 import { useApi } from "@web/lib/trpc";
-import { useEffect, useReducer } from "react";
+import { useEffect, useEffectEvent, useReducer } from "react";
 
 const reconnectInitialDelayMs = 1_000;
 const reconnectMaxDelayMs = 30_000;
@@ -103,11 +104,20 @@ function failureCode(
  * Follows the streamer's live chat. When the subscription stops while the consumer is still
  * mounted, for example because the chat service restarted, it reports a connection error and
  * resubscribes with bounded exponential backoff, except for a revoked overlay link. Received
- * messages are kept across reconnects.
+ * messages are kept across reconnects. `onSourceError` runs when a source reports `error`, which
+ * may mean that its connection now has to be reconnected.
  */
-export function useChatServiceStream(mode: "editor" | "overlay" = "editor", overlayToken?: string) {
+export function useChatServiceStream(
+  mode: "editor" | "overlay" = "editor",
+  overlayToken?: string,
+  onSourceError?: (sourceId: ChatSourceId) => void,
+) {
   const { trpcClient } = useApi();
   const [state, dispatch] = useReducer(reducer, initialState);
+  const receive = useEffectEvent((event: ChatStreamEvent) => {
+    dispatch({ type: "event", event });
+    if (event.type === "state" && event.state === "error") onSourceError?.(event.sourceId);
+  });
 
   useEffect(() => {
     dispatch({ type: "reset" });
@@ -144,7 +154,7 @@ export function useChatServiceStream(mode: "editor" | "overlay" = "editor", over
       };
       subscription = open({
         onStarted: () => dispatch({ type: "connected" }),
-        onData: (event) => dispatch({ type: "event", event }),
+        onData: (event) => receive(event),
         onConnectionStateChange: ({ state, error }) => {
           // The transport retries interrupted connections itself; surface the gap meanwhile.
           if (state === "connecting" && error !== null) {
