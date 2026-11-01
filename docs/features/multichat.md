@@ -163,10 +163,11 @@ The status update uses the same `token_version` guard without incrementing it. A
 holds rejected credentials cannot overwrite a refresh or reconnect that already replaced them; it
 reports a retryable error, and reconciliation restarts the collector with the newer credentials.
 After the update, the collector publishes the source `error` state and stops instead of restarting.
-Reconciliation, Kick webhooks, and **Check stream** skip sources of connections that are not
-`connected`. The multichat page refreshes the configuration when a source reports `error`, then
-shows the expired access with a reconnect action. OAuth providers reconnect through the usual OAuth
-flow; Boosty reconnects by submitting its token form again.
+Collector reconciliation and Kick webhooks skip sources of connections that are not `connected`,
+so their messages no longer reach the multichat. **Check stream** is hidden and rejected for them.
+The multichat page reloads the configuration when a source reports `error`, then shows the expired
+access with a reconnect action. OAuth providers reconnect through the usual OAuth flow; Boosty
+reconnects by submitting its token form again.
 
 Reconnecting the same provider account updates its tokens, sets the status to `connected`, and
 increments `token_version`. A connection or reconnect requests collector reconciliation for its

@@ -12,6 +12,7 @@ import { MAX_CHAT_MESSAGE_LENGTH } from "@streambrew/packages/chat.js";
 import { createFileRoute } from "@tanstack/react-router";
 import { BoostyConnectionForm } from "@web/components/boosty-connection-form";
 import { ChatFeed } from "@web/components/chat-feed";
+import { ChatReconnectNotice } from "@web/components/chat-reconnect-notice";
 import { ChatProviderMeta, Icons } from "@web/components/icons";
 import { Button } from "@web/components/ui/button";
 import { CosmicPageHeader } from "@web/components/ui/cosmic-page-header";
@@ -411,7 +412,10 @@ function useChatPageModel() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const { availabilityQuery, configQuery } = useChatServiceQueries();
-  const stream = useChatServiceStream();
+  // A source error may come from a connection that now has to be reconnected.
+  const stream = useChatServiceStream("editor", undefined, () => {
+    void configQuery.refetch({ cancelRefetch: false });
+  });
   const state = useChatPageState();
   const mutations = useChatServiceMutations({
     onBroadcastSuccess: (result) => state.setBroadcastResult(result),
@@ -425,9 +429,8 @@ function useChatPageModel() {
   const indexes = chatConfigIndexes(config);
   const capabilitiesForSource = (sourceId: ChatSourceId) => {
     const source = indexes.sourceById.get(sourceId);
-    return source?.enabled
-      ? (indexes.connectionsById.get(source.connectionId)?.capabilities ?? [])
-      : [];
+    const connection = source && indexes.connectionsById.get(source.connectionId);
+    return source?.enabled && connection?.status === "connected" ? connection.capabilities : [];
   };
   const writableConnectionCount =
     config?.sources.filter((source) => {
@@ -443,9 +446,18 @@ function useChatPageModel() {
       ? null
       : withChatOverlayBackground(state.overlayUrl, state.overlayBackground);
 
+  const connectProvider = (provider: ChatProvider) => {
+    if (provider === "boosty") {
+      state.setBoostyFormOpen(true);
+    } else {
+      mutations.startOauth.mutate({ provider });
+    }
+  };
+
   return {
     availability: (availabilityQuery.data ?? []) as ChatProviderAvailability[],
     capabilitiesForSource,
+    connectProvider,
     config,
     configQuery,
     configuredOverlayUrl,
@@ -737,7 +749,9 @@ function ConnectionActions({
 }) {
   const { t } = useI18n(chatTranslations);
   const { disconnect, refreshSource, setSourceEnabled } = page.mutations;
-  const refreshable = connection.provider === "youtube" || connection.provider === "vk_video";
+  const refreshable =
+    connection.status === "connected" &&
+    (connection.provider === "youtube" || connection.provider === "vk_video");
   const isRefreshing =
     source !== undefined &&
     refreshSource.isPending &&
@@ -835,7 +849,10 @@ function ConnectionCard({
 }) {
   const { locale } = useI18n(translations);
   const source = page.indexes.sourceByConnection.get(connection.connectionId);
-  const sourceState = source ? page.stream.statuses[source.sourceId] : undefined;
+  // A connection awaiting reconnect collects nothing, so its last live state no longer applies.
+  const sourceState =
+    connection.status === "connected" ? source && page.stream.statuses[source.sourceId] : "error";
+  const { startOauth } = page.mutations;
   return (
     <article
       className={cn(
@@ -858,6 +875,16 @@ function ConnectionCard({
           sourceState={sourceState}
         />
       </div>
+      <ChatReconnectNotice
+        disabled={
+          page.availability.find(({ provider }) => provider === connection.provider)?.access ===
+            "unavailable" || startOauth.isPending
+        }
+        onReconnect={() => page.connectProvider(connection.provider)}
+        pending={startOauth.isPending && startOauth.variables?.provider === connection.provider}
+        provider={connection.provider}
+        status={connection.status}
+      />
       <ConnectionErrors page={page} source={source} />
     </article>
   );
@@ -881,18 +908,11 @@ function AvailableProviderButton({
     provider.provider === "vk_video";
   const connectable =
     provider.access !== "unavailable" && (oauthProvider || provider.provider === "boosty");
-  const connect = () => {
-    if (provider.provider === "boosty") {
-      page.state.setBoostyFormOpen(true);
-    } else if (oauthProvider) {
-      page.mutations.startOauth.mutate({ provider: provider.provider });
-    }
-  };
   return (
     <Button
       className={cn("justify-start", className)}
       disabled={!connectable || page.mutations.startOauth.isPending}
-      onClick={connect}
+      onClick={() => page.connectProvider(provider.provider)}
       title={provider.detail}
       variant="outline"
     >

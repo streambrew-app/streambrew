@@ -52,8 +52,10 @@ describe("useChatServiceStream", () => {
   let root: Root;
   let stream: ReturnType<typeof useChatServiceStream> | undefined;
 
+  const onSourceError = vi.fn();
+
   function Probe({ mode, token }: { mode: "editor" | "overlay"; token?: string }) {
-    stream = useChatServiceStream(mode, token);
+    stream = useChatServiceStream(mode, token, onSourceError);
     return null;
   }
 
@@ -78,6 +80,7 @@ describe("useChatServiceStream", () => {
     vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     subscriptions.length = 0;
     stream = undefined;
+    onSourceError.mockClear();
     container = document.createElement("div");
     document.body.append(container);
     root = createRoot(container);
@@ -119,6 +122,18 @@ describe("useChatServiceStream", () => {
       advance(1);
       expect(subscriptions).toHaveLength(opened + 1);
     }
+  });
+
+  it("reports source errors so the editor can reload connection statuses", async () => {
+    const sourceId = "00000000-0000-4000-8000-000000000001";
+    await render();
+    act(() => {
+      latest().observer.onData({ type: "state", sourceId, state: "live" });
+      latest().observer.onData({ type: "state", sourceId, state: "error", detail: "Reconnect" });
+    });
+
+    expect(stream?.statuses[sourceId]).toBe("error");
+    expect(onSourceError).toHaveBeenCalledExactlyOnceWith(sourceId);
   });
 
   it("restarts the backoff after a subscription stayed healthy", async () => {
