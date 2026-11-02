@@ -8,7 +8,7 @@ application runtime portable:
 | ------------------ | ------------------------------- | --------------------------------------------------------------------- | -------------------------------------- |
 | `infra/bootstrap`  | local, operator-held            | S3 state bucket and GitHub OIDC role                                  | once from an authenticated workstation |
 | `infra/aws`        | `streambrew/aws.tfstate`        | Lightsail instance, firewall, snapshots, and S3 backups               | manual `AWS infrastructure` workflow   |
-| `infra/production` | `streambrew/production.tfstate` | Docker network, containers, persistent volumes, and deployed revision | every push to `main`                   |
+| `infra/production` | `streambrew/production.tfstate` | Docker network, containers, persistent volumes, and deployed revision | published GitHub Release               |
 
 `compose.yaml` remains a development and emergency-recovery reference. Normal
 production deployments do not copy the repository to the server and do not run
@@ -118,9 +118,9 @@ Set the outputs on the `Production` GitHub environment:
 - `AWS_TERRAFORM_ROLE_ARN` from `deployment_role_arn`;
 - `TF_STATE_REGION` and `AWS_REGION` to the selected region.
 
-Configure the environment with a custom deployment branch rule that allows the
-`main` branch. Pushes to `main` deploy the application; manual infrastructure,
-rollback, and recovery runs also start from `main`. See GitHub's
+Configure the environment with custom deployment rules that allow the `main`
+branch and `v*` tags. Published releases deploy the application; manual
+infrastructure, rollback, and recovery runs start from `main`. See GitHub's
 [AWS OIDC guide](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws)
 for the repository/environment subject format.
 
@@ -249,27 +249,37 @@ persistent volumes are no-op.
 
 ## Deployments and migrations
 
-Every push to `main` deploys that commit. The merge queue already tested it:
-the queue fast-forwards `main` to the tested commit, and its CI built the
-SHA-tagged application image. `Production` reuses that successful `Quality checks`
-run and that image. It runs CI and builds the image only when they are missing,
-for example for a manual dispatch of a revision that never passed the queue.
+Publishing a GitHub Release deploys its tagged commit; pushes to `main` do not
+deploy. Release tags use the UTC date and time, `vYYYY.MM.DD-HHMM`, and must
+point to a commit on `main`; prereleases do not deploy. Publish a release with:
+
+```sh
+just production-release [revision]
+```
+
+The recipe defaults to `origin/main` and refuses a revision without a successful
+`Quality checks` run. The merge queue already tested every `main` commit: the
+queue fast-forwards `main` to the tested commit, and its CI built the SHA-tagged
+application image. `Production` reuses that successful `Quality checks` run and
+that image. It runs CI and builds the image only when they are missing, for
+example for a manual dispatch of a revision that never passed the queue.
 `Production` then publishes the PostgreSQL/WAL-G image if its content changed,
 discovers the current Lightsail IP, uploads runtime files, and applies only
 `infra/production`. Images use commit or content identifiers. Images are pulled
 before Terraform changes containers. PostgreSQL is excluded from routine restarts
 unless `restart_database=true` is selected in a manual run.
 
-Pushes deploy in order. A newer pending push replaces an older pending one, and
-a delayed push run skips its deployment when production already runs a newer
-revision that contains it. The `Production` environment's deployment history and
+Releases deploy in order. A newer pending release replaces an older pending one,
+and a delayed release run skips its deployment when production already runs a
+newer revision that contains it. The `Production` environment's deployment history and
 each run's summary record the deployed revision.
 
 Migrations added or changed since the deployed revision apply automatically
 before new containers start, while the previous revision keeps serving. Every
-migration must therefore work with the revision already in production; see
-[migrations in the SQL guide](../engineering/sql.md#migrations). Merging a PR with
-a migration approves applying it to production. Migrations are forward-only and are
+migration must therefore work with the revision already in production, which may
+be several PRs behind `main`; see
+[migrations in the SQL guide](../engineering/sql.md#migrations). Publishing a
+release that contains a migration approves applying it to production. Migrations are forward-only and are
 not automatically reversed; recover data with WAL-G point-in-time restore.
 
 The restream workflow runs on pushes to `main` that change restream code,
@@ -277,7 +287,7 @@ infrastructure, its workflow, or Go module files, and on manual dispatch.
 
 ### Rollback
 
-Deploy an earlier `main` revision and pause automatic deployments:
+Deploy an earlier `main` revision and pause release deployments:
 
 ```sh
 just production-rollback <revision>
@@ -286,10 +296,10 @@ just production-rollback <revision>
 The recipe sets the repository variable `PRODUCTION_AUTO_DEPLOY=false` and
 dispatches `Production` for the revision. A revision that passed the merge queue
 skips CI and the image build, so the rollback takes only the Terraform apply.
-Check that no deployment from `main` is still running, because it may replace the
+Check that no release deployment is still running, because it may replace the
 rollback. Rolling back does not reverse migrations; the expand/contract rule keeps
 older revisions compatible with the newer schema. Fix forward with a revert or fix
-PR, then resume:
+PR, then resume; the recipe publishes a release of the current `main`:
 
 ```sh
 just production-resume

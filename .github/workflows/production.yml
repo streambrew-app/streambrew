@@ -1,9 +1,9 @@
 name: Production
 
 on:
-  push:
-    branches:
-      - main
+  release:
+    types:
+      - published
   workflow_dispatch:
     inputs:
       revision:
@@ -24,18 +24,18 @@ on:
 
 permissions: {}
 
-# Pushes to main deploy in order: a newer pending push replaces an older pending
-# one. Manual runs are not superseded by pushes at the workflow level.
+# Releases deploy in order: a newer pending release replaces an older pending
+# one. Manual runs are not superseded by releases at the workflow level.
 concurrency:
-  group: ${{ github.event_name == 'push' && 'production-main' || format('production-manual-{0}', github.run_id) }}
+  group: ${{ github.event_name == 'release' && 'production-release' || format('production-manual-{0}', github.run_id) }}
   cancel-in-progress: false
 
 jobs:
   resolve:
     name: Resolve revision
     # Setting the repository variable PRODUCTION_AUTO_DEPLOY=false pauses
-    # deployments from main, for example while a rollback is in production.
-    if: github.event_name != 'push' || vars.PRODUCTION_AUTO_DEPLOY != 'false'
+    # release deployments, for example while a rollback is in production.
+    if: github.event_name != 'release' || vars.PRODUCTION_AUTO_DEPLOY != 'false'
     runs-on: ubuntu-latest
     permissions:
       checks: read
@@ -48,16 +48,36 @@ jobs:
       - name: Check out revision
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
+          # Full history lets a release check that its commit is on main.
+          fetch-depth: 0
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.revision || github.sha }}
 
       - name: Record revision and earlier CI result
         id: revision
         env:
+          EVENT_NAME: ${{ github.event_name }}
           GH_TOKEN: ${{ github.token }}
+          RELEASE_PRERELEASE: ${{ github.event.release.prerelease }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
           set -euo pipefail
 
           sha="$(git rev-parse HEAD)"
+
+          if [[ "$EVENT_NAME" == release ]]; then
+            if [[ ! "$RELEASE_TAG" =~ ^v[0-9]{4}\.[0-9]{2}\.[0-9]{2}-[0-9]{4}$ ]]; then
+              echo "Release tag $RELEASE_TAG does not match vYYYY.MM.DD-HHMM." >&2
+              exit 1
+            fi
+            if [[ "$RELEASE_PRERELEASE" == true ]]; then
+              echo "Prerelease $RELEASE_TAG does not deploy." >&2
+              exit 1
+            fi
+            if ! git merge-base --is-ancestor "$sha" origin/main; then
+              echo "Release $RELEASE_TAG points to $sha, which is not on main." >&2
+              exit 1
+            fi
+          fi
 
           # The merge queue fast-forwards main to the commit it tested, so its
           # successful Quality checks run already covers this SHA.
@@ -178,7 +198,7 @@ jobs:
       always() &&
       needs.resolve.result == 'success' &&
       needs.publish.result == 'success' &&
-      (github.event_name != 'push' || vars.PRODUCTION_AUTO_DEPLOY != 'false')
+      (github.event_name != 'release' || vars.PRODUCTION_AUTO_DEPLOY != 'false')
     needs:
       - resolve
       - publish
@@ -545,9 +565,9 @@ jobs:
             previous_known=true
           fi
 
-          # A delayed push run must not replace a newer revision that is already
+          # A delayed release run must not replace a newer revision that is already
           # deployed. Manual runs may deploy an older revision on purpose.
-          if [[ "$EVENT_NAME" == push && "$previous_known" == true && "$previous_revision" != "$TARGET_SHA" ]] &&
+          if [[ "$EVENT_NAME" == release && "$previous_known" == true && "$previous_revision" != "$TARGET_SHA" ]] &&
             git merge-base --is-ancestor "$TARGET_SHA" "$previous_revision"; then
             echo "Production already runs $previous_revision, which contains $TARGET_SHA; skipping."
             exit 0

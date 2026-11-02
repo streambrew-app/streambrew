@@ -7,6 +7,10 @@ on:
   merge_group:
     branches:
       - main
+  # A failed scheduled run on main signals the fix-main agent even when no
+  # commit broke main, for example after a dependency or provider change.
+  schedule:
+    - cron: "*/30 * * * *"
   workflow_call:
     inputs:
       revision:

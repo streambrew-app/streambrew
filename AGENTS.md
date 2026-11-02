@@ -51,7 +51,9 @@ behavior belongs to the domain guides below.
 - Before changing code, read [contribution guide](docs/contributing.md). Work through an
   open issue, a task branch, and a PR. Read-only tasks do not require an issue.
 - Complete code work with a green, review-ready PR. Merge a specific PR only when
-  the user explicitly requests that merge.
+  the user explicitly requests that merge. Exception: a `fix-main` PR that repairs
+  a broken `main` may auto-merge; see
+  [Repairing main](docs/contributing.md#repairing-main).
 - Obtain explicit user authorization before changing the data schema, applying
   migrations (including `just db-migrate`), or removing legacy code or compatibility
   paths. Authorization already given for the action need not be requested again.
