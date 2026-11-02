@@ -13,13 +13,11 @@ code. Documentation may be updated alongside the behavior it describes.
    checks, on a task branch. Never change code directly on `main`.
    When continuing an existing task branch or PR, retain its work and issue;
    update it from `main` when integration or conflicts require it.
-3. If `main` is broken or required checks fail, identify the failing check and
-   report the blocker before starting a new implementation. Continue independent
-   read-only investigation or documentation work. Repair `main` through a
-   dedicated issue and PR when the user requests that repair, or when restoring
-   those checks is already the task. Otherwise, do not switch to an unrelated
-   repair. For an ongoing PR, distinguish failures introduced by the branch from
-   pre-existing failures; report the latter and fix failures caused by the change.
+3. If `main` is broken or required checks fail, repair it through a single
+   `fix-main` PR before relying on `main`; see [Repairing main](#repairing-main).
+   For an ongoing PR, distinguish failures introduced by the branch from failures
+   that `main` already has. Fix the former in the branch; never fix a broken
+   `main` inside an unrelated PR.
 
 ## Implementation and review
 
@@ -33,10 +31,12 @@ code. Documentation may be updated alongside the behavior it describes.
 4. Hand a green, review-ready PR to the human for review, approval, and merge.
    The merge authorization boundary is defined in [AGENTS.md](../AGENTS.md#working-agreements).
    Merging is cheap: the merge queue tests the PR against the latest `main`, and
-   every merge to `main` deploys to production. Recover from a bad merge with a
-   rollback and a fix-forward PR as described in the
-   [deployment guide](operations/deployment.md#rollback). A PR does not need to be
-   up to date with `main`; enable auto-merge to add it to the queue once checks pass.
+   production deploys only from a published release, as described in the
+   [deployment guide](operations/deployment.md#deployments-and-migrations).
+   Recover from a bad release with a rollback and a fix-forward PR as described in
+   the [deployment guide](operations/deployment.md#rollback). A PR does not need to
+   be up to date with `main`; enable auto-merge to add it to the queue once checks
+   pass.
    A migration must stay compatible with the revision in production; see
    [migrations](engineering/sql.md#migrations).
 5. Turn recurring review findings into automated repository checks when practical.
@@ -44,6 +44,23 @@ code. Documentation may be updated alongside the behavior it describes.
 Green CI establishes automated correctness only. Follow the decision and approval
 boundaries in [AGENTS.md](../AGENTS.md#working-agreements) for product and architecture
 choices.
+
+## Repairing main
+
+CI runs on `main` every 30 minutes as well as in the merge queue. A failed run
+on the latest `main` commit means `main` is broken. At most one open PR labelled
+`fix-main` repairs it at a time:
+
+1. Check for an open `fix-main` PR. If one exists, do not start another repair;
+   wait for it to merge, then update your branch from `main`.
+2. Otherwise, create a `fix-main` issue and a PR from `main` with the `fix-main`
+   label, then continue your own task once the repair merges.
+3. Prefer reverting the commit that broke `main`; fix forward only when the fix is
+   small and evident. Never skip, delete, or weaken tests or checks to make `main`
+   green.
+4. Enable auto-merge on the `fix-main` PR. This is the one exception to the
+   [merge authorization boundary](../AGENTS.md#working-agreements): it needs no
+   explicit merge request.
 
 ## Shared engineering conventions
 

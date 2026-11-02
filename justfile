@@ -183,7 +183,27 @@ production-deploy $app_image $postgres_image:
       fi
     '
 
-# Pause deployments from main and deploy an earlier revision through GitHub Actions.
+# Publish a date-stamped release of a main revision; publishing deploys it.
+[script("bash", "-euo", "pipefail")]
+production-release revision="origin/main":
+  git fetch --quiet origin main
+  sha="$(git rev-parse --verify "{{ revision }}^{commit}")"
+  if ! git merge-base --is-ancestor "$sha" origin/main; then
+    echo "Release revision $sha is not on main." >&2
+    exit 1
+  fi
+  passed_runs="$(gh api \
+    "repos/{owner}/{repo}/commits/$sha/check-runs?check_name=Quality%20checks&filter=all&per_page=100" \
+    --jq '[.check_runs[] | select(.app.slug == "github-actions" and .conclusion == "success")] | length')"
+  if [[ "$passed_runs" -eq 0 ]]; then
+    echo "Revision $sha has no successful Quality checks run." >&2
+    exit 1
+  fi
+  tag="v$(date -u +%Y.%m.%d-%H%M)"
+  gh release create "$tag" --target "$sha" --title "$tag" --generate-notes
+  echo "Published $tag for $sha. Watch the deployment with: gh run list --workflow production.yml"
+
+# Pause release deployments and deploy an earlier revision through GitHub Actions.
 [script("bash", "-euo", "pipefail")]
 production-rollback revision:
   git fetch --quiet origin main
@@ -194,14 +214,13 @@ production-rollback revision:
   fi
   gh variable set PRODUCTION_AUTO_DEPLOY --body false
   gh workflow run production.yml --ref main -f revision="$sha"
-  echo "Deployments from main are paused. Watch the run with: gh run list --workflow production.yml"
+  echo "Release deployments are paused. Watch the run with: gh run list --workflow production.yml"
   echo "After the fix reaches main, run: just production-resume"
 
-# Resume deployments from main and deploy the current main.
-[script("bash", "-euo", "pipefail")]
+# Resume release deployments and release the current main.
 production-resume:
   gh variable delete PRODUCTION_AUTO_DEPLOY || true
-  gh workflow run production.yml --ref main -f revision=main
+  just production-release
 
 compose-db-up:
   docker compose up -d postgres
