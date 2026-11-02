@@ -130,8 +130,8 @@ confirmation because it affects every checkout.
 
 Production runs on Terraform-managed AWS infrastructure. The manual
 `AWS infrastructure` workflow manages Lightsail, its firewall and snapshots,
-and S3 backups. Every merge to `main`
-deploys production: `Production` reuses the image that the merge queue built,
+and S3 backups. Publishing a date-stamped GitHub Release
+deploys its `main` commit: `Production` reuses the image that the merge queue built,
 applies new migrations, and applies only the portable Docker runtime over SSH.
 Routine deployments neither plan nor replace cloud resources. Bootstrap, first deployment,
 migrations, rollback, networking, and backup guidance lives in
