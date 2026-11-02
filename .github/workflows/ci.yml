@@ -160,6 +160,18 @@ jobs:
       - name: Run tests
         run: just test
 
+  drill:
+    # Fix-main drill: fails only in scheduled runs so it passes the merge queue
+    # and breaks main, exercising automatic repair.
+    name: Fix-main drill
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail on purpose
+        run: |
+          echo "Fix-main drill: this scheduled-only failure is deliberate." >&2
+          exit 1
+
   image:
     # The merge queue fast-forwards main to the tested commit, so this image is
     # the one Production deploys for the same SHA.
