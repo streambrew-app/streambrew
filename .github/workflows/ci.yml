@@ -7,10 +7,9 @@ on:
   merge_group:
     branches:
       - main
-  # A failed scheduled run on main signals the fix-main agent even when no
-  # commit broke main, for example after a dependency or provider change.
-  schedule:
-    - cron: "*/30 * * * *"
+  # The Raspberry Pi dispatches CI on main every 30 minutes and starts the
+  # fix-main agent when the run fails, even when no commit broke main.
+  workflow_dispatch:
   workflow_call:
     inputs:
       revision:
@@ -161,15 +160,17 @@ jobs:
         run: just test
 
   drill:
-    # Fix-main drill: fails only in scheduled runs so it passes the merge queue
-    # and breaks main, exercising automatic repair.
+    # Fix-main drill: fails only in dispatched CI runs so it passes the merge
+    # queue and breaks main, exercising automatic repair. Production's manual
+    # runs call this workflow with the same event, so the workflow name guards
+    # them.
     name: Fix-main drill
-    if: github.event_name == 'schedule'
+    if: github.event_name == 'workflow_dispatch' && github.workflow == 'CI'
     runs-on: ubuntu-latest
     steps:
       - name: Fail on purpose
         run: |
-          echo "Fix-main drill: this scheduled-only failure is deliberate." >&2
+          echo "Fix-main drill: this dispatched-run failure is deliberate." >&2
           exit 1
 
   image:

@@ -47,7 +47,8 @@ choices.
 
 ## Repairing main
 
-CI runs on `main` every 30 minutes as well as in the merge queue. A failed run
+Besides the merge queue, the owner's Raspberry Pi dispatches CI on `main` every
+30 minutes and starts a repair agent when that run fails. A failed run
 on the latest `main` commit means `main` is broken. At most one open PR labelled
 `fix-main` repairs it at a time:
 
