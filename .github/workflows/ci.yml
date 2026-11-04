@@ -159,20 +159,6 @@ jobs:
       - name: Run tests
         run: just test
 
-  drill:
-    # Fix-main drill: fails only in dispatched CI runs so it passes the merge
-    # queue and breaks main, exercising automatic repair. Production's manual
-    # runs call this workflow with the same event, so the workflow name guards
-    # them.
-    name: Fix-main drill
-    if: github.event_name == 'workflow_dispatch' && github.workflow == 'CI'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Fail on purpose
-        run: |
-          echo "Fix-main drill: this dispatched-run failure is deliberate." >&2
-          exit 1
-
   image:
     # The merge queue fast-forwards main to the tested commit, so this image is
     # the one Production deploys for the same SHA.
