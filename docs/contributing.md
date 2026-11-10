@@ -48,9 +48,11 @@ choices.
 ## Repairing main
 
 Besides the merge queue, the owner's Raspberry Pi dispatches CI on `main` every
-30 minutes and starts a repair agent when that run fails. A failed run
-on the latest `main` commit means `main` is broken. At most one open PR labelled
-`fix-main` repairs it at a time:
+30 minutes. When that run fails, the Pi reruns the failed jobs once and starts a
+repair agent only if they fail again, outside setup steps, so transient
+infrastructure failures do not start a repair. A failed run on the latest `main`
+commit means `main` is broken. At most one open PR labelled `fix-main` repairs it
+at a time:
 
 1. Check for an open `fix-main` PR. If one exists, do not start another repair;
    wait for it to merge, then update your branch from `main`.
