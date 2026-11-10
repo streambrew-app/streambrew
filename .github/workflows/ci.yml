@@ -7,8 +7,9 @@ on:
   merge_group:
     branches:
       - main
-  # The Raspberry Pi dispatches CI on main every 30 minutes and starts the
-  # fix-main agent when the run fails, even when no commit broke main.
+  # The Raspberry Pi dispatches CI on main every 30 minutes, reruns failed jobs
+  # once, and starts the fix-main agent when they fail again outside setup steps,
+  # even when no commit broke main.
   workflow_dispatch:
   workflow_call:
     inputs:
